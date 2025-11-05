@@ -1,0 +1,129 @@
+import { useRef, useState } from 'react';
+import { observer } from 'mobx-react-lite';
+
+import Plus from 'lucide-react/icons/plus';
+
+import { Button } from './ui/button';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from './ui/context-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Input } from './ui/input';
+
+import axios from '@/lib/axiosLike';
+import siteManager from '@/managers/SiteManager';
+
+import icon from '@/assets/leak.jpeg';
+import authManager from '@/managers/AuthManager';
+
+const SideBar = observer(function SideBar({ setState }: { setState: React.Dispatch<React.SetStateAction<'site' | 'users' | ''>> }) {
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [siteAddError, setSiteAddError] = useState('');
+
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    return (
+        <>
+            <div className='border-neutral-200 w-72 h-full flex flex-col px-6 py-8 fixed left-0 top-0 bottom-0 z-20'>
+                <div className='flex flex-col justify-between h-full w-full items-center'>
+                    <div className='flex flex-col items-center gap-4 mb-4 w-full h-full'>
+                        <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => setState('site')}>
+                            <img src={icon} className='w-12 h-12 rounded-xl shadow-md border border-neutral-300 p-2' alt='drain logo' />
+                            <h1 className='text-4xl font-extrabold tracking-tight text-neutral-800 drop-shadow-sm'>drain</h1>
+                        </div>
+                        <div className='w-full border-b border-neutral-300'></div>
+
+                        {authManager.isAdmin() && (
+                            <div
+                                className='flex items-center justify-center gap-2 bg-blue-600 w-full py-2 rounded-lg shadow hover:bg-blue-700 transition-colors duration-125 cursor-pointer font-semibold text-lg'
+                                onClick={() => setDialogOpen(true)}
+                            >
+                                <Plus className='w-6 h-6 text-white' />
+                                <span className='text-white'>Add Site</span>
+                            </div>
+                        )}
+
+                        <div className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2'>
+                            {siteManager.sites.map((site, i) => (
+                                <ContextMenu key={i}>
+                                    <ContextMenuTrigger asChild>
+                                        <div
+                                            className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer
+                                            ${siteManager.currentSiteId === site.domain
+                                                    ? 'bg-blue-100 border border-blue-300 shadow'
+                                                    : 'hover:bg-neutral-100'
+                                                }`}
+                                            onClick={e => {
+                                                if (!(e.target as HTMLElement).classList.contains('no-click')) {
+                                                    siteManager.currentSiteId = site.domain;
+                                                    setState('site');
+                                                }
+                                            }}
+                                        >
+                                            <span className={`text-lg font-medium ${siteManager.currentSiteId === site.domain ? 'text-blue-700' : 'text-neutral-800'}`}>
+                                                {site.domain}
+                                            </span>
+                                        </div>
+                                    </ContextMenuTrigger>
+                                    <ContextMenuContent>
+                                        <ContextMenuItem
+                                            className='no-click'
+                                            onClick={() => navigator.clipboard.writeText(location.origin + '#' + site.domain)}
+                                        >
+                                            Copy URL
+                                        </ContextMenuItem>
+                                        {authManager.isAdmin() && (
+                                            <ContextMenuItem
+                                                className='text-red-500 no-click'
+                                                onClick={() => {
+                                                    axios.post('/$/sites/deleteSite', { domain: site.domain }).then(resp => {
+                                                        if (resp.data.error) {
+                                                            alert(resp.data.error);
+                                                        } else {
+                                                            siteManager.getSites();
+                                                            siteManager.currentSiteId = '';
+                                                        }
+                                                    });
+                                                }}
+                                            >
+                                                Delete Site
+                                            </ContextMenuItem>
+                                        )}
+                                    </ContextMenuContent>
+                                </ContextMenu>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>add site</DialogTitle>
+                        <DialogDescription>add a site to our database. keys can be added later.</DialogDescription>
+                    </DialogHeader>
+
+                    <Input placeholder='my-cool-app.com' id='domainAddInput' className='w-full mb-4' onKeyUp={(e) => (e.key === 'Enter') && buttonRef.current!.click()} />
+
+                    {siteAddError && (<div className='text-red-500 mb-2'>{siteAddError}</div>)}
+
+                    <Button className='w-3/4' ref={buttonRef} onClick={() => {
+                        axios.post('/$/sites/add', {
+                            url: (document.getElementById('domainAddInput') as HTMLInputElement).value
+                        }).then((resp) => {
+                            if (resp.data.error) setSiteAddError(resp.data.error);
+                            else {
+                                siteManager.getSites();
+                                setSiteAddError('');
+                                setDialogOpen(false);
+                            }
+                        }).catch((err) => {
+                            console.error(err);
+                        });
+                    }}>submit</Button>
+                </DialogContent>
+            </Dialog>
+        </>
+    )
+});
+
+export default SideBar;

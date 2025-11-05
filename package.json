@@ -1,0 +1,7 @@
+{
+    "name": "drain",
+    "scripts": {
+        "start": "cd api && bun .",
+        "prep": "cd app && bun install && bun run build && cd ../api && bun install && cd .."
+    }
+}
