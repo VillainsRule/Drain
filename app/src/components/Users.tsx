@@ -47,7 +47,6 @@ const Users = observer(function Users() {
         if (!adminManager.users?.length) adminManager.fetchAllUsers();
     }, []);
 
-
     const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
     const [changePasswordTarget, setChangePasswordTarget] = useState(0);
     const [changePasswordTargetName, setChangePasswordTargetName] = useState('');
