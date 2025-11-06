@@ -2,6 +2,7 @@
     "name": "drain",
     "scripts": {
         "start": "cd api && bun .",
-        "prep": "cd app && bun install && bun run build && cd ../api && bun install && cd .."
+        "prep": "cd app && bun install && bun run build && cd ../api && bun install && cd ..",
+        "update": "cd app && bun update && cd ../api && bun update && cd .."
     }
 }
