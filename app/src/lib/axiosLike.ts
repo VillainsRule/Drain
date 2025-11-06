@@ -13,7 +13,7 @@ interface ResponseLike {
 
 const baseLike = (url: string, params?: RequestInit) => new Promise<ResponseLike>((r) => {
     const response: ResponseLike = { headers: {}, status: 0, statusText: '', data: null };
-    
+
     fetch(url, params).then((res) => {
         response.headers = Object.fromEntries(res.headers.entries());
         response.status = res.status;
