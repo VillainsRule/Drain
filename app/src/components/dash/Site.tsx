@@ -23,6 +23,12 @@ import adminManager from '@/managers/AdminManager';
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
 
+const fakeKeys = [
+    crypto.randomUUID().replace(/-/g, ''),
+    crypto.randomUUID().replace(/-/g, ''),
+    crypto.randomUUID().replace(/-/g, '')
+]
+
 const Site = observer(function Site() {
     const [addKeyDialogOpen, setAddKeyDialogOpen] = useState(false);
     const [keyAddError, setKeyAddError] = useState('');
@@ -209,7 +215,7 @@ const Site = observer(function Site() {
                                     const role = editors.some(u => u.username === user.username) ? 'editor' : 'reader';
 
                                     const changeRole = (newRole: 'reader' | 'editor') => {
-                                        axios.post('/$/sites/changeUserRole', {
+                                        axios.post('/$/sites/access/changeUserRole', {
                                             domain: siteManager.site.get().domain,
                                             username: user.username,
                                             role: newRole
@@ -242,7 +248,7 @@ const Site = observer(function Site() {
                                                 </Select>
 
                                                 <Button variant='destructive' onClick={() => {
-                                                    axios.post('/$/sites/removeUserFromSite', {
+                                                    axios.post('/$/sites/access/removeUser', {
                                                         domain: siteManager.site.get().domain,
                                                         username: user.username
                                                     }).then((resp) => {
@@ -267,7 +273,7 @@ const Site = observer(function Site() {
                                 <DialogDescription>add a key to {siteManager.site.get().domain}!</DialogDescription>
                             </DialogHeader>
 
-                            <Input placeholder={crypto.randomUUID().replace(/-/g, '')} id='keyAddInput' className='w-full' onKeyUp={(e) => e.key === 'Enter' && (document.querySelector('#keyAddButton') as HTMLButtonElement).click()} />
+                            <Input placeholder={fakeKeys[0]} id='keyAddInput' className='w-full' onKeyUp={(e) => e.key === 'Enter' && (document.querySelector('#keyAddButton') as HTMLButtonElement).click()} />
 
                             {keyAddError && (<div className='text-red-500'>{keyAddError}</div>)}
 
@@ -300,7 +306,7 @@ const Site = observer(function Site() {
                                 <DialogDescription>add multiple keys to {siteManager.site.get().domain}!</DialogDescription>
                             </DialogHeader>
 
-                            <Textarea placeholder={Array.from({ length: 3 }, () => crypto.randomUUID().replace(/-/g, '')).join('\n')} id='bulkAddTextarea' className='max-h-74 overflow-auto' />
+                            <Textarea placeholder={fakeKeys.join('\n')} id='bulkAddTextarea' className='max-h-74 overflow-auto' />
 
                             {bulkAddError && (<div className='text-red-500'>{bulkAddError}</div>)}
                             {bulkAddProgress && (<div className='text-gray-500'>{bulkAddProgress}</div>)}
@@ -349,7 +355,7 @@ const Site = observer(function Site() {
                             {addUserError && (<div className='text-red-500'>{addUserError}</div>)}
 
                             <Button className='w-3/4' onClick={async () => {
-                                axios.post('/$/sites/addUserToSite', {
+                                axios.post('/$/sites/access/addUser', {
                                     domain: siteManager.site.get().domain,
                                     username: addUserSelected
                                 }).then((resp) => {

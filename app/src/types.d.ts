@@ -19,3 +19,9 @@ export interface FrontendSite {
     keys: SiteKey[];
     supportsBalancer: boolean;
 }
+
+export interface InstanceInformation {
+    commit: string;
+    isDev: boolean;
+    isUsingSystemd: boolean;
+}

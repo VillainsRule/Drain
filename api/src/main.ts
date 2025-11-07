@@ -1,5 +1,6 @@
 import Elysia from 'elysia';
 
+import fs from 'node:fs';
 import path from 'node:path';
 
 import auth from './endpoints/auth';
@@ -8,8 +9,19 @@ import admin from './endpoints/admin';
 
 const app = new Elysia();
 
-const distDir = path.join(import.meta.dirname, '..', '..', 'app', 'dist');
-const getFile = (p: string[]) => p.includes('..') ? Bun.file(path.join(distDir, 'index.html')) : Bun.file(path.join(distDir, ...p));
+const distDir = path.resolve(import.meta.dirname, '../../app/dist');
+
+const safeJoin = (...segments: string[]) => {
+    const resolved = path.resolve(distDir, ...segments);
+    if (resolved.startsWith(distDir)) return resolved;
+    else return path.join(distDir, 'index.html');
+};
+
+const getFile = (segments: string[]) => {
+    const filePath = safeJoin(...segments);
+    if (fs.existsSync(filePath)) return Bun.file(safeJoin(...segments));
+    else return new Response('not found', { status: 404 });
+}
 
 app.get('/', () => getFile(['index.html']));
 app.get('/favicon.ico', () => getFile(['favicon.ico']));

@@ -25,19 +25,20 @@ class AuthManager {
     async checkAuth() {
         try {
             const { data } = await axios.post('/$/auth/whoami');
-            if (data.error) {
-                console.error(data);
-                alert('Error checking authentication. Check the console for details.');
-            } else {
-                this.hasInit = true;
+
+            this.hasInit = true;
+
+            if (!data.error) {
+                this.loggedIn = true;
                 this.user = data.user;
+
                 siteManager.getSites();
-                if (this.isAdmin()) adminManager.fetchAllUsers();
-                this.loggedIn = data.loggedIn;
+                if (this.user.admin) adminManager.fetchAllUsers();
+                if (this.user.id === 1) adminManager.fetchInstanceInformation();
             }
         } catch (error) {
             console.error(error);
-            alert('Error checking authentication. Check the console for details.');
+            alert('error checking authentication, try reloading?');
         }
     }
 

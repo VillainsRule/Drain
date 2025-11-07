@@ -6,7 +6,6 @@ export interface PublicUser {
 
 export interface User extends PublicUser {
     password: string;
-    key: string;
 }
 
 export interface Session {

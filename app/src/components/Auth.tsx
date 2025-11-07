@@ -36,11 +36,11 @@ export default function Auth() {
                     {error && <div className='text-red-500 text-sm'>{error}</div>}
 
                     <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                        axios.post('/$/auth/login', {
+                        axios.post('/$/auth/secure', {
                             username: usernameRef.current!.value,
                             password: passwordRef.current!.value
                         }).then((response) => {
-                            if (response.data.loggedIn) location.reload();
+                            if (response.data.user) location.reload();
                             else setError(response.data.error);
                         })
                     }}>Log In</Button>

@@ -23,10 +23,8 @@ const TopBar = observer(function TopBar() {
 
                 <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => {
                     axios.post('/$/auth/logout').then((r) => {
-                        if (r.data.loggedOut) {
-                            authManager.loggedIn = false;
-                            authManager.user = authManager.placeholderUser;
-                        } else alert(r.data.error);
+                        if (r.data.error) alert(r.data.error);
+                        else location.reload();
                     })
                 }} />
             </div>

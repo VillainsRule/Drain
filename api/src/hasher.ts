@@ -1,18 +1,6 @@
 import crypto from 'node:crypto';
 
-export class JSONResponse extends Response {
-    constructor(body: any, init?: ResponseInit) {
-        super(JSON.stringify(body), {
-            ...init,
-            headers: {
-                'Content-Type': 'application/json',
-                ...init?.headers,
-            },
-        });
-    }
-}
-
-export const hasher = {
+const hasher = {
     encode: (string: string): string => {
         const salt = crypto.randomBytes(16).toString('hex');
         const derivedKey = crypto.scryptSync(string, salt, 64);
@@ -23,4 +11,6 @@ export const hasher = {
         const derivedKey = crypto.scryptSync(input, salt, 64);
         return derivedKey.toString('hex') === key;
     }
-}
+};
+
+export default hasher;

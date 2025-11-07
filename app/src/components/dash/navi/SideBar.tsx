@@ -109,7 +109,7 @@ const SideBar = observer(function SideBar() {
                     {siteAddError && (<div className='text-red-500 mb-2'>{siteAddError}</div>)}
 
                     <Button className='w-3/4' ref={buttonRef} onClick={() => {
-                        axios.post('/$/sites/add', {
+                        axios.post('/$/sites/create', {
                             url: (document.getElementById('domainAddInput') as HTMLInputElement).value
                         }).then((resp) => {
                             if (resp.data.error) setSiteAddError(resp.data.error);

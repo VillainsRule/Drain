@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { Button } from '../../shadcn/button';
@@ -18,6 +18,7 @@ interface UserSitesThingy {
 
 const Users = observer(function Users() {
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+    const [addUserError, setAddUserError] = useState('');
     const addUserUsernameRef = useRef<HTMLInputElement>(null);
     const addUserPasswordRef = useRef<HTMLInputElement>(null);
     const addUserSubmitRef = useRef<HTMLButtonElement>(null);
@@ -27,7 +28,7 @@ const Users = observer(function Users() {
     const [userSitesDialogList, setUserSitesDialogList] = useState<UserSitesThingy>({});
 
     const changeRole = (username: string, domain: string, newRole: 'reader' | 'editor') => {
-        axios.post('/$/sites/changeUserRole', {
+        axios.post('/$/sites/access/changeUserRole', {
             domain: domain,
             username: username,
             role: newRole
@@ -41,10 +42,6 @@ const Users = observer(function Users() {
         });
     }
 
-    useEffect(() => {
-        if (!adminManager.users?.length) adminManager.fetchAllUsers();
-    }, []);
-
     const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
     const [changePasswordTarget, setChangePasswordTarget] = useState(0);
     const [changePasswordTargetName, setChangePasswordTargetName] = useState('');
@@ -52,7 +49,7 @@ const Users = observer(function Users() {
     const changePasswordSubmitRef = useRef<HTMLButtonElement>(null);
 
     const grabUserSitesDialogList = (username: string) => {
-        axios.post('/$/admin/userSites', { username }).then((res) => {
+        axios.post('/$/admin/getUserSites', { username }).then((res) => {
             setUserSitesDialogList(res.data.sites);
         });
     }
@@ -118,11 +115,15 @@ const Users = observer(function Users() {
                     <Input className='w-full' placeholder='username' ref={addUserUsernameRef} onKeyUp={(k) => (k.key === 'Enter') && addUserPasswordRef.current?.focus()} />
                     <Input className='w-full' placeholder='password' ref={addUserPasswordRef} onKeyUp={(k) => (k.key === 'Enter') && addUserSubmitRef.current?.click()} />
 
+                    {addUserError && <span className='text-red-500'>{addUserError}</span>}
+
                     <Button className='w-3/4' ref={addUserSubmitRef} onClick={() => {
                         const username = addUserUsernameRef.current?.value;
                         const password = addUserPasswordRef.current?.value;
 
-                        axios.post('/$/admin/createUser', { username, password }).then(() => {
+                        axios.post('/$/admin/createUser', { username, password }).then((res) => {
+                            if (res.data.error) return setAddUserError(res.data.error);
+
                             adminManager.fetchAllUsers();
                             setAddUserDialogOpen(false);
                         });
@@ -160,7 +161,7 @@ const Users = observer(function Users() {
                                     </Select>
 
                                     <Button variant='destructive' onClick={() => {
-                                        axios.post('/$/sites/removeUserFromSite', { domain, username: userSitesDialogTarget }).then((resp) => {
+                                        axios.post('/$/sites/access/removeUser', { domain, username: userSitesDialogTarget }).then((resp) => {
                                             if (resp.data.error) {
                                                 console.error(resp.data);
                                                 alert(resp.data.error);

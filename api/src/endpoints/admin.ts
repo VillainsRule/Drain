@@ -1,114 +1,114 @@
-import { Elysia, t } from 'elysia';
+import { Elysia, status, t } from 'elysia';
+
+import terminal from 'node:child_process';
 
 import siteDB from '../db/SiteDB';
 import userDB from '../db/UserDB';
 
-import { JSONResponse } from '../util';
-
 export default function admin(app: Elysia) {
-    app.get('/$/admin/users', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ loggedIn: false });
+    app.get('/$/admin/users', async ({ cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const allUsers = userDB.getAllUsers();
-
-        return new JSONResponse({ allUsers });
+        const users = userDB.getAllUsers();
+        return { users };
     }, { cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/createUser', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ loggedIn: false });
+    app.post('/$/admin/createUser', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        if (userDB.getUserByUsername(req.body.username))
-            return new JSONResponse({ error: 'User already exists' }, { status: 400 });
+        if (userDB.getUserByUsername(body.username)) return status(400, { error: 'user already exists' });
+        if (body.password.length < 6) return status(400, { error: 'password is too short' });
 
-        userDB.createUser(req.body.username, req.body.password);
+        userDB.createUser(body.username, body.password);
 
-        return new JSONResponse({});
+        return {};
     }, { body: t.Object({ username: t.String(), password: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/userSites', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ loggedIn: false });
-        if (!user.admin) return new JSONResponse({ error: 'unauthorized' });
+    app.post('/$/admin/getUserSites', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const target = userDB.getUserByUsername(req.body.username);
-        if (!target) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        const target = userDB.getUserByUsername(body.username);
+        if (!target) return status(404, { error: 'user not found' });
 
         const targetSites = siteDB.getUserSites(target.id);
-        if (!targetSites) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        if (!targetSites) return status(404, { error: 'user not found' });
 
-        const index: { [key: string]: 'reader' | 'editor' } = {};
+        const sites: { [key: string]: 'reader' | 'editor' } = {};
 
         targetSites.forEach((site) => {
-            index[site.domain] = site.readers.includes(target.id) ? 'reader' : 'editor';
+            sites[site.domain] = site.readers.includes(target.id) ? 'reader' : 'editor';
         });
 
-        return new JSONResponse({ sites: index });
+        return { sites };
     }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/deleteUser', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ loggedIn: false });
+    app.post('/$/admin/deleteUser', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        if (req.body.userId === 1) return new JSONResponse({ error: 'Cannot delete primary admin' }, { status: 400 });
+        if (body.userId === 1) return status(403, { error: 'cannot modify primary admin' });
 
-        const target = userDB.getPublicUser(req.body.userId);
-        if (!target) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        const target = userDB.getPublicUser(body.userId);
+        if (!target) return status(404, { error: 'user not found' });
 
         if (user.id !== 1 && target.admin && target.id !== user.id)
-            return new JSONResponse({ error: 'Cannot delete other admins' }, { status: 403 });
+            return status(403, { error: 'cannot delete other admins' });
 
-        userDB.deleteUser(req.body.userId);
+        userDB.deleteUser(body.userId);
 
-        return new JSONResponse({});
+        return {};
     }, { body: t.Object({ userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/setUserRole', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ loggedIn: false });
+    app.post('/$/admin/setUserRole', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const targetUser = userDB.getPublicUser(req.body.userId);
-        if (!targetUser) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        const targetUser = userDB.getPublicUser(body.userId);
+        if (!targetUser) return status(404, { error: 'user not found' });
 
-        if (req.body.userId === 1) return new JSONResponse({ error: 'Cannot change role of primary admin' }, { status: 400 });
+        if (body.userId === 1) return status(403, { error: 'cannot modify primary admin' });
 
-        userDB.setUserAdmin(req.body.userId, req.body.isAdmin);
+        userDB.setUserAdmin(body.userId, body.isAdmin);
 
-        return new JSONResponse({});
+        return {};
     }, { body: t.Object({ userId: t.Number(), isAdmin: t.Boolean() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/setUserPassword', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ loggedIn: false });
+    app.post('/$/admin/setUserPassword', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const target = userDB.getPublicUser(req.body.userId);
-        if (!target) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        const target = userDB.getPublicUser(body.userId);
+        if (!target) return status(404, { error: 'user not found' });
 
         if (user.id !== 1 && target.admin && target.id !== user.id)
-            return new JSONResponse({ error: 'Cannot change password of other admins' }, { status: 403 });
+            return status(403, { error: 'cannot modify other admins' });
 
-        userDB.setUserPassword(req.body.userId, req.body.newPassword);
+        userDB.setUserPassword(body.userId, body.newPassword);
 
-        return new JSONResponse({});
+        return {};
     }, { body: t.Object({ userId: t.Number(), newPassword: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/nukeSessions', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || user.id !== 1) return new JSONResponse({ loggedIn: false });
+    app.post('/$/admin/removeAllSessions', async ({ cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
         userDB.db.sessions = {};
         userDB.updateDB();
 
-        return new JSONResponse({});
+        return {};
     }, { cookie: t.Cookie({ session: t.String() }) });
 
-    app.get('/$/admin/instanceInformation', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || user.id !== 1) return new JSONResponse({ loggedIn: false });
+    app.get('/$/admin/instanceInformation', async ({ cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
+        const commit = terminal.execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).toString().trim();
+        const isDev = terminal.execSync('git status --porcelain', { encoding: 'utf8' }).trim().length > 0;
         const isUsingSystemd = !!process.env['INVOCATION_ID'];
 
-        return new JSONResponse({ isUsingSystemd });
+        return { commit, isDev, isUsingSystemd };
     }, { cookie: t.Cookie({ session: t.String() }) });
 }

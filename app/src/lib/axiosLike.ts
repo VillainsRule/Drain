@@ -24,7 +24,7 @@ const baseLike = (url: string, params?: RequestInit) => new Promise<ResponseLike
 
                 if (response.data && typeof response.data === 'object' && 'type' in response.data && response.data.type === 'validation') {
                     const data = response.data as { type: string, on: string, property: string };
-                    if (data.on === 'cookie' && data.property === '/session') response.data = { loggedIn: false };
+                    if (data.on === 'cookie' && data.property === '/session') response.data = { error: 'not logged in' };
                 }
             } catch {
                 response.data = text;

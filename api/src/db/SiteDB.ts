@@ -16,10 +16,27 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
         this.db = { sites: {} };
     }
 
-    addSite(domain: string): { error?: string } {
-        if (typeof domain !== 'string' || !domain.trim()) return { error: 'Invalid domain' };
-        if (this.db.sites[domain]) return { error: 'Site already exists' };
+    siteExists(domain: string): boolean {
+        return !!this.db.sites[domain];
+    }
 
+    userAccessLevel(domain: string, userId: number): 'none' | 'reader' | 'editor' {
+        const site = this.db.sites[domain];
+        if (!site) return 'none';
+
+        if (site.editors.includes(userId)) return 'editor';
+        if (site.readers.includes(userId)) return 'reader';
+        return 'none';
+    }
+
+    keyExistsOn(domain: string, token: string): boolean {
+        const site = this.db.sites[domain];
+        if (!site) return false;
+
+        return site.keys.some(key => key.token === token);
+    }
+
+    addSite(domain: string): { error?: string } {
         this.db.sites[domain] = {
             domain,
             public: false,
@@ -41,14 +58,11 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
         return sites;
     }
 
-    async addKeyToSite(domain: string, token: string): Promise<{ error?: string }> {
-        if (!this.db.sites[domain]) return { error: 'Site not found' };
-        if (this.db.sites[domain].keys.some(key => key.token === token)) return { error: 'Key already exists' };
-
+    async addKeyToSite(domain: string, token: string) {
         const balancer = getBalancer(domain);
         if (balancer) {
             const balance = await balancer(token);
-            if (balance === 'invalid_key') return { error: 'Balancer has determined the key is invalid.' };
+            if (balance === 'invalid_key') return { error: 'balancer has determined the key is invalid.' };
             this.db.sites[domain].keys.push({ token, balance: isNaN(Number(balance)) ? balance : `$${balance}` });
         } else this.db.sites[domain].keys.push({ token, balance: '?' });
 
@@ -57,32 +71,19 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
         return {};
     }
 
-    setKeyBalance(domain: string, token: string, balance: string): { error?: string } {
-        if (!this.db.sites[domain]) return { error: 'Site not found' };
+    setKeyBalance(domain: string, token: string, balance: string) {
         const key = this.db.sites[domain].keys.find(k => k.token === token);
-        if (!key) return { error: 'Key not found' };
-
-        key.balance = balance;
+        if (key) key.balance = balance;
         this.updateDB();
-
-        return {};
     }
 
-    removeKeyFromSite(domain: string, token: string): { error?: string } {
-        if (!this.db.sites[domain]) return { error: 'Site not found' };
-
+    removeKeyFromSite(domain: string, token: string) {
         const keyIndex = this.db.sites[domain].keys.findIndex(k => k.token === token);
-        if (keyIndex === -1) return { error: 'Key not found' };
-
         this.db.sites[domain].keys.splice(keyIndex, 1);
         this.updateDB();
-
-        return {};
     }
 
     sortKeys(domain: string): { error?: string } {
-        if (!this.db.sites[domain]) return { error: 'Site not found' };
-
         const uniqueKeys = new Set<string>();
         this.db.sites[domain].keys = this.db.sites[domain].keys.filter((key) => {
             if (uniqueKeys.has(key.token)) return false;
@@ -118,28 +119,12 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
         return {};
     }
 
-    addUserToSite(domain: string, userId: number): { error?: string } {
-        if (!this.db.sites[domain]) return { error: 'Site not found' };
-
-        const site = this.db.sites[domain];
-        if (!site.readers.includes(userId)) site.readers.push(userId);
-        else return { error: 'User already has this role' };
-
-        this.updateDB();
-
-        return {};
-    }
-
-    deleteSite(domain: string): { error?: string } {
-        if (!this.db.sites[domain]) return { error: 'Site not found' };
-
+    deleteSite(domain: string) {
         delete this.db.sites[domain];
         this.updateDB();
-
-        return {};
     }
 
-    removeUserFromAllSites(userId: number): void {
+    removeUserFromAllSites(userId: number) {
         for (const domain in this.db.sites) {
             const site = this.db.sites[domain];
 

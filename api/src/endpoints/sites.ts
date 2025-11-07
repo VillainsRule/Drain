@@ -1,121 +1,130 @@
-import { Elysia, t } from 'elysia';
+import { Elysia, status, t } from 'elysia';
 
 import siteDB from '../db/SiteDB';
 import userDB from '../db/UserDB';
 
 import getBalancer from '../balancer';
 
-import { JSONResponse } from '../util';
-
 export default (app: Elysia) => {
-    app.post('/$/sites/index', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user) return new JSONResponse({ loggedIn: false });
+    app.post('/$/sites/get', async ({ cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
 
-        const sites = siteDB.getUserSites(user.id);
-        const reconstructedSites = sites.map((site) => ({
+        const rawSites = siteDB.getUserSites(user.id);
+        const sites = rawSites.map((site) => ({
             ...site,
             readers: site.readers.map((userId) => userDB.getPublicUser(userId)!),
             editors: site.editors.map((userId) => userDB.getPublicUser(userId)!)
         }));
 
-        reconstructedSites.forEach((site) => (site.supportsBalancer = !!getBalancer(site.domain)));
+        sites.forEach((site) => (site.supportsBalancer = !!getBalancer(site.domain)));
 
-        return new JSONResponse({ sites: reconstructedSites });
+        return { sites };
     }, { cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/add', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user) return new JSONResponse({ loggedIn: false }, { status: 401 });
+    app.post('/$/sites/create', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
 
-        const result = siteDB.addSite(req.body.url);
-        return new JSONResponse(result);
+        if (siteDB.siteExists(body.url)) return status(403, { error: 'site already exists' });
+
+        siteDB.addSite(body.url);
+
+        return {};
     }, { body: t.Object({ url: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/addKey', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user) return new JSONResponse({ loggedIn: false }, { status: 401 });
+    app.post('/$/sites/addKey', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
 
-        if (!siteDB.db.sites[req.body.domain]) return new JSONResponse({ error: 'No permission' }, { status: 403 });
-        if (!siteDB.db.sites[req.body.domain].readers.includes(user.id) && !siteDB.db.sites[req.body.domain].editors.includes(user.id) && !user.admin) return new JSONResponse({ error: 'No permission' }, { status: 403 });
+        if (!siteDB.siteExists(body.domain)) return status(401, { error: 'no permission' });
+        if (siteDB.userAccessLevel(body.domain, user.id) === 'none' && !user.admin) return status(401, { error: 'no permission' });
 
-        const result = await siteDB.addKeyToSite(req.body.domain, req.body.key);
-        return new JSONResponse(result);
+        if (siteDB.keyExistsOn(body.domain, body.key)) return status(403, { error: 'key already exists' });
+
+        return await siteDB.addKeyToSite(body.domain, body.key);
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/balancerCheck', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user) return new JSONResponse({ loggedIn: false }, { status: 401 });
+    app.post('/$/sites/balancerCheck', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
 
-        const balancer = getBalancer(req.body.domain);
-        if (!balancer) return new JSONResponse({ error: 'No permission' }, { status: 403 });
+        const domainExists = siteDB.siteExists(body.domain);
+        if (!domainExists) return status(401, { error: 'no permission' });
 
-        const domainInfo = siteDB.db.sites[req.body.domain];
-        if (!domainInfo.editors.includes(user.id) && !user.admin) return new JSONResponse({ error: 'No permission' }, { status: 403 });
-        if (!domainInfo.keys.some(key => key.token === req.body.key)) return new JSONResponse({ error: 'Key not found' }, { status: 404 });
+        const balancer = getBalancer(body.domain);
+        if (!balancer) return status(401, { error: 'no permission' });
 
-        const balance = await balancer(req.body.key);
-        if (balance === 'invalid_key') return new JSONResponse({ error: 'Balancer has determined the key is invalid.' }, { status: 400 });
+        const accessLevel = siteDB.userAccessLevel(body.domain, user.id);
+        if (accessLevel !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
 
-        siteDB.setKeyBalance(req.body.domain, req.body.key, isNaN(Number(balance)) ? balance : `$${balance}`);
+        const keyExists = siteDB.keyExistsOn(body.domain, body.key);
+        if (!keyExists) return status(404, { error: 'key not found' });
 
-        return new JSONResponse({});
+        const balance = await balancer(body.key);
+        if (balance === 'invalid_key') return status(400, { error: 'balancer has determined the key is invalid' });
+
+        siteDB.setKeyBalance(body.domain, body.key, isNaN(Number(balance)) ? balance : `$${balance}`);
+
+        return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/removeKey', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ loggedIn: false }, { status: 401 });
+    app.post('/$/sites/removeKey', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[req.body.domain];
-        if (!domainInfo.keys.some(key => key.token === req.body.key)) return new JSONResponse({ error: 'Key not found' }, { status: 404 });
+        const domainInfo = siteDB.db.sites[body.domain];
+        if (!domainInfo.keys.some(key => key.token === body.key)) return status(404, { error: 'key not found' });
 
-        siteDB.removeKeyFromSite(req.body.domain, req.body.key);
+        const keyExists = siteDB.keyExistsOn(body.domain, body.key);
+        if (!keyExists) return status(404, { error: 'key not found' });
 
-        return new JSONResponse({});
+        siteDB.removeKeyFromSite(body.domain, body.key);
+
+        return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/sortKeys', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user) return new JSONResponse({ loggedIn: false }, { status: 401 });
+    app.post('/$/sites/sortKeys', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[req.body.domain];
-        if (!domainInfo) return new JSONResponse({ error: 'No permission' }, { status: 403 });
-        if (!domainInfo.editors.includes(user.id) && !user.admin) return new JSONResponse({ error: 'No permission' }, { status: 403 });
+        const domainInfo = siteDB.db.sites[body.domain];
+        if (!domainInfo) return status(401, { error: 'no permission' });
+        if (!domainInfo.editors.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
 
-        siteDB.sortKeys(req.body.domain);
-
-        return new JSONResponse({});
+        const result = siteDB.sortKeys(body.domain);
+        return result;
     }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/addUserToSite', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ error: 'Unauthorized' }, { status: 401 });
+    app.post('/$/sites/access/addUser', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[req.body.domain];
-        if (!domainInfo) return new JSONResponse({ error: 'Site not found' }, { status: 404 });
+        const domainInfo = siteDB.db.sites[body.domain];
+        if (!domainInfo) return status(404, { error: 'site does not exist' });
 
-        const targetUser = userDB.getUserByUsername(req.body.username);
-        if (!targetUser) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        const targetUser = userDB.getUserByUsername(body.username);
+        if (!targetUser) return status(404, { error: 'user not found' });
 
-        if (domainInfo.readers.includes(targetUser.id)) return new JSONResponse({ error: 'User already a reader' }, { status: 400 });
+        if (domainInfo.readers.includes(targetUser.id)) return status(403, { error: 'user already has access to site' });
+
         domainInfo.readers.push(targetUser.id);
-
         siteDB.updateDB();
 
-        return new JSONResponse({});
+        return {};
     }, { body: t.Object({ domain: t.String(), username: t.String(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/changeUserRole', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ error: 'Unauthorized' }, { status: 401 });
+    app.post('/$/sites/access/changeUserRole', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[req.body.domain];
-        if (!domainInfo) return new JSONResponse({ error: 'Site does not exist' }, { status: 404 });
+        const domainInfo = siteDB.db.sites[body.domain];
+        if (!domainInfo) return status(404, { error: 'site does not exist' });
 
-        const targetUser = userDB.getUserByUsername(req.body.username);
-        if (!targetUser) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        const targetUser = userDB.getUserByUsername(body.username);
+        if (!targetUser) return status(404, { error: 'user not found' });
 
-        if (req.body.role === 'reader') {
+        if (body.role === 'reader') {
             if (!domainInfo.readers.includes(targetUser.id)) domainInfo.readers.push(targetUser.id);
             domainInfo.editors = domainInfo.editors.filter(id => id !== targetUser.id);
         } else {
@@ -125,34 +134,35 @@ export default (app: Elysia) => {
 
         siteDB.updateDB();
 
-        return new JSONResponse({});
+        return {};
     }, { body: t.Object({ domain: t.String(), username: t.String(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/removeUserFromSite', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ error: 'Unauthorized' }, { status: 401 });
+    app.post('/$/sites/access/removeUser', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[req.body.domain];
-        if (!domainInfo) return new JSONResponse({ error: 'Site does not exist' }, { status: 404 });
+        const domainInfo = siteDB.db.sites[body.domain];
+        if (!domainInfo) return status(404, { error: 'site does not exist' });
 
-        const targetUser = userDB.getUserByUsername(req.body.username);
-        if (!targetUser) return new JSONResponse({ error: 'User not found' }, { status: 404 });
+        const targetUser = userDB.getUserByUsername(body.username);
+        if (!targetUser) return status(404, { error: 'user not found' });
 
         domainInfo.readers = domainInfo.readers.filter(id => id !== targetUser.id);
         domainInfo.editors = domainInfo.editors.filter(id => id !== targetUser.id);
 
         siteDB.updateDB();
 
-        return new JSONResponse({});
+        return {};
     }, { body: t.Object({ domain: t.String(), username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/deleteSite', async (req) => {
-        const user = userDB.whoIsSession(req.cookie.session.value);
-        if (!user || !user.admin) return new JSONResponse({ error: 'Unauthorized' }, { status: 401 });
+    app.post('/$/sites/deleteSite', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[req.body.domain];
-        if (!domainInfo) return new JSONResponse({ error: 'Site does not exist' }, { status: 404 });
+        if (!siteDB.siteExists(body.domain)) return status(404, { error: 'site does not exist' });
 
-        return new JSONResponse(siteDB.deleteSite(req.body.domain));
+        siteDB.deleteSite(body.domain);
+
+        return {};
     }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 }

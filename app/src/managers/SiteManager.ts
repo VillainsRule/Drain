@@ -13,7 +13,14 @@ class SiteManager {
     constructor() {
         makeAutoObservable(this);
 
-        window.onfocus = () => this.getSites();
+        let actuallyBlurred = false;
+        window.onblur = () => actuallyBlurred = true;
+        window.onfocus = () => {
+            if (actuallyBlurred) {
+                this.getSites();
+                actuallyBlurred = false;
+            }
+        };
     }
 
     site = {
@@ -25,7 +32,7 @@ class SiteManager {
 
     async getSites() {
         try {
-            const { data } = await axios.post('/$/sites/index');
+            const { data } = await axios.post('/$/sites/get');
             this.sites = data.sites || [];
         } catch (error) {
             console.error(error);
@@ -35,5 +42,4 @@ class SiteManager {
 }
 
 const siteManager = new SiteManager();
-(window as any).sm = siteManager;
 export default siteManager;

@@ -1,10 +1,9 @@
-import crypto from 'node:crypto';
 import path from 'node:path';
 
 import BaseDB from './BaseDB';
 import siteDB from './SiteDB';
 
-import { hasher } from '../util';
+import hasher from '../hasher';
 
 import { PublicUser, Session, User } from '../types.d';
 
@@ -21,7 +20,7 @@ export class UserDB extends BaseDB<UserDBType> {
 
     initializeData() {
         this.db = {
-            users: [{ id: 1, username: 'admin', password: hasher.encode('admin'), admin: 1, key: crypto.randomBytes(64).toHex() }],
+            users: [{ id: 1, username: 'admin', password: hasher.encode('admin'), admin: 1 }],
             sessions: {},
             nextId: 2
         };
@@ -36,8 +35,7 @@ export class UserDB extends BaseDB<UserDBType> {
             id: this.db.nextId,
             username,
             password: hasher.encode(password),
-            admin: 0,
-            key: crypto.randomBytes(64).toHex()
+            admin: 0
         });
 
         this.db.nextId++;

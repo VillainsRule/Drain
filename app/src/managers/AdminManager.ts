@@ -1,23 +1,30 @@
 import { makeAutoObservable } from 'mobx';
 
-import type { PublicUser } from '@/types';
+import type { InstanceInformation, PublicUser } from '@/types';
 
 class AdminManager {
     users: PublicUser[] = [];
+
+    instanceInformation: InstanceInformation = {
+        commit: 'unknown',
+        isDev: false,
+        isUsingSystemd: false
+    };
 
     constructor() {
         makeAutoObservable(this);
     }
 
     async fetchAllUsers() {
-        try {
-            const req = await fetch('/$/admin/users');
-            const json = await req.json();
-            this.users = json.allUsers as PublicUser[] || [];
-        } catch (error) {
-            console.error(error);
-            alert('Error checking authentication. Check the console for details.');
-        }
+        const req = await fetch('/$/admin/users');
+        const json = await req.json();
+        this.users = json.users as PublicUser[] || [];
+    }
+
+    async fetchInstanceInformation() {
+        const req = await fetch('/$/admin/instanceInformation');
+        const json = await req.json();
+        this.instanceInformation = json as InstanceInformation;
     }
 }
 
