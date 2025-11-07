@@ -3,7 +3,7 @@ import {
     CommandItem,
     CommandList,
     CommandInput,
-} from "../ui/command"
+} from "./command"
 import { Command as CommandPrimitive } from "cmdk"
 import { useState, useRef, useCallback, type KeyboardEvent } from "react"
 

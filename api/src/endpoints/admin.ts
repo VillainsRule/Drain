@@ -92,4 +92,23 @@ export default function admin(app: Elysia) {
 
         return new JSONResponse({});
     }, { body: t.Object({ userId: t.Number(), newPassword: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/admin/nukeSessions', async (req) => {
+        const user = userDB.whoIsSession(req.cookie.session.value);
+        if (!user || user.id !== 1) return new JSONResponse({ loggedIn: false });
+
+        userDB.db.sessions = {};
+        userDB.updateDB();
+
+        return new JSONResponse({});
+    }, { cookie: t.Cookie({ session: t.String() }) });
+
+    app.get('/$/admin/instanceInformation', async (req) => {
+        const user = userDB.whoIsSession(req.cookie.session.value);
+        if (!user || user.id !== 1) return new JSONResponse({ loggedIn: false });
+
+        const isUsingSystemd = !!process.env['INVOCATION_ID'];
+
+        return new JSONResponse({ isUsingSystemd });
+    }, { cookie: t.Cookie({ session: t.String() }) });
 }

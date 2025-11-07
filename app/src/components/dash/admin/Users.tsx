@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Button } from '../../shadcn/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../shadcn/dialog';
+import { Input } from '../../shadcn/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shadcn/select';
 
 import axios from '@/lib/axiosLike';
 
@@ -17,8 +17,6 @@ interface UserSitesThingy {
 }
 
 const Users = observer(function Users() {
-    location.hash = 'users';
-
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
     const addUserUsernameRef = useRef<HTMLInputElement>(null);
     const addUserPasswordRef = useRef<HTMLInputElement>(null);

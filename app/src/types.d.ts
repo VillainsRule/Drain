@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 export interface PublicUser {
     id: number;
     username: string;

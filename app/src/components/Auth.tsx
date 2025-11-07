@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from '@/components/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card'
+import { Input } from '@/components/shadcn/input'
+import { Label } from '@/components/shadcn/label'
 
 import axios from '@/lib/axiosLike'
 

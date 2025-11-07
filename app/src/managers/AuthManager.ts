@@ -5,7 +5,7 @@ import siteManager from './SiteManager';
 import adminManager from './AdminManager';
 
 class AuthManager {
-    init = false;
+    hasInit = false;
     loggedIn = false;
 
     placeholderUser = {
@@ -29,9 +29,9 @@ class AuthManager {
                 console.error(data);
                 alert('Error checking authentication. Check the console for details.');
             } else {
-                this.init = true;
+                this.hasInit = true;
                 this.user = data.user;
-                siteManager.getSites(true);
+                siteManager.getSites();
                 if (this.isAdmin()) adminManager.fetchAllUsers();
                 this.loggedIn = data.loggedIn;
             }

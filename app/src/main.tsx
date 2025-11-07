@@ -3,14 +3,31 @@ import { observer } from 'mobx-react-lite'
 
 import authManager from './managers/AuthManager'
 
-import Main from './pages/Main'
-import Auth from './pages/Auth'
-import Loading from './pages/Loading'
+import Main from './components/dash/Main'
+import Auth from './components/Auth'
+
+import { AppProvider } from './components/AppProvider'
+
+import icon from '@/assets/leak.jpeg';
 
 import './index.css'
 
 const App = observer(function App() {
-    return authManager.init ? (authManager.loggedIn ? <Main /> : <Auth />) : <Loading />;
+    if (authManager.hasInit) {
+        if (authManager.loggedIn) return <Main />;
+        else return <Auth />;
+    }
+
+    return (
+        <div className='flex justify-center items-center gap-10 h-screen w-screen'>
+            <img src={icon} className='w-50 h-50' />
+            <h1 className='text-7xl font-bold mb-1.5'>loading drain...</h1>
+        </div>
+    )
 });
 
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(
+    <AppProvider>
+        <App />
+    </AppProvider>
+);

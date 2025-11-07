@@ -8,8 +8,7 @@ import authManager from './AuthManager';
 class SiteManager {
     sites: FrontendSite[] = [];
 
-    currentSiteId = '';
-    hash = '';
+    domain = '';
 
     constructor() {
         makeAutoObservable(this);
@@ -17,23 +16,17 @@ class SiteManager {
         window.onfocus = () => this.getSites();
     }
 
-    currentSite = {
-        isCurrent: () => !!this.currentSite.get(),
-        get: () => this.sites.find(site => site.domain === this.currentSiteId)!,
-        canBeSorted: () => this.currentSite.get().keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),
-        hasAccess: (userId: number) => this.currentSite.get().readers.some((reader) => reader.id == userId) || this.currentSite.get().editors.some((editor) => editor.id == userId),
-        isEditor: (userId: number) => this.currentSite.get().editors.some((editor) => editor.id == userId) || authManager.isAdmin()
+    site = {
+        get: () => this.sites.find(site => site.domain === this.domain)!,
+        canBeSorted: () => this.site.get().keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),
+        isReader: (userId: number) => this.site.get().readers.some((reader) => reader.id == userId) || this.site.get().editors.some((editor) => editor.id == userId),
+        isEditor: (userId: number) => this.site.get().editors.some((editor) => editor.id == userId) || authManager.isAdmin()
     }
 
-    async getSites(doHashCheck = false) {
+    async getSites() {
         try {
             const { data } = await axios.post('/$/sites/index');
             this.sites = data.sites || [];
-
-            if (doHashCheck) {
-                const siteData = this.sites.find(s => s.domain === this.hash);
-                this.currentSiteId = siteData ? siteData.domain : '';
-            }
         } catch (error) {
             console.error(error);
             alert('Error fetching sites. Check the console for details.');
@@ -42,4 +35,5 @@ class SiteManager {
 }
 
 const siteManager = new SiteManager();
+(window as any).sm = siteManager;
 export default siteManager;
