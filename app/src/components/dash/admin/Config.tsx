@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { Button } from '@/components/shadcn/button';
@@ -9,16 +8,9 @@ import siteManager from '@/managers/SiteManager';
 import { useAppState } from '@/components/AppProvider';
 
 import superSecretAdminImage from '@/assets/superSecretAdminImage.png';
-import axios from '@/lib/axiosLike';
 
 const AdminConfig = observer(function AdminConfig() {
     const { setScreen } = useAppState();
-
-    const [isUsingSystemd, setIsUsingSystemd] = useState(false);
-
-    useEffect(() => {
-        axios.get('/$/admin/instanceInformation').then((r) => r.data.isUsingSystemd && setIsUsingSystemd(true));
-    }, []);
 
     return (
         <>
@@ -50,7 +42,7 @@ const AdminConfig = observer(function AdminConfig() {
                                 setTimeout(() => location.reload(), 2000);
                             });
                         }}>nuke sessions</Button>
-                        {isUsingSystemd && <Button>trigger systemd restart</Button>}
+                        {adminManager.instanceInformation.isUsingSystemd && <Button>trigger systemd restart</Button>}
                     </div>
 
                     <img src={superSecretAdminImage} className='mt-3 w-96 h-40 rounded-xl shadow-md border border-neutral-300 p-2' alt='super secret admin image' />

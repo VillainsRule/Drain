@@ -7,6 +7,8 @@ import { Label } from '@/components/shadcn/label'
 
 import axios from '@/lib/axiosLike'
 
+import icon from '@/assets/leak.jpeg';
+
 export default function Auth() {
     const [error, setError] = useState<string>('');
 
@@ -16,10 +18,14 @@ export default function Auth() {
 
     return (
         <div className='min-h-screen flex items-center justify-center bg-gray-50'>
-            <Card className='w-full max-w-md'>
-                <CardHeader className='text-center'>
-                    <CardTitle className='text-2xl font-bold'>Drain</CardTitle>
-                    <CardDescription>log in with your dedicated credentials</CardDescription>
+            <Card className='w-11/12 md:w-full max-w-md'>
+                <CardHeader className='text-center flex flex-row md:flex-col items-center gap-3'>
+                    <img src={icon} className='w-30 h-30 rounded-xl shadow-md border border-neutral-200 p-4 bg-white md:hidden mb-3' alt='drain logo' />
+
+                    <div className='flex flex-col'>
+                        <CardTitle className='text-3xl font-bold'>Drain</CardTitle>
+                        <CardDescription>your credentials have been provided by the site admin.</CardDescription>
+                    </div>
                 </CardHeader>
 
                 <CardContent className='space-y-4'>

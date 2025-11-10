@@ -46,14 +46,9 @@ const Site = observer(function Site() {
 
     return (
         <>
-            {!siteManager.site.get() ? (
-                <div className='flex flex-col items-center text-center h-full w-full gap-1 mt-2'>
-                    <h1 className='text-3xl font-bold'>{siteManager.sites.length ? 'select a site from the list to the left!' : 'you cannot access any sites :['}</h1>
-                    <h2 className='text-xl font-bold'>{siteManager.sites.length ? 'tip: share a site by right clicking the name and copying the link.' : 'contact the site administrator for more info :P'}</h2>
-                </div>
-            ) : (
+            {!siteManager.site.get() ? (<>something went wrong.</>) : (
                 <div className='flex justify-center items-center w-full h-full overflow-y-auto overflow-x-hidden drain-scrollbar'>
-                    <Tabs className='mt-5 w-4/5 h-full' defaultValue='keys'>
+                    <Tabs className='mt-5 md:w-4/5 w-11/12 h-full' defaultValue='keys'>
                         {Boolean(authManager.isAdmin()) && (
                             <TabsList className='w-full'>
                                 <TabsTrigger value='keys'>keys</TabsTrigger>
@@ -62,7 +57,7 @@ const Site = observer(function Site() {
                         )}
 
                         <TabsContent value='keys' className='flex flex-col flex-1 h-full'>
-                            <div className='flex justify-between items-center w-full mt-2'>
+                            <div className='flex justify-between items-center flex-col lg:flex-row w-full mt-2 gap-3 lg:gap-0'>
                                 <h2 className='text-2xl font-bold'>{siteManager.site.get().domain} x{siteManager.site.get().keys.length}</h2>
                                 <div className='flex gap-3'>
                                     <Tooltip>
@@ -105,7 +100,7 @@ const Site = observer(function Site() {
 
                                     {authManager.isAdmin() && <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={async () => {
+                                            <Button className='w-12 py-2 rounded-md transition-colors duration-150 hidden md:flex' onClick={async () => {
                                                 const hasOver50Keys = siteManager.site.get().keys.length > 50;
                                                 if (hasOver50Keys && !confirm('this site has over 50 keys, rechecking all of them MAY HIT RATELIMITS AND GET THE CHECKER IP BANNED. are you sure you want to proceed?')) return;
 
@@ -153,14 +148,18 @@ const Site = observer(function Site() {
 
                             <div className='grow flex flex-col items-center justify-start gap-1 w-full mt-4'>
                                 {siteManager.site.get().keys.map((key, i) => (
-                                    <div key={i} className='flex items-center justify-center w-full rounded-md px-7 hover:bg-gray-50 transition-colors duration-125 py-2 cursor-pointer gap-5' style={{
+                                    <div key={i} className='flex items-center justify-center w-full rounded-md md:px-7 hover:bg-gray-50 transition-colors duration-125 py-2 cursor-pointer gap-2 md:gap-5' style={{
                                         color: validKeys.includes(key.token) ? 'green' : invalidKeys.includes(key.token) ? 'red' : ''
                                     }}>
-                                        <Input value={key.token} readOnly className='font-mono w-md text-center' />
-                                        {key.balance !== '?' && <Input value={key.balance} readOnly className='font-mono w-36 text-center' />}
+                                        <Input value={'...' + key.token.slice(-4)} readOnly className='font-mono w-fit text-center sm:hidden flex px-1' />
+                                        <Input value={key.token} readOnly className='font-mono w-md text-center hidden sm:flex' />
+
+                                        {key.balance !== '?' && <Input value={key.balance} readOnly className='font-mono min-w-20 sm:min-w-0 sm:w-36 text-center px-1' />}
+
                                         <Button variant='outline' size='sm' onClick={() => navigator.clipboard.writeText(key.token)}>
                                             <Copy className='h-4 w-4' />
                                         </Button>
+
                                         {Boolean(siteManager.site.get().supportsBalancer && (siteManager.site.isEditor(authManager.user.id) || authManager.user.admin)) && <Button variant='outline' size='sm' onClick={() => {
                                             axios.post('/$/sites/balancerCheck', {
                                                 domain: siteManager.site.get().domain,
@@ -181,7 +180,8 @@ const Site = observer(function Site() {
                                         }}>
                                             <RefreshCw className='h-4 w-4' />
                                         </Button>}
-                                        {authManager.isAdmin() && <Button variant='destructive' size='sm' onClick={() => {
+
+                                        {authManager.isAdmin() && <Button variant='destructive' size='sm' className='hidden md:flex' onClick={() => {
                                             axios.post('/$/sites/removeKey', {
                                                 domain: siteManager.site.get().domain,
                                                 key: key.token
@@ -202,7 +202,7 @@ const Site = observer(function Site() {
                         </TabsContent>
 
                         <TabsContent value='access' className='flex flex-col flex-1 h-full'>
-                            <div className='flex justify-between items-center w-full mt-2'>
+                            <div className='flex justify-between items-center flex-col lg:flex-row gap-3 lg:gap-0 w-full mt-2'>
                                 <h2 className='text-2xl font-bold'>access@{siteManager.site.get().domain}</h2>
                                 <div className='flex gap-3'>
                                     <Button className='w-40 py-2 rounded-md transition-colors duration-150' onClick={() => setAddUserDialogOpen(true)}>invite user</Button>
@@ -230,7 +230,7 @@ const Site = observer(function Site() {
                                     }
 
                                     return (
-                                        <div className='flex justify-between w-full py-3 px-6 border rounded-md' key={i}>
+                                        <div className='flex justify-between w-full py-3 px-4 md:px-5 border rounded-md' key={i}>
                                             <div className='flex items-center gap-3'>
                                                 <span className='text-lg font-bold'>@{user.username}</span>
                                             </div>
@@ -257,7 +257,10 @@ const Site = observer(function Site() {
                                                             alert(resp.data.error);
                                                         } else siteManager.getSites();
                                                     });
-                                                }}>remove user</Button>
+                                                }}>
+                                                    <span className='hidden md:flex'>revoke access</span>
+                                                    <Trash className='h-4 w-4 md:hidden' />
+                                                </Button>
                                             </div>
                                         </div>
                                     )

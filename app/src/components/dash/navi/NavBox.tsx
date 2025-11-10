@@ -15,9 +15,7 @@ import siteManager from '@/managers/SiteManager';
 
 import { useAppState } from '@/components/AppProvider';
 
-import icon from '@/assets/leak.jpeg';
-
-const SideBar = observer(function SideBar() {
+const NavBox = observer(function NavBox() {
     const { screen, setScreen, setDomain } = useAppState();
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -27,26 +25,9 @@ const SideBar = observer(function SideBar() {
 
     return (
         <>
-            <div className='border-neutral-200 w-72 h-full flex flex-col px-6 py-8 fixed left-0 top-0 bottom-0 z-20'>
+            <div className='border-neutral-200 w-full h-[calc(100%-5.25rem)] flex flex-col px-6 py-8 pb-6 fixed left-0 top-0 bottom-0 z-20'>
                 <div className='flex flex-col justify-between h-full w-full items-center'>
-                    <div className='flex flex-col items-center gap-4 mb-4 w-full h-full'>
-                        <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => setScreen('none')}>
-                            <img src={icon} className='w-12 h-12 rounded-xl shadow-md border border-neutral-300 p-2' alt='drain logo' />
-                            <h1 className='text-4xl font-extrabold tracking-tight text-neutral-800 drop-shadow-sm'>drain</h1>
-                        </div>
-
-                        {siteManager.sites.length > 0 && <div className='w-full border-b border-neutral-300'></div>}
-
-                        {authManager.isAdmin() && (
-                            <div
-                                className='flex items-center justify-center gap-2 bg-blue-600 w-full py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-125 cursor-pointer font-semibold text-lg'
-                                onClick={() => setDialogOpen(true)}
-                            >
-                                <Plus className='w-6 h-6 text-white' />
-                                <span className='text-white'>Add Site</span>
-                            </div>
-                        )}
-
+                    <div className='flex flex-col items-center gap-4 w-full h-full'>
                         <div className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2'>
                             {siteManager.sites.map((site, i) => (
                                 <ContextMenu key={i}>
@@ -93,6 +74,16 @@ const SideBar = observer(function SideBar() {
                                 </ContextMenu>
                             ))}
                         </div>
+
+                        {authManager.isAdmin() && (
+                            <div
+                                className='flex items-center justify-center gap-2 bg-blue-600 w-full py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-125 cursor-pointer font-semibold text-lg'
+                                onClick={() => setDialogOpen(true)}
+                            >
+                                <Plus className='w-6 h-6 text-white' />
+                                <span className='text-white'>Add Site</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -128,4 +119,4 @@ const SideBar = observer(function SideBar() {
     )
 });
 
-export default SideBar;
+export default NavBox;

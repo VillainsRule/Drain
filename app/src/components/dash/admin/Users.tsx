@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 import axios from '@/lib/axiosLike';
 
+import KeyRound from 'lucide-react/icons/key-round';
+import ScanSearch from 'lucide-react/icons/scan-search';
+import Trash from 'lucide-react/icons/trash';
+
 import adminManager from '@/managers/AdminManager';
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
@@ -57,12 +61,12 @@ const Users = observer(function Users() {
     return (
         <>
             <div className='flex flex-col items-center w-full h-full overflow-y-auto drain-scrollbar mt-6'>
-                <div className='flex flex-col items-center h-full w-5/6 gap-5'>
-                    <div className='flex justify-between w-full'>
+                <div className='flex flex-col items-center h-full w-full md:w-5/6 gap-5'>
+                    <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
                         <h2 className='text-2xl font-bold'>drain login manager</h2>
 
                         <div className='flex gap-3'>
-                            <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setAddUserDialogOpen(true)}>add user</Button>
+                            <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setAddUserDialogOpen(true)}>create user</Button>
                         </div>
                     </div>
 
@@ -78,26 +82,36 @@ const Users = observer(function Users() {
                                         setChangePasswordTarget(user.id);
                                         setChangePasswordTargetName(user.username);
                                         setChangePasswordDialogOpen(true);
-                                    }}>change password</Button>
+                                    }}>
+                                        <KeyRound className='h-4 w-4 md:hidden' />
+                                        <span className='hidden md:flex'>change password</span>
+                                    </Button>
 
                                     <Button disabled={user.id === 1} onClick={() => {
                                         setUserSitesDialogOpen(true);
                                         setUserSitesDialogTarget(user.username);
                                         grabUserSitesDialogList(user.username);
-                                    }}>site access</Button>
+                                    }}>
+                                        <ScanSearch className='h-4 w-4 md:hidden' />
+                                        <span className='hidden md:flex'>site access</span>
+                                    </Button>
 
-                                    <Button disabled={user.id === 1} onClick={() => {
+                                    <Button disabled={user.id === 1} className='hidden md:flex' onClick={() => {
                                         axios.post('/$/admin/setUserRole', { userId: user.id, isAdmin: !user.admin }).then(() => {
                                             adminManager.fetchAllUsers();
                                         });
                                     }}>{user.admin ? 'demote to user' : 'promote to admin'}</Button>
+
                                     <Button disabled={user.id === 1} variant='destructive' onClick={() => {
                                         if (confirm(`are you sure you want to delete @${user.username}? this action cannot be undone.`)) {
                                             axios.post('/$/admin/deleteUser', { userId: user.id }).then(() => {
                                                 adminManager.fetchAllUsers();
                                             });
                                         }
-                                    }}>delete user</Button>
+                                    }}>
+                                        <Trash className='h-4 w-4 md:hidden' />
+                                        <span className='hidden md:flex'>delete user</span>
+                                    </Button>
                                 </div>
                             </div>
                         ))}

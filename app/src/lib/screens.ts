@@ -1,6 +1,7 @@
 export const Screens = [
     'none',
     'site',
+    'navbox',
     'users.admin',
     'config.admin'
 ] as const;
