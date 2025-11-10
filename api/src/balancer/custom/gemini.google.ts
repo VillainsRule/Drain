@@ -7,6 +7,7 @@ export default async function geminiBalancer(token: string): Promise<string> {
 
     const data = await req.json() as any;
     if (data.error?.code === 400) return 'invalid_key';
+    if (data.error?.code === 403) return 'invalid_key';
     if (data.error?.code === 429) return 'Free Key';
     else if (data.name) return 'Paid Key';
 
