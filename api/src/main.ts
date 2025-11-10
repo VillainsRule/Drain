@@ -19,7 +19,7 @@ const safeJoin = (...segments: string[]) => {
 
 const getFile = (segments: string[]) => {
     const filePath = safeJoin(...segments);
-    if (fs.existsSync(filePath)) return Bun.file(safeJoin(...segments));
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return Bun.file(safeJoin(...segments));
     else return new Response('not found', { status: 404 });
 }
 
