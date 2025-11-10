@@ -1,4 +1,4 @@
-import Elysia from 'elysia';
+import { Elysia, status } from 'elysia';
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -8,6 +8,17 @@ import sites from './endpoints/sites';
 import admin from './endpoints/admin';
 
 const app = new Elysia();
+
+if (Bun.env.RP_ID && Bun.env.RP_NAME) {
+    if (Bun.env.RP_ID.startsWith('localhost')) throw new Error('RP_ID cannot start with localhost...localhost isn\'t supported');
+
+    app.onRequest(({ request }) => {
+        if (request.headers.get('host')?.startsWith('localhost'))
+            return status(403, { error: 'requests from localhost are not allowed when using passkeys' });
+
+        return;
+    })
+}
 
 const distDir = path.resolve(import.meta.dirname, '../../app/dist');
 
