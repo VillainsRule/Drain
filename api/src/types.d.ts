@@ -2,10 +2,12 @@ export interface PublicUser {
     id: number;
     username: string;
     admin: 0 | 1;
+    stillPendingLogin?: boolean;
 }
 
 export interface User extends PublicUser {
     password: string;
+    code?: string;
 }
 
 export interface Session {

@@ -30,11 +30,12 @@ export class UserDB extends BaseDB<UserDBType> {
         return this.db.users.find(user => user.username.toLowerCase() === username.toLowerCase()) || null;
     }
 
-    createUser(username: string, password: string): void {
+    createUser(username: string, inviteCode: string): void {
         this.db.users.push({
             id: this.db.nextId,
             username,
-            password: hasher.encode(password),
+            password: hasher.encode(crypto.randomUUID()),
+            code: inviteCode,
             admin: 0
         });
 
@@ -68,7 +69,7 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     getAllUsers(): PublicUser[] {
-        return this.db.users.map((u) => ({ id: u.id, username: u.username, admin: u.admin }));
+        return this.db.users.map((u) => ({ id: u.id, username: u.username, admin: u.admin, stillPendingLogin: !!u.code }));
     }
 
     getPublicUser(userId: number): PublicUser | null {
@@ -110,6 +111,19 @@ export class UserDB extends BaseDB<UserDBType> {
                 delete this.db.sessions[session];
             }
         }
+
+        this.updateDB();
+    }
+
+    getCode(code: string): User | null {
+        return this.db.users.find(user => user.code === code) || null;
+    }
+
+    purgeCodeOf(userId: number): void {
+        const user = this.db.users.find(u => u.id === userId);
+        if (!user) throw new Error('User not found');
+
+        delete user.code;
 
         this.updateDB();
     }

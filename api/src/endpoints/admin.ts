@@ -19,12 +19,13 @@ export default function admin(app: Elysia) {
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
         if (userDB.getUserByUsername(body.username)) return status(400, { error: 'user already exists' });
-        if (body.password.length < 6) return status(400, { error: 'password is too short' });
+        
+        const inviteCode = crypto.randomUUID();
 
-        userDB.createUser(body.username, body.password);
+        userDB.createUser(body.username, inviteCode);
 
-        return {};
-    }, { body: t.Object({ username: t.String(), password: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+        return { inviteCode };
+    }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/admin/getUserSites', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);

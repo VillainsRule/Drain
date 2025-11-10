@@ -5,6 +5,7 @@ import { Button } from '../../shadcn/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../shadcn/dialog';
 import { Input } from '../../shadcn/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shadcn/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/shadcn/tooltip';
 
 import axios from '@/lib/axiosLike';
 
@@ -30,6 +31,8 @@ const Users = observer(function Users() {
     const [userSitesDialogOpen, setUserSitesDialogOpen] = useState(false);
     const [userSitesDialogTarget, setUserSitesDialogTarget] = useState('');
     const [userSitesDialogList, setUserSitesDialogList] = useState<UserSitesThingy>({});
+
+    const [inviteCode, setInviteCode] = useState('');
 
     const changeRole = (username: string, domain: string, newRole: 'reader' | 'editor') => {
         axios.post('/$/sites/access/changeUserRole', {
@@ -78,40 +81,73 @@ const Users = observer(function Users() {
                                 </div>
 
                                 <div className='flex gap-3'>
-                                    <Button disabled={!!(authManager.user.id !== 1 && user.admin && user.id !== authManager.user.id)} onClick={() => {
-                                        setChangePasswordTarget(user.id);
-                                        setChangePasswordTargetName(user.username);
-                                        setChangePasswordDialogOpen(true);
-                                    }}>
-                                        <KeyRound className='h-4 w-4 md:hidden' />
-                                        <span className='hidden md:flex'>change password</span>
-                                    </Button>
+                                    <Tooltip>
+                                        <TooltipProvider>
+                                            <TooltipTrigger>
+                                                <Button disabled={(!!(authManager.user.id !== 1 && user.admin && user.id !== authManager.user.id)) || user.stillPendingLogin} onClick={() => {
+                                                    setChangePasswordTarget(user.id);
+                                                    setChangePasswordTargetName(user.username);
+                                                    setChangePasswordDialogOpen(true);
+                                                }}>
+                                                    <KeyRound className='h-4 w-4 md:hidden' />
+                                                    <span className='hidden md:flex'>change password</span>
+                                                </Button>
+                                            </TooltipTrigger>
 
-                                    <Button disabled={user.id === 1} onClick={() => {
-                                        setUserSitesDialogOpen(true);
-                                        setUserSitesDialogTarget(user.username);
-                                        grabUserSitesDialogList(user.username);
-                                    }}>
-                                        <ScanSearch className='h-4 w-4 md:hidden' />
-                                        <span className='hidden md:flex'>site access</span>
-                                    </Button>
+                                            {user.stillPendingLogin && <TooltipContent>this user is tied to an invite code and has not yet logged in.</TooltipContent>}
+                                            {user.id === 1 && authManager.user.id !== 1 && <TooltipContent>this admin cannot be modified.</TooltipContent>}
+                                        </TooltipProvider>
+                                    </Tooltip>
 
-                                    <Button disabled={user.id === 1} className='hidden md:flex' onClick={() => {
-                                        axios.post('/$/admin/setUserRole', { userId: user.id, isAdmin: !user.admin }).then(() => {
-                                            adminManager.fetchAllUsers();
-                                        });
-                                    }}>{user.admin ? 'demote to user' : 'promote to admin'}</Button>
+                                    <Tooltip>
+                                        <TooltipProvider>
+                                            <TooltipTrigger>
+                                                <Button disabled={user.id === 1} onClick={() => {
+                                                    setUserSitesDialogOpen(true);
+                                                    setUserSitesDialogTarget(user.username);
+                                                    grabUserSitesDialogList(user.username);
+                                                }}>
+                                                    <ScanSearch className='h-4 w-4 md:hidden' />
+                                                    <span className='hidden md:flex'>site access</span>
+                                                </Button>
+                                            </TooltipTrigger>
 
-                                    <Button disabled={user.id === 1} variant='destructive' onClick={() => {
-                                        if (confirm(`are you sure you want to delete @${user.username}? this action cannot be undone.`)) {
-                                            axios.post('/$/admin/deleteUser', { userId: user.id }).then(() => {
-                                                adminManager.fetchAllUsers();
-                                            });
-                                        }
-                                    }}>
-                                        <Trash className='h-4 w-4 md:hidden' />
-                                        <span className='hidden md:flex'>delete user</span>
-                                    </Button>
+                                            {user.id === 1 && <TooltipContent>this admin cannot be modified.</TooltipContent>}
+                                        </TooltipProvider>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                        <TooltipProvider>
+                                            <TooltipTrigger>
+                                                <Button disabled={user.id === 1} className='hidden md:flex' onClick={() => {
+                                                    axios.post('/$/admin/setUserRole', { userId: user.id, isAdmin: !user.admin }).then(() => {
+                                                        adminManager.fetchAllUsers();
+                                                    });
+                                                }}>{user.admin ? 'demote to user' : 'promote to admin'}</Button>
+                                            </TooltipTrigger>
+
+                                            {user.id === 1 && <TooltipContent>this admin cannot be modified.</TooltipContent>}
+                                        </TooltipProvider>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                        <TooltipProvider>
+                                            <TooltipTrigger>
+                                                <Button disabled={user.id === 1} variant='destructive' onClick={() => {
+                                                    if (confirm(`are you sure you want to delete @${user.username}? this action cannot be undone.`)) {
+                                                        axios.post('/$/admin/deleteUser', { userId: user.id }).then(() => {
+                                                            adminManager.fetchAllUsers();
+                                                        });
+                                                    }
+                                                }}>
+                                                    <Trash className='h-4 w-4 md:hidden' />
+                                                    <span className='hidden md:flex'>delete user</span>
+                                                </Button>
+                                            </TooltipTrigger>
+
+                                            {user.id === 1 && <TooltipContent>this admin cannot be modified.</TooltipContent>}
+                                        </TooltipProvider>
+                                    </Tooltip>
                                 </div>
                             </div>
                         ))}
@@ -127,18 +163,18 @@ const Users = observer(function Users() {
                     </DialogHeader>
 
                     <Input className='w-full' placeholder='username' ref={addUserUsernameRef} onKeyUp={(k) => (k.key === 'Enter') && addUserPasswordRef.current?.focus()} />
-                    <Input className='w-full' placeholder='password' ref={addUserPasswordRef} onKeyUp={(k) => (k.key === 'Enter') && addUserSubmitRef.current?.click()} />
 
                     {addUserError && <span className='text-red-500'>{addUserError}</span>}
 
                     <Button className='w-3/4' ref={addUserSubmitRef} onClick={() => {
                         const username = addUserUsernameRef.current?.value;
-                        const password = addUserPasswordRef.current?.value;
 
-                        axios.post('/$/admin/createUser', { username, password }).then((res) => {
+                        axios.post('/$/admin/createUser', { username }).then((res) => {
                             if (res.data.error) return setAddUserError(res.data.error);
 
                             adminManager.fetchAllUsers();
+
+                            setInviteCode(res.data.inviteCode);
                             setAddUserDialogOpen(false);
                         });
                     }}>add</Button>
@@ -207,6 +243,21 @@ const Users = observer(function Users() {
                             setChangePasswordDialogOpen(false);
                         });
                     }}>change password</Button>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!inviteCode} onOpenChange={(isOpen) => !isOpen && setInviteCode('')}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>user created!</DialogTitle>
+                        <DialogDescription>the user has been created! give them this invite code to set their password and log in:</DialogDescription>
+                    </DialogHeader>
+
+                    <div className='flex flex-col gap-3'>
+                        <Input className='w-full' value={inviteCode} readOnly />
+
+                        <Button className='w-3/4 mx-auto' onClick={() => setInviteCode('')}>close</Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>
