@@ -14,6 +14,8 @@ import TopBar from './navi/TopBar';
 import AdminConfig from './admin/Config';
 import Users from './admin/Users';
 
+import Passkeys from './user/Passkeys';
+
 import Site from './Site';
 
 import icon from '@/assets/leak.jpeg';
@@ -27,7 +29,8 @@ export default function Main() {
         'site': Site,
         'navbox': NavBox,
         'users.admin': Users,
-        'config.admin': AdminConfig
+        'config.admin': AdminConfig,
+        'passkeys.user': Passkeys,
     }
 
     if (screen) return (

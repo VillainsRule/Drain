@@ -1,3 +1,20 @@
+import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
+
+export interface Passkey {
+    userId: number;
+    name: string;
+    lastUsed: number;
+
+    // webauthn requires
+    webAuthnUserID: string; // from step 1
+    id: string; // from step 2
+    publicKey: number[]; // from step 2
+    counter: number; // from step 2
+    transports: AuthenticatorTransportFuture[]; // from step 2
+    deviceType: string; // from step 2
+    backedUp: boolean; // from step 2
+}
+
 export interface PublicUser {
     id: number;
     username: string;

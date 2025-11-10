@@ -16,6 +16,8 @@ class AuthManager {
 
     user = this.placeholderUser;
 
+    passkeys: Array<{ name: string; lastUsed: string }> = [];
+
     constructor() {
         makeAutoObservable(this);
 
@@ -33,6 +35,8 @@ class AuthManager {
                 this.user = data.user;
 
                 siteManager.getSites();
+                this.fetchPasskeys();
+
                 if (this.user.admin) adminManager.fetchAllUsers();
                 if (this.user.id === 1) adminManager.fetchInstanceInformation();
             }
@@ -40,6 +44,11 @@ class AuthManager {
             console.error(error);
             alert('error checking authentication, try reloading?');
         }
+    }
+
+    async fetchPasskeys() {
+        const res = await axios.post('/$/auth/passkeys/index');
+        this.passkeys = res.data.passkeys;
     }
 
     isAdmin() {

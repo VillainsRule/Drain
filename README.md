@@ -38,5 +38,15 @@ Users can have 3 levels of access to Drain:
 
 This implementation is amazing for those with trust issues.
 
+<br><h2 align='center'>WebAuthn (Passkeys)</h2>
+
+To setup passkey support:
+
+1. Copy `.env.example` to `.env` in the [api](./api/) folder
+2. Set the RP_ID variable to your domain (e.g. `drain.com`)
+3. Restart Drain
+
+If these two variables both do not exist, passkey support will be disabled.
+
 <br><br>
 <h5 align='center'>made with ❤️ by <b>VillainsRule</b></h5>

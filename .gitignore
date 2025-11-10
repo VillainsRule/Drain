@@ -2,8 +2,9 @@
 node_modules
 bun.lock
 
-# db
+# protected
 api/db
+.env
 
 # builds
 dist

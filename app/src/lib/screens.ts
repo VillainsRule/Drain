@@ -3,7 +3,8 @@ export const Screens = [
     'site',
     'navbox',
     'users.admin',
-    'config.admin'
+    'config.admin',
+    'passkeys.user'
 ] as const;
 
 export type ScreensT = typeof Screens[number];

@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 
+import { startAuthentication } from '@simplewebauthn/browser'
+
 import { Button } from '@/components/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog'
@@ -67,6 +69,23 @@ export default function Auth() {
                     </div>
 
                     <Button className='w-full cursor-pointer' onClick={() => setInviteDialogOpen(true)}>i have an invite code</Button>
+                    <Button className='w-full cursor-pointer' onClick={async () => {
+                        const req = await axios.post('/$/auth/secure/webauthn/login/options');
+                        if (req.data.error) return setStandardError(req.data.error);
+
+                        let assertionResp;
+                        try {
+                            assertionResp = await startAuthentication({ optionsJSON: req.data });
+                        } catch (err) {
+                            console.error(err);
+                            return setStandardError('failed to get passkey credential. make sure you have a passkey set up and try again.');
+                        }
+
+                        axios.post('/$/auth/secure/webauthn/login/verify', assertionResp).then((response) => {
+                            if (response.data.user) location.reload();
+                            else setStandardError(response.data.error);
+                        });
+                    }}>i have a passkey</Button>
                 </CardContent>
             </Card>
 
