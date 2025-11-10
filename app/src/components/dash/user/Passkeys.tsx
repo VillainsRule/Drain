@@ -74,7 +74,8 @@ const Passkeys = observer(function Passkeys() {
 
                         try {
                             attResp = await startRegistration({ optionsJSON: options.data });
-                        } catch {
+                        } catch (e) {
+                            console.error(e);
                             return setPasskeyError('an error occurred during passkey registration. please try again.');
                         }
 
