@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { observer } from 'mobx-react-lite'
 
 import { startAuthentication } from '@simplewebauthn/browser'
 
@@ -10,9 +11,11 @@ import { Label } from '@/components/shadcn/label'
 
 import axios from '@/lib/axiosLike'
 
+import authManager from '@/managers/AuthManager'
+
 import icon from '@/assets/leak.jpeg';
 
-export default function Auth() {
+const Auth = observer(function Auth() {
     const [standardError, setStandardError] = useState<string>('');
     const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
@@ -69,7 +72,7 @@ export default function Auth() {
                     </div>
 
                     <Button className='w-full cursor-pointer' onClick={() => setInviteDialogOpen(true)}>i have an invite code</Button>
-                    <Button className='w-full cursor-pointer' onClick={async () => {
+                    {authManager.webAuthnEnabled && <Button className='w-full cursor-pointer' onClick={async () => {
                         const req = await axios.post('/$/auth/secure/webauthn/login/options');
                         if (req.data.error) return setStandardError(req.data.error);
 
@@ -85,7 +88,7 @@ export default function Auth() {
                             if (response.data.user) location.reload();
                             else setStandardError(response.data.error);
                         });
-                    }}>i have a passkey</Button>
+                    }}>i have a passkey</Button>}
                 </CardContent>
             </Card>
 
@@ -149,4 +152,6 @@ export default function Auth() {
             </Dialog>
         </div>
     )
-}
+});
+
+export default Auth;

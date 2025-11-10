@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
 import axios from '@/lib/axiosLike';
+
 import siteManager from './SiteManager';
 import adminManager from './AdminManager';
 
@@ -18,10 +19,22 @@ class AuthManager {
 
     passkeys: Array<{ name: string; lastUsed: string }> = [];
 
+    webAuthnEnabled = false;
+
     constructor() {
         makeAutoObservable(this);
 
         this.checkAuth();
+        this.checkWebAuthnEnabled();
+    }
+
+    async checkWebAuthnEnabled() {
+        try {
+            const { data } = await axios.post('/$/auth/secure/webauthn/enabled');
+            this.webAuthnEnabled = data.enabled;
+        } catch (error) {
+            console.error('error checking webauthn enabled:', error);
+        }
     }
 
     async checkAuth() {

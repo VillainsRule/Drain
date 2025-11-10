@@ -1,7 +1,11 @@
 import { createElement, type FC } from 'react';
 
+import KeyRound from 'lucide-react/icons/key-round';
+import LogOut from 'lucide-react/icons/log-out';
 import UserPen from 'lucide-react/icons/user-pen';
 import Wrench from 'lucide-react/icons/wrench';
+
+import axios from '@/lib/axiosLike';
 
 import authManager from '@/managers/AuthManager';
 
@@ -45,26 +49,21 @@ export default function Main() {
                         <img src={icon} className='w-45 h-45 rounded-xl shadow-md border border-neutral-200 p-4 bg-white' alt='drain logo' />
 
                         <div className='flex items-center flex-col text-center'>
-                            <h1 className='text-4xl font-bold mb-1.5'>hi, internet user!</h1>
-                            <h3 className='text-2xl font-medium'>welcome to drain! you are user #{authManager.user.id}!</h3>
+                            <h1 className='text-4xl font-bold mb-1.5'>hi, @{authManager.user.username}</h1>
+                            <h3 className='text-2xl font-medium'>welcome to drain!</h3>
                         </div>
 
-                        <div className='flex md:hidden flex-col gap-2 min-w-fit'>
-                            {authManager.user.id === 1 && <div
-                                className='flex items-center justify-center gap-2 bg-blue-600 w-67 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-125 cursor-pointer font-semibold text-lg'
-                                onClick={() => setScreen('config.admin')}
-                            >
-                                <Wrench className='w-6 h-6 text-white' />
-                                <span className='text-white'>super secret panel</span>
-                            </div>}
+                        <div className='flex md:hidden flex-row gap-4 min-w-fit'>
+                            {authManager.webAuthnEnabled && <KeyRound className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />}
+                            {authManager.isAdmin() && <Wrench className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />}
+                            {authManager.isAdmin() && <UserPen className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />}
 
-                            {authManager.isAdmin() && <div
-                                className='flex items-center justify-center gap-2 bg-blue-600 w-67 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-125 cursor-pointer font-semibold text-lg'
-                                onClick={() => setScreen('users.admin')}
-                            >
-                                <UserPen className='w-6 h-6 text-white' />
-                                <span className='text-white'>manage users</span>
-                            </div>}
+                            <LogOut className='w-8 h-8 cursor-pointer text-red-500' onClick={() => {
+                                axios.post('/$/auth/logout').then((r) => {
+                                    if (r.data.error) alert(r.data.error);
+                                    else location.reload();
+                                })
+                            }} />
                         </div>
                     </div>
                 </>}

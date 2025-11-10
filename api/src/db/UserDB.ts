@@ -54,7 +54,7 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     runDBMigrations(): void {
-        if (!this.db.hasOwnProperty('passkeys')) (this.db as any).passkeys = [];
+        if (!this.db.hasOwnProperty('passkeys')) this.db.passkeys = [];
     }
 
     getUserByUsername(username: string): User | null {

@@ -118,8 +118,8 @@ const Users = observer(function Users() {
 
                                     <Tooltip>
                                         <TooltipProvider>
-                                            <TooltipTrigger>
-                                                <Button disabled={user.id === 1} className='hidden md:flex' onClick={() => {
+                                            <TooltipTrigger className='hidden md:flex'>
+                                                <Button disabled={user.id === 1} onClick={() => {
                                                     axios.post('/$/admin/setUserRole', { userId: user.id, isAdmin: !user.admin }).then(() => {
                                                         adminManager.fetchAllUsers();
                                                     });

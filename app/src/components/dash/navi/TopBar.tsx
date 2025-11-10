@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useAppState } from '@/components/AppProvider';
 
 import Hamburger from 'lucide-react/icons/hamburger';
+import KeyRound from 'lucide-react/icons/key-round';
 import LogOut from 'lucide-react/icons/log-out';
 import UserPen from 'lucide-react/icons/user-pen';
 import Wrench from 'lucide-react/icons/wrench';
@@ -23,6 +24,7 @@ const TopBar = observer(function TopBar() {
                 <h1 className='font-semibold text-lg'>welcome, {authManager.user.username}!</h1>
 
                 <div className='flex items-center gap-6'>
+                    {authManager.webAuthnEnabled && <KeyRound className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />}
                     {authManager.isAdmin() && <Wrench className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />}
                     {authManager.isAdmin() && <UserPen className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />}
 
