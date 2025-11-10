@@ -8,7 +8,7 @@ export interface Passkey {
     // webauthn requires
     webAuthnUserID: string; // from step 1
     id: string; // from step 2
-    publicKey: number[]; // from step 2
+    publicKey: string; // from step 2
     counter: number; // from step 2
     transports: AuthenticatorTransportFuture[]; // from step 2
     deviceType: string; // from step 2
