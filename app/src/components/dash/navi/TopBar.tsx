@@ -2,6 +2,8 @@ import { observer } from 'mobx-react-lite';
 
 import { useAppState } from '@/components/AppProvider';
 
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
+
 import Fingerprint from 'lucide-react/icons/fingerprint';
 import Hamburger from 'lucide-react/icons/hamburger';
 import LogOut from 'lucide-react/icons/log-out';
@@ -24,16 +26,44 @@ const TopBar = observer(function TopBar() {
                 <h1 className='font-semibold text-lg'>welcome, {authManager.user.username}!</h1>
 
                 <div className='flex items-center gap-6'>
-                    {authManager.webAuthnEnabled && <Fingerprint className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />}
-                    {authManager.isAdmin() && <Wrench className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />}
-                    {authManager.isAdmin() && <UserCog className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />}
+                    {authManager.webAuthnEnabled && <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Fingerprint className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <span>Passkeys</span>
+                        </TooltipContent>
+                    </Tooltip>}
+                    {authManager.isAdmin() && <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Wrench className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <span>Instance Config</span>
+                        </TooltipContent>
+                    </Tooltip>}
+                    {authManager.isAdmin() && <Tooltip>
+                        <TooltipTrigger asChild>
+                            <UserCog className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <span>User Management</span>
+                        </TooltipContent>
+                    </Tooltip>}
 
-                    <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => {
-                        axios.post('/$/auth/logout').then((r) => {
-                            if (r.data.error) alert(r.data.error);
-                            else location.reload();
-                        })
-                    }} />
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => {
+                                axios.post('/$/auth/logout').then((r) => {
+                                    if (r.data.error) alert(r.data.error);
+                                    else location.reload();
+                                })
+                            }} />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <span>Log Out</span>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
 
