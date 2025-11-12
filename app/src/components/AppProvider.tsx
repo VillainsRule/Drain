@@ -27,14 +27,38 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [domain, setDomain] = useState<string>(initialHashProbablyIsDomain ? initialHash : '');
 
     useEffect(() => {
-        const el = () => {
+        const resizeListener = () => {
             if (window.innerWidth >= 768 && screen === 'navbox') setScreen(lastScreen);
         };
 
-        window.addEventListener('resize', el);
+        window.addEventListener('resize', resizeListener);
 
-        return () => window.removeEventListener('resize', el);
+        return () => {
+            window.removeEventListener('resize', resizeListener);
+        }
     }, [lastScreen, screen]);
+
+    useEffect(() => {
+        const popstateListener = () => {
+            const newHash = location.hash.slice(1);
+            const newHashIsScreen = isScreen(newHash);
+            const newHashProbablyIsDomain = !newHashIsScreen && newHash.length > 0 && newHash.includes('.');
+            const newHashIsIllegalNavbox = newHash === 'navbox' && window.innerWidth >= 768;
+
+            if (newHashIsScreen && !newHashIsIllegalNavbox) setScreen(newHash);
+            else if (newHashProbablyIsDomain) {
+                setDomain(newHash);
+                setScreen('site');
+            }
+            else setScreen('none');
+        };
+
+        window.addEventListener('popstate', popstateListener);
+
+        return () => {
+            window.removeEventListener('popstate', popstateListener);
+        }
+    }, []);
 
     useEffect(() => {
         siteManager.domain = domain;

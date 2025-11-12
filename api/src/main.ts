@@ -9,8 +9,10 @@ import admin from './endpoints/admin';
 
 const app = new Elysia();
 
-if (Bun.env.RP_ID && Bun.env.RP_NAME) {
-    if (Bun.env.RP_ID.startsWith('localhost')) throw new Error('RP_ID cannot start with localhost...localhost isn\'t supported');
+const hasPasskeysSetUp = Bun.env.RP_ID && Bun.env.RP_NAME;
+
+if (hasPasskeysSetUp) {
+    if (Bun.env.RP_ID && Bun.env.RP_ID.startsWith('localhost')) throw new Error('RP_ID cannot start with localhost...localhost isn\'t supported');
 
     app.onRequest(({ request }) => {
         if (request.headers.get('host')?.startsWith('localhost'))
@@ -42,4 +44,4 @@ admin(app);
 auth(app);
 sites(app);
 
-app.listen(4422, () => console.log('drain it up! http://localhost:4422'));
+app.listen(4422, () => console.log(`drain it up! ${hasPasskeysSetUp ? `https://${Bun.env.RP_ID}` : 'http://localhost:4422'}`));

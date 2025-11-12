@@ -1,8 +1,9 @@
 import { createElement, type FC } from 'react';
+import { observer } from 'mobx-react-lite';
 
-import KeyRound from 'lucide-react/icons/key-round';
+import Fingerprint from 'lucide-react/icons/fingerprint';
 import LogOut from 'lucide-react/icons/log-out';
-import UserPen from 'lucide-react/icons/user-pen';
+import UserCog from 'lucide-react/icons/user-cog';
 import Wrench from 'lucide-react/icons/wrench';
 
 import axios from '@/lib/axiosLike';
@@ -26,7 +27,7 @@ import icon from '@/assets/leak.jpeg';
 
 import type { ScreensT } from '@/lib/screens';
 
-export default function Main() {
+const Main = observer(function Main() {
     const { screen, setScreen } = useAppState();
 
     const assignedScreens: { [K in ScreensT]?: FC } = {
@@ -53,10 +54,10 @@ export default function Main() {
                             <h3 className='text-2xl font-medium'>welcome to drain!</h3>
                         </div>
 
-                        <div className='flex md:hidden flex-row gap-4 min-w-fit'>
-                            {authManager.webAuthnEnabled && <KeyRound className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />}
+                        <div className='flex md:hidden flex-row gap-4 min-w-fit mt-2'>
+                            {authManager.webAuthnEnabled && <Fingerprint className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />}
                             {authManager.isAdmin() && <Wrench className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />}
-                            {authManager.isAdmin() && <UserPen className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />}
+                            {authManager.isAdmin() && <UserCog className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />}
 
                             <LogOut className='w-8 h-8 cursor-pointer text-red-500' onClick={() => {
                                 axios.post('/$/auth/logout').then((r) => {
@@ -70,4 +71,6 @@ export default function Main() {
             </div>
         </div>
     )
-}
+});
+
+export default Main;
