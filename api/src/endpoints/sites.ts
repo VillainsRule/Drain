@@ -112,7 +112,7 @@ export default (app: Elysia) => {
         siteDB.updateDB();
 
         return {};
-    }, { body: t.Object({ domain: t.String(), username: t.String(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/sites/access/changeUserRole', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
