@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { Button } from '@/components/shadcn/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
 import adminManager from '@/managers/AdminManager';
@@ -14,7 +15,6 @@ import Power from 'lucide-react/icons/power';
 import Users from 'lucide-react/icons/users';
 
 import superSecretAdminImage from '@/assets/superSecretAdminImage.png';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
 
 const AdminConfig = observer(function AdminConfig() {
     const { setScreen } = useAppState();
