@@ -133,26 +133,26 @@ const APIKeys = observer(function APIKeys() {
                 <DialogContent className='min-w-5/6! w-5/6! max-w-5/6! max-h-5/6! overflow-y-auto drain-scrollbar'>
                     <DialogHeader>
                         <DialogTitle>using drain API keys</DialogTitle>
-                        <DialogDescription>drain API keys can be used to authenticate requests to the drain API. they should be included in the <code>Authorization</code> header of your requests.</DialogDescription>
+                        <DialogDescription>drain API keys can be used to authenticate requests to this drain instance's API!</DialogDescription>
                     </DialogHeader>
 
                     <div className='space-y-4'>
                         <div className='flex flex-col'>
                             <h3 className='font-semibold'>authenticating</h3>
-                            <span>you can authenticate using 2 methods:</span>
+                            <span>you can authenticate either:</span>
                             <ul className='list-disc list-inside'>
-                                <li>include the API key in the <code>Authorization</code> header</li>
-                                <li>include the API key as a query parameter named <code>key</code></li>
+                                <li>by putting the API key in the <code>Authorization</code> header</li>
+                                <li>by putting the API key in a query parameter named <code>key</code></li>
                             </ul>
                             <pre className='bg-gray-100 p-4 rounded-md my-2'><code>curl -H "Authorization: YOUR_API_KEY_HERE" https://{location.host}/$/v1/[endpoint]</code></pre>
                             <pre className='bg-gray-100 p-4 rounded-md my-2'><code>curl "https://{location.host}/$/v1/[endpoint]?key=YOUR_API_KEY_HERE"</code></pre>
                         </div>
 
-                        <h2 className='text-lg font-bold'>endpoints!</h2>
+                        <h2 className='text-lg font-bold'>the endpoints!</h2>
 
                         <div className='flex flex-col'>
                             <h3 className='font-semibold'>/$/v1/getKeys</h3>
-                            <span>this returns keys of the provided count from a site. if the count is higher than the site, the keys array will simply be short.</span>
+                            <span>this returns keys of the provided count from a site. if the count is higher than the # of keys the site has, the keys array will simply be cut short.</span>
                             <span>requires read permission of the site</span>
                             <pre className='bg-gray-100 p-4 rounded-md my-2'><code>GET https://{location.host}/$/v1/getKeys?site=[site]&count=[count]</code></pre>
                             <pre className='bg-gray-100 p-4 rounded-md my-2'><code>{`{\n\tsite: "[domain]",\n\tkeys: ["[key1]", "[key2]", ...]\n}`}</code></pre>
@@ -160,15 +160,14 @@ const APIKeys = observer(function APIKeys() {
 
                         <div className='flex flex-col'>
                             <h3 className='font-semibold'>/$/v1/getPrecheckedKeys</h3>
-                            <span>same as getKeys, but they're PRECHECKED, ensuring that the key you get is valid!</span>
-                            <span>responses will take slightly longer than getKeys since keys have to be prechecked (obviously)</span>
-                            <span>requires edit permission of the site; you can only get 5 keys at once unless you are a site admin</span>
+                            <span>same as getKeys, but they're validated on request, ensuring that the key you get is valid!</span>
+                            <span>requires edit permission of the site; you can only get 10 keys at once to avoid nuking the server</span>
                             <pre className='bg-gray-100 p-4 rounded-md my-2'><code>GET https://{location.host}/$/v1/getPrecheckedKeys?site=[site]&count=[count]</code></pre>
                             <pre className='bg-gray-100 p-4 rounded-md my-2'><code>{`{\n\tsite: "[domain]",\n\tkeys: ["[key1]", "[key2]", ...]\n}`}</code></pre>
                         </div>
                     </div>
 
-                    <span>more endpoints will be added later...if i feel like it. you can always make an issue to request one on the <a className='text-blue-500 underline' href='https://github.com/VillainsRule/Drain' target='_blank'>drain repository!</a></span>
+                    <span>want more endpoints? make an issue to request one on the <a className='text-blue-500 underline' href='https://github.com/VillainsRule/Drain' target='_blank'>drain repository!</a></span>
                 </DialogContent>
             </Dialog >
         </>
