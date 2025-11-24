@@ -16,7 +16,7 @@ class SiteManager {
         let actuallyBlurred = false;
         window.onblur = () => actuallyBlurred = true;
         window.onfocus = () => {
-            if (actuallyBlurred) {
+            if (actuallyBlurred && authManager.loggedIn) {
                 this.getSites();
                 actuallyBlurred = false;
             }
@@ -32,7 +32,7 @@ class SiteManager {
 
     async getSites() {
         try {
-            const { data } = await axios.post('/$/sites/get');
+            const { data } = await axios.post('/$/sites/dump');
             this.sites = data.sites || [];
         } catch (error) {
             console.error(error);

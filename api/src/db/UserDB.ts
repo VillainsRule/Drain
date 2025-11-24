@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import path from 'node:path';
 
 import BaseDB from './BaseDB';
@@ -5,11 +6,12 @@ import siteDB from './SiteDB';
 
 import hasher from '../hasher';
 
-import { Passkey, PublicUser, Session, User } from '../types.d';
+import { APIKey, Passkey, PublicUser, Session, User } from '../types.d';
 
 type UserDBType = {
     users: User[];
     passkeys: Passkey[];
+    apiKeys: APIKey[];
     sessions: Record<string, Session>;
     nextId: number;
 }
@@ -48,6 +50,7 @@ export class UserDB extends BaseDB<UserDBType> {
         this.db = {
             users: [{ id: 1, username: 'admin', password: hasher.encode('admin'), admin: 1 }],
             passkeys: [],
+            apiKeys: [],
             sessions: {},
             nextId: 2
         };
@@ -55,6 +58,7 @@ export class UserDB extends BaseDB<UserDBType> {
 
     runDBMigrations(): void {
         if (!this.db.hasOwnProperty('passkeys')) this.db.passkeys = [];
+        if (!this.db.hasOwnProperty('apiKeys')) this.db.apiKeys = [];
     }
 
     getUserByUsername(username: string): User | null {
@@ -208,6 +212,69 @@ export class UserDB extends BaseDB<UserDBType> {
         passkey.lastUsed = Date.now();
 
         this.updateDB();
+    }
+
+    getPublicFacingAPIKeysFor(userId: number): Array<{ name: string; createdAt: string; lastUsed: string; lastUserAgent: string }> {
+        return this.db.apiKeys.filter(ak => ak.userId === userId).map(ak => {
+            const createdAt = new Date(ak.createdAt).toLocaleDateString();
+            const lastUsed = getRelativeTime(ak.lastUsed);
+
+            return {
+                name: ak.name,
+                createdAt,
+                lastUsed: lastUsed === 'never' ? 'never used' : 'last used: ' + lastUsed,
+                lastUserAgent: ak.lastUserAgent
+            }
+        });
+    }
+
+    apiKeyExists(userId: number, name: string): boolean {
+        return this.db.apiKeys.some(ak => ak.userId === userId && ak.name === name);
+    }
+
+    createAPIKey(userId: number, name: string): string {
+        const apiKey: APIKey = {
+            userId,
+            name,
+            key: crypto.randomBytes(24).toString('hex'),
+            createdAt: Date.now(),
+            lastUsed: 0,
+            lastUserAgent: ''
+        };
+
+        this.db.apiKeys.push(apiKey);
+        this.updateDB();
+
+        return apiKey.key;
+    }
+
+    deleteAPIKey(userId: number, name: string): void {
+        this.db.apiKeys = this.db.apiKeys.filter(ak => !(ak.userId === userId && ak.name === name));
+        this.updateDB();
+    }
+
+    checkAndUpdate(keyValue: string, userAgent: string): User | null {
+        const apiKey = this.db.apiKeys.find(ak => ak.key === keyValue);
+        if (!apiKey) return null;
+
+        apiKey.lastUsed = Date.now();
+        apiKey.lastUserAgent = userAgent;
+
+        this.updateDB();
+
+        const user = this.db.users.find(u => u.id === apiKey.userId);
+        return user || null;
+    }
+
+    regenerateAPIKey(userId: number, name: string): string {
+        const apiKey = this.db.apiKeys.find(ak => ak.userId === userId && ak.name === name);
+        if (!apiKey) throw new Error('API key not found');
+
+        apiKey.key = crypto.randomBytes(24).toString('hex');
+
+        this.updateDB();
+
+        return apiKey.key;
     }
 }
 

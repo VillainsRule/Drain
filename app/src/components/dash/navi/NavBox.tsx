@@ -56,7 +56,7 @@ const NavBox = observer(function NavBox() {
                                             <ContextMenuItem
                                                 className='text-red-500 no-click'
                                                 onClick={() => {
-                                                    axios.post('/$/sites/deleteSite', { domain: site.domain }).then(resp => {
+                                                    axios.post('/$/sites/delete', { domain: site.domain }).then(resp => {
                                                         if (resp.data.error) {
                                                             alert(resp.data.error);
                                                         } else {

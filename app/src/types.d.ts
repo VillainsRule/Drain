@@ -26,3 +26,10 @@ export interface InstanceInformation {
     isDev: boolean;
     isUsingSystemd: boolean;
 }
+
+export interface APIKey {
+    name: string;
+    createdAt: number;
+    lastUsed: number;
+    lastUserAgent: string;
+}

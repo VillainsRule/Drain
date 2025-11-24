@@ -106,7 +106,7 @@ const Site = observer(function Site() {
 
                                                 for (const key of siteManager.site.get().keys) {
                                                     await new Promise((r) => {
-                                                        axios.post('/$/sites/balancerCheck', {
+                                                        axios.post('/$/sites/balancer', {
                                                             domain: siteManager.site.get().domain,
                                                             key: key.token
                                                         }).then((resp) => {
@@ -161,7 +161,7 @@ const Site = observer(function Site() {
                                         </Button>
 
                                         {Boolean(siteManager.site.get().supportsBalancer && (siteManager.site.isEditor(authManager.user.id) || authManager.user.admin)) && <Button variant='outline' size='sm' onClick={() => {
-                                            axios.post('/$/sites/balancerCheck', {
+                                            axios.post('/$/sites/balancer', {
                                                 domain: siteManager.site.get().domain,
                                                 key: key.token
                                             }).then((resp) => {
@@ -215,7 +215,7 @@ const Site = observer(function Site() {
                                     const role = editors.some(u => u.username === user.username) ? 'editor' : 'reader';
 
                                     const changeRole = (newRole: 'reader' | 'editor') => {
-                                        axios.post('/$/sites/access/changeUserRole', {
+                                        axios.post('/$/sites/access/setRole', {
                                             domain: siteManager.site.get().domain,
                                             username: user.username,
                                             role: newRole

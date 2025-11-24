@@ -134,6 +134,13 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
 
         this.updateDB();
     }
+
+    getSiteKeys(domain: string): string[] {
+        const site = this.db.sites[domain];
+        if (!site) return [];
+
+        return site.keys.map(k => k.token);
+    }
 }
 
 const siteDB = new SiteDB();

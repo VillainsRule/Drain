@@ -108,7 +108,7 @@ const Auth = observer(function Auth() {
                         {inviteError && <div className='text-red-500 text-sm'>{inviteError}</div>}
 
                         <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            axios.post('/$/auth/secure/code/start', {
+                            axios.post('/$/auth/secure/invite/account', {
                                 code: inviteCodeRef.current!.value
                             }).then((response) => {
                                 if (response.data.username) {
@@ -139,7 +139,7 @@ const Auth = observer(function Auth() {
                         {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
                         <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            axios.post('/$/auth/secure/code/set', {
+                            axios.post('/$/auth/secure/invite/claim', {
                                 code: inviteCode,
                                 password: invitePasswordRef.current!.value
                             }).then((response) => {

@@ -1,5 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 
+import axios from '@/lib/axiosLike';
+
 import type { InstanceInformation, PublicUser } from '@/types';
 
 class AdminManager {
@@ -7,7 +9,7 @@ class AdminManager {
 
     instanceInformation: InstanceInformation = {
         commit: 'unknown',
-        isDev: false,
+        isDev: true,
         isUsingSystemd: false
     };
 
@@ -16,15 +18,13 @@ class AdminManager {
     }
 
     async fetchAllUsers() {
-        const req = await fetch('/$/admin/users');
-        const json = await req.json();
-        this.users = json.users as PublicUser[] || [];
+        const req = await axios.post('/$/admin/secure/users');
+        this.users = req.data.users;
     }
 
     async fetchInstanceInformation() {
-        const req = await fetch('/$/admin/instanceInformation');
-        const json = await req.json();
-        this.instanceInformation = json as InstanceInformation;
+        const req = await axios.post('/$/admin/secure/instance');
+        this.instanceInformation = req.data;
     }
 }
 

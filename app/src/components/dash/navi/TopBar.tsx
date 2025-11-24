@@ -4,6 +4,7 @@ import { useAppState } from '@/components/AppProvider';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
+import Code from 'lucide-react/icons/code';
 import Fingerprint from 'lucide-react/icons/fingerprint';
 import Hamburger from 'lucide-react/icons/hamburger';
 import LogOut from 'lucide-react/icons/log-out';
@@ -26,6 +27,15 @@ const TopBar = observer(function TopBar() {
                 <h1 className='font-semibold text-lg'>welcome, {authManager.user.username}!</h1>
 
                 <div className='flex items-center gap-6'>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Code className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('apikeys.user')} />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <span>Drain API Keys</span>
+                        </TooltipContent>
+                    </Tooltip>
+
                     {authManager.webAuthnEnabled && <Tooltip>
                         <TooltipTrigger asChild>
                             <Fingerprint className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />
@@ -34,6 +44,7 @@ const TopBar = observer(function TopBar() {
                             <span>Passkeys</span>
                         </TooltipContent>
                     </Tooltip>}
+
                     {authManager.isAdmin() && <Tooltip>
                         <TooltipTrigger asChild>
                             <Wrench className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />
@@ -42,6 +53,7 @@ const TopBar = observer(function TopBar() {
                             <span>Instance Config</span>
                         </TooltipContent>
                     </Tooltip>}
+
                     {authManager.isAdmin() && <Tooltip>
                         <TooltipTrigger asChild>
                             <UserCog className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />

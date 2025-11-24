@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import auth from './endpoints/auth';
+import api from './endpoints/api';
 import sites from './endpoints/sites';
 import admin from './endpoints/admin';
 
@@ -41,6 +42,7 @@ app.get('/favicon.ico', () => getFile(['favicon.ico']));
 app.get('/$/*', ({ params }) => getFile(['$', ...params['*'].split('/')]));
 
 admin(app);
+api(app);
 auth(app);
 sites(app);
 

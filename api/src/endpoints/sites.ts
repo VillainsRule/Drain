@@ -6,7 +6,7 @@ import userDB from '../db/UserDB';
 import getBalancer from '../balancer';
 
 export default (app: Elysia) => {
-    app.post('/$/sites/get', async ({ cookie: { session } }) => {
+    app.post('/$/sites/dump', async ({ cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -45,7 +45,7 @@ export default (app: Elysia) => {
         return await siteDB.addKeyToSite(body.domain, body.key);
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/balancerCheck', async ({ body, cookie: { session } }) => {
+    app.post('/$/sites/balancer', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -114,7 +114,7 @@ export default (app: Elysia) => {
         return {};
     }, { body: t.Object({ domain: t.String(), username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/access/changeUserRole', async ({ body, cookie: { session } }) => {
+    app.post('/$/sites/access/setRole', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -155,7 +155,7 @@ export default (app: Elysia) => {
         return {};
     }, { body: t.Object({ domain: t.String(), username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/sites/deleteSite', async ({ body, cookie: { session } }) => {
+    app.post('/$/sites/delete', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 

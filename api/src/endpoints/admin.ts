@@ -6,7 +6,7 @@ import siteDB from '../db/SiteDB';
 import userDB from '../db/UserDB';
 
 export default function admin(app: Elysia) {
-    app.get('/$/admin/users', async ({ cookie: { session } }) => {
+    app.post('/$/admin/secure/users', async ({ cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -14,12 +14,12 @@ export default function admin(app: Elysia) {
         return { users };
     }, { cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/createUser', async ({ body, cookie: { session } }) => {
+    app.post('/$/admin/secure/createUser', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
         if (userDB.getUserByUsername(body.username)) return status(400, { error: 'user already exists' });
-        
+
         const inviteCode = crypto.randomUUID();
 
         userDB.createUser(body.username, inviteCode);
@@ -27,7 +27,7 @@ export default function admin(app: Elysia) {
         return { inviteCode };
     }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/getUserSites', async ({ body, cookie: { session } }) => {
+    app.post('/$/admin/secure/getUserSites', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -46,7 +46,7 @@ export default function admin(app: Elysia) {
         return { sites };
     }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/deleteUser', async ({ body, cookie: { session } }) => {
+    app.post('/$/admin/secure/deleteUser', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -63,7 +63,7 @@ export default function admin(app: Elysia) {
         return {};
     }, { body: t.Object({ userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/setUserRole', async ({ body, cookie: { session } }) => {
+    app.post('/$/admin/secure/setUserRole', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -77,7 +77,7 @@ export default function admin(app: Elysia) {
         return {};
     }, { body: t.Object({ userId: t.Number(), isAdmin: t.Boolean() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/setUserPassword', async ({ body, cookie: { session } }) => {
+    app.post('/$/admin/secure/setUserPassword', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -92,24 +92,33 @@ export default function admin(app: Elysia) {
         return {};
     }, { body: t.Object({ userId: t.Number(), newPassword: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/admin/removeAllSessions', async ({ cookie: { session } }) => {
+    const commit = terminal.execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).toString().trim();
+    const isDev = terminal.execSync('git status --porcelain', { encoding: 'utf8' }).trim().length > 0;
+    const isUsingSystemd = !!process.env['INVOCATION_ID'];
+
+    app.post('/$/admin/secure/instance', async ({ cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
-
-        userDB.db.sessions = {};
-        userDB.updateDB();
-
-        return {};
-    }, { cookie: t.Cookie({ session: t.String() }) });
-
-    app.get('/$/admin/instanceInformation', async ({ cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
-        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
-
-        const commit = terminal.execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).toString().trim();
-        const isDev = terminal.execSync('git status --porcelain', { encoding: 'utf8' }).trim().length > 0;
-        const isUsingSystemd = !!process.env['INVOCATION_ID'];
 
         return { commit, isDev, isUsingSystemd };
+    }, { cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/admin/secure/gitPull', async ({ cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
+
+        const out = terminal.execSync('git pull', { encoding: 'utf8' }).toString();
+        return { out };
+    }, { cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/admin/secure/systemdRestart', async ({ cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
+
+        if (!isUsingSystemd) return status(400, { error: 'not using systemd' });
+
+        terminal.exec('systemctl --user restart yolkbot.service');
+
+        return {};
     }, { cookie: t.Cookie({ session: t.String() }) });
 }

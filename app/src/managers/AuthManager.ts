@@ -2,8 +2,10 @@ import { makeAutoObservable } from 'mobx';
 
 import axios from '@/lib/axiosLike';
 
-import siteManager from './SiteManager';
 import adminManager from './AdminManager';
+import siteManager from './SiteManager';
+
+import type { APIKey } from '@/types';
 
 class AuthManager {
     hasInit = false;
@@ -18,6 +20,7 @@ class AuthManager {
     user = this.placeholderUser;
 
     passkeys: Array<{ name: string; lastUsed: string }> = [];
+    apiKeys: APIKey[] = [];
 
     webAuthnEnabled = false;
 
@@ -25,10 +28,10 @@ class AuthManager {
         makeAutoObservable(this);
 
         this.checkAuth();
-        this.checkWebAuthnEnabled();
+        this.checkWebAuthn();
     }
 
-    async checkWebAuthnEnabled() {
+    async checkWebAuthn() {
         try {
             const { data } = await axios.post('/$/auth/secure/webauthn/enabled');
             this.webAuthnEnabled = data.enabled;
@@ -39,7 +42,7 @@ class AuthManager {
 
     async checkAuth() {
         try {
-            const { data } = await axios.post('/$/auth/whoami');
+            const { data } = await axios.post('/$/auth/account');
 
             this.hasInit = true;
 
@@ -48,7 +51,9 @@ class AuthManager {
                 this.user = data.user;
 
                 siteManager.getSites();
+
                 this.fetchPasskeys();
+                this.fetchAPIKeys();
 
                 if (this.user.admin) adminManager.fetchAllUsers();
                 if (this.user.id === 1) adminManager.fetchInstanceInformation();
@@ -60,8 +65,13 @@ class AuthManager {
     }
 
     async fetchPasskeys() {
-        const res = await axios.post('/$/auth/passkeys/index');
+        const res = await axios.post('/$/auth/passkeys');
         this.passkeys = res.data.passkeys;
+    }
+
+    async fetchAPIKeys() {
+        const res = await axios.post('/$/auth/api/keys');
+        this.apiKeys = res.data.apiKeys;
     }
 
     isAdmin() {

@@ -18,7 +18,7 @@ import userDB from '../db/UserDB';
 import hasher from '../hasher';
 
 export default function auth(app: Elysia) {
-    app.post('/$/auth/whoami', async ({ cookie: { session } }) => {
+    app.post('/$/auth/account', async ({ cookie: { session } }) => {
         if (typeof session.value !== 'string') return status(401, { error: 'not logged in' });
 
         const user = userDB.whoIsSession(session.value);
@@ -53,7 +53,7 @@ export default function auth(app: Elysia) {
         }
     }, { body: t.Object({ username: t.String(), password: t.String() }) });
 
-    app.post('/$/auth/secure/code/start', async ({ body }) => {
+    app.post('/$/auth/secure/invite/account', async ({ body }) => {
         try {
             const code = userDB.getCode(body.code);
             if (!code) return status(401, { error: 'that invite code does not exist or has been claimed' });
@@ -65,7 +65,7 @@ export default function auth(app: Elysia) {
         }
     }, { body: t.Object({ code: t.String() }) });
 
-    app.post('/$/auth/secure/code/set', async ({ body, cookie: { session } }) => {
+    app.post('/$/auth/secure/invite/claim', async ({ body, cookie: { session } }) => {
         try {
             const user = userDB.getCode(body.code);
             if (!user) return status(401, { error: 'that invite code does not exist or has been claimed' });
@@ -104,7 +104,7 @@ export default function auth(app: Elysia) {
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) });
 
-    app.post('/$/auth/passkeys/index', async ({ cookie: { session } }) => {
+    app.post('/$/auth/passkeys', async ({ cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -334,4 +334,43 @@ export default function auth(app: Elysia) {
             }), cookie: t.Cookie({ webauthn: t.String() })
         });
     }
+
+    app.post('/$/auth/api/keys', async ({ cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        const apiKeys = userDB.getPublicFacingAPIKeysFor(user.id);
+        return { apiKeys };
+    }, { cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/auth/api/keys/create', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        if (userDB.apiKeyExists(user.id, body.name)) return status(400, { error: 'you already have an API key with that name' });
+
+        const newKey = userDB.createAPIKey(user.id, body.name);
+        return { key: newKey };
+    }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/auth/api/keys/delete', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        if (!userDB.apiKeyExists(user.id, body.name)) return status(400, { error: 'you do not have an API key with that name' });
+
+        userDB.deleteAPIKey(user.id, body.name);
+
+        return {};
+    }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/auth/api/keys/regen', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        if (!userDB.apiKeyExists(user.id, body.name)) return status(400, { error: 'you do not have an API key with that name' });
+
+        const newKey = userDB.regenerateAPIKey(user.id, body.name);
+        return { key: newKey };
+    }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 }

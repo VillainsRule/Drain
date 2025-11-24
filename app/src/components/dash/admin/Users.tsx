@@ -35,7 +35,7 @@ const Users = observer(function Users() {
     const [inviteCode, setInviteCode] = useState('');
 
     const changeRole = (username: string, domain: string, newRole: 'reader' | 'editor') => {
-        axios.post('/$/sites/access/changeUserRole', {
+        axios.post('/$/sites/access/setRole', {
             domain: domain,
             username: username,
             role: newRole
@@ -56,7 +56,7 @@ const Users = observer(function Users() {
     const changePasswordSubmitRef = useRef<HTMLButtonElement>(null);
 
     const grabUserSitesDialogList = (username: string) => {
-        axios.post('/$/admin/getUserSites', { username }).then((res) => {
+        axios.post('/$/admin/secure/getUserSites', { username }).then((res) => {
             setUserSitesDialogList(res.data.sites);
         });
     }
@@ -120,7 +120,7 @@ const Users = observer(function Users() {
                                         <TooltipProvider>
                                             <TooltipTrigger className='hidden md:flex'>
                                                 <Button disabled={user.id === 1} onClick={() => {
-                                                    axios.post('/$/admin/setUserRole', { userId: user.id, isAdmin: !user.admin }).then(() => {
+                                                    axios.post('/$/admin/secure/setUserRole', { userId: user.id, isAdmin: !user.admin }).then(() => {
                                                         adminManager.fetchAllUsers();
                                                     });
                                                 }}>{user.admin ? 'demote to user' : 'promote to admin'}</Button>
@@ -135,7 +135,7 @@ const Users = observer(function Users() {
                                             <TooltipTrigger>
                                                 <Button disabled={user.id === 1} variant='destructive' onClick={() => {
                                                     if (confirm(`are you sure you want to delete @${user.username}? this action cannot be undone.`)) {
-                                                        axios.post('/$/admin/deleteUser', { userId: user.id }).then(() => {
+                                                        axios.post('/$/admin/secure/deleteUser', { userId: user.id }).then(() => {
                                                             adminManager.fetchAllUsers();
                                                         });
                                                     }
@@ -169,7 +169,7 @@ const Users = observer(function Users() {
                     <Button className='w-3/4' ref={addUserSubmitRef} onClick={() => {
                         const username = addUserUsernameRef.current?.value;
 
-                        axios.post('/$/admin/createUser', { username }).then((res) => {
+                        axios.post('/$/admin/secure/createUser', { username }).then((res) => {
                             if (res.data.error) return setAddUserError(res.data.error);
 
                             adminManager.fetchAllUsers();
@@ -239,7 +239,7 @@ const Users = observer(function Users() {
                     <Button className='w-3/4' ref={changePasswordSubmitRef} onClick={() => {
                         const newPassword = changePasswordRef.current?.value;
 
-                        axios.post('/$/admin/setUserPassword', { userId: changePasswordTarget, newPassword }).then(() => {
+                        axios.post('/$/admin/secure/setUserPassword', { userId: changePasswordTarget, newPassword }).then(() => {
                             setChangePasswordDialogOpen(false);
                         });
                     }}>change password</Button>

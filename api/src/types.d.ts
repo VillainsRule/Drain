@@ -15,6 +15,15 @@ export interface Passkey {
     backedUp: boolean; // from step 2
 }
 
+export interface APIKey {
+    userId: number;
+    name: string;
+    key: string;
+    createdAt: number;
+    lastUsed: number;
+    lastUserAgent: string;
+}
+
 export interface PublicUser {
     id: number;
     username: string;

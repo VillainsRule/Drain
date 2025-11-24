@@ -19,6 +19,7 @@ import TopBar from './navi/TopBar';
 import AdminConfig from './admin/Config';
 import Users from './admin/Users';
 
+import APIKeys from './user/APIKeys';
 import Passkeys from './user/Passkeys';
 
 import Site from './Site';
@@ -35,7 +36,8 @@ const Main = observer(function Main() {
         'navbox': NavBox,
         'users.admin': Users,
         'config.admin': AdminConfig,
-        'passkeys.user': Passkeys,
+        'apikeys.user': APIKeys,
+        'passkeys.user': Passkeys
     }
 
     if (screen) return (

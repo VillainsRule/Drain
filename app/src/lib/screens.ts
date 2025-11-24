@@ -4,6 +4,7 @@ export const Screens = [
     'navbox',
     'users.admin',
     'config.admin',
+    'apikeys.user',
     'passkeys.user'
 ] as const;
 
