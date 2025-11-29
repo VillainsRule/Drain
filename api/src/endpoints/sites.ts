@@ -63,6 +63,7 @@ export default (app: Elysia) => {
 
         const balance = await balancer(body.key);
         if (balance === 'invalid_key') return status(400, { error: 'balancer has determined the key is invalid' });
+        if (balance === 'leaked_key') return status(400, { error: 'balancer has determined the key was flagged' });
 
         siteDB.setKeyBalance(body.domain, body.key, isNaN(Number(balance)) ? balance : `$${balance}`);
 

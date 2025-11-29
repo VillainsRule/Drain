@@ -59,7 +59,7 @@ export default (app: Elysia) => {
                 if (checkedAndValid.length >= countNum) break;
 
                 const balance = await balancer(key);
-                if (balance !== 'invalid_key') checkedAndValid.push(key);
+                if (balance !== 'invalid_key' && balance !== 'leaked_key') checkedAndValid.push(key);
             }
 
             return { site, keys: checkedAndValid };
