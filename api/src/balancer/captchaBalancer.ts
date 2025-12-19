@@ -1,5 +1,7 @@
+import fetchWithProxy from './getProxy';
+
 const createCaptchaBalancer = (url: string) => async (token: string): Promise<string> => {
-    const req = await fetch(url, {
+    const req = await fetchWithProxy(url, {
         method: 'POST',
         headers: {
             Accept: 'application/json',

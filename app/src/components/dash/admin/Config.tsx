@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { Button } from '@/components/shadcn/button';
+import { Checkbox } from '@/components/shadcn/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
+import { Label } from '@/components/shadcn/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
 import adminManager from '@/managers/AdminManager';
@@ -34,6 +36,18 @@ const AdminConfig = observer(function AdminConfig() {
 
                         <h2 className='text-lg text-center font-medium mt-4'>instance commit: {adminManager.instanceInformation.commit}</h2>
                         <h2 className='text-lg text-center font-medium'>is drain dev?: {adminManager.instanceInformation.isDev.toString()}</h2>
+                    </div>
+
+                    <div className='flex items-center gap-3'>
+                        <Checkbox id='useProxiesBalancer' checked={adminManager.instanceInformation.config.useProxiesForBalancer} onCheckedChange={(isChecked) => {
+                            adminManager.instanceInformation.config.useProxiesForBalancer = !!isChecked;
+                            fetch('/$/admin/secure/setConfig', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ config: adminManager.instanceInformation.config })
+                            }).then(() => adminManager.fetchInstanceInformation());
+                        }} />
+                        {siteManager.siteExists('https.proxy') && <Label htmlFor='useProxiesBalancer'>use proxies from "https.proxy" for balancer</Label>}
                     </div>
 
                     <div className={`flex justify-center gap-3 ${adminManager.instanceInformation.isDev && !adminManager.instanceInformation.isUsingSystemd ? 'md:hidden' : ''}`}>

@@ -241,6 +241,7 @@ const Users = observer(function Users() {
 
                         axios.post('/$/admin/secure/setUserPassword', { userId: changePasswordTarget, newPassword }).then(() => {
                             setChangePasswordDialogOpen(false);
+                            if (changePasswordTarget === authManager.user.id) setTimeout(() => location.reload(), 100);
                         });
                     }}>change password</Button>
                 </DialogContent>

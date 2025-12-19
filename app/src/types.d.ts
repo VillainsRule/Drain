@@ -21,10 +21,15 @@ export interface FrontendSite {
     supportsBalancer: boolean;
 }
 
+export interface InstanceConfiguration {
+    useProxiesForBalancer: boolean;
+}
+
 export interface InstanceInformation {
     commit: string;
     isDev: boolean;
     isUsingSystemd: boolean;
+    config: InstanceConfiguration;
 }
 
 export interface APIKey {

@@ -39,6 +39,10 @@ class SiteManager {
             alert('Error fetching sites. Check the console for details.');
         }
     }
+
+    siteExists(domain: string) {
+        return this.sites.some(site => site.domain === domain);
+    }
 }
 
 const siteManager = new SiteManager();

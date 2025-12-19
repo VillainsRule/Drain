@@ -13,6 +13,9 @@
 3. Prepare for production: `bun prep`
 4. Start the production server: `bun start`
 
+> [!WARNING]
+> If not using Bun, some features may not work as intended.
+
 <br><h2 align='center'>Usage</h2>
 
 Drain is an API key manager, and the biggest aspect is the vast permission system.

@@ -211,8 +211,7 @@ const Site = observer(function Site() {
 
                             <div className='grow flex flex-col items-center justify-start gap-1 w-full mt-4'>
                                 {[...siteManager.site.get().editors, ...siteManager.site.get().readers].map((user, i) => {
-                                    const editors = siteManager.site.get().editors;
-                                    const role = editors.some(u => u.username === user.username) ? 'editor' : 'reader';
+                                    const role = siteManager.site.isEditor(user.id) ? 'editor' : 'reader';
 
                                     const changeRole = (newRole: 'reader' | 'editor') => {
                                         axios.post('/$/sites/access/setRole', {

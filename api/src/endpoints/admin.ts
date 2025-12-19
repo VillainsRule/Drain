@@ -2,6 +2,7 @@ import { Elysia, status, t } from 'elysia';
 
 import terminal from 'node:child_process';
 
+import configDB from '../db/ConfigDB';
 import siteDB from '../db/SiteDB';
 import userDB from '../db/UserDB';
 
@@ -100,7 +101,7 @@ export default function admin(app: Elysia) {
         const user = userDB.whoIsSession(session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
-        return { commit, isDev, isUsingSystemd };
+        return { commit, isDev, isUsingSystemd, config: configDB.db };
     }, { cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/admin/secure/gitPull', async ({ cookie: { session } }) => {
@@ -121,4 +122,13 @@ export default function admin(app: Elysia) {
 
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/admin/secure/setConfig', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
+
+        configDB.updateConfig(body.config);
+
+        return {};
+    }, { body: t.Object({ config: t.Any() }), cookie: t.Cookie({ session: t.String() }) });
 }

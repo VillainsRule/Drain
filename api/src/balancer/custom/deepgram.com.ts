@@ -1,5 +1,7 @@
+import fetchWithProxy from '../getProxy';
+
 export default async function deepgramBalancer(token: string): Promise<string> {
-    const req = await fetch('https://api.deepgram.com/v1/auth/grant', {
+    const req = await fetchWithProxy('https://api.deepgram.com/v1/auth/grant', {
         method: 'POST',
         headers: { Authorization: `Token ${token}` }
     });

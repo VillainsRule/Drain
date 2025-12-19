@@ -63,3 +63,7 @@ export interface BackendSite extends BaseSite {
     readers: number[];
     editors: number[];
 }
+
+export interface IConfigDB {
+    useProxiesForBalancer: boolean;
+}

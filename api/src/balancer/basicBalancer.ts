@@ -1,4 +1,4 @@
-import https from 'node:https';
+import fetchWithProxy from './getProxy';
 
 interface X {
     tokenHeader?: string;
@@ -10,15 +10,15 @@ interface X {
 }
 
 const createBasicBalancer = (url: string, x: X = {}) => async (token: string): Promise<string> => {
-    const code = await new Promise<number>((resolve, reject) => {
-        https.get(url, {
-            method: x.method || 'GET',
-            headers: {
-                ...(x.tokenHeader ? { [x.tokenHeader]: token } : { 'Authorization': `Bearer ${token}` }),
-                ...(x.extraHeaders ?? {})
-            }
-        }, (res) => resolve(res.statusCode as number)).on('error', reject);
+    const response = await fetchWithProxy(url, {
+        method: x.method || 'GET',
+        headers: {
+            ...(x.tokenHeader ? { [x.tokenHeader]: token } : { 'Authorization': `Bearer ${token}` }),
+            ...(x.extraHeaders ?? {})
+        }
     });
+
+    const code = response.status;
 
     if (typeof x.invalidCode === 'object' && x.invalidCode.includes(code)) return 'invalid_key';
     else if (typeof x.invalidCode === 'number' && code === x.invalidCode) return 'invalid_key';
