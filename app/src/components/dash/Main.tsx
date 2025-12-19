@@ -6,8 +6,6 @@ import LogOut from 'lucide-react/icons/log-out';
 import UserCog from 'lucide-react/icons/user-cog';
 import Wrench from 'lucide-react/icons/wrench';
 
-import axios from '@/lib/axiosLike';
-
 import authManager from '@/managers/AuthManager';
 
 import { useAppState } from '@/components/AppProvider';
@@ -24,7 +22,7 @@ import Passkeys from './user/Passkeys';
 
 import Site from './Site';
 
-import icon from '@/assets/leak.jpeg';
+import Logo from '@/assets/Logo';
 
 import type { ScreensT } from '@/lib/screens';
 
@@ -49,7 +47,7 @@ const Main = observer(function Main() {
 
                 {screen in assignedScreens && assignedScreens[screen] ? createElement(assignedScreens[screen]!) : <>
                     <div className='flex md:justify-center items-center flex-col md:flex-row gap-3 md:gap-9 h-full w-full mt-2 md:-mt-32'>
-                        <img src={icon} className='w-45 h-45 rounded-xl shadow-md border border-neutral-200 p-4 bg-white' alt='drain logo' />
+                        <Logo className='w-45 h-45 rounded-xl shadow-md border border-neutral-200 p-4 bg-white' />
 
                         <div className='flex items-center flex-col text-center'>
                             <h1 className='text-4xl font-bold mb-1.5'>hi, @{authManager.user.username}</h1>
@@ -61,12 +59,7 @@ const Main = observer(function Main() {
                             {authManager.isAdmin() && <Wrench className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />}
                             {authManager.isAdmin() && <UserCog className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />}
 
-                            <LogOut className='w-8 h-8 cursor-pointer text-red-500' onClick={() => {
-                                axios.post('/$/auth/logout').then((r) => {
-                                    if (r.data.error) alert(r.data.error);
-                                    else location.reload();
-                                })
-                            }} />
+                            <LogOut className='w-8 h-8 cursor-pointer text-red-500' onClick={() => authManager.logout()} />
                         </div>
                     </div>
                 </>}

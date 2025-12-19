@@ -8,7 +8,7 @@ import Auth from './components/Auth'
 
 import { AppProvider } from './components/AppProvider'
 
-import icon from '@/assets/leak.jpeg';
+import Logo from './assets/Logo'
 
 import './index.css'
 
@@ -20,7 +20,7 @@ const App = observer(function App() {
 
     return (
         <div className='flex justify-center items-center gap-10 h-screen w-screen'>
-            <img src={icon} className='w-50 h-50' />
+            <Logo className='w-50 h-50' />
             <h1 className='text-7xl font-bold mb-1.5'>loading drain...</h1>
         </div>
     )

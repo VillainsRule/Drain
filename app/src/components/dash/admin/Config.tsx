@@ -103,7 +103,7 @@ const AdminConfig = observer(function AdminConfig() {
                         </Tooltip>}
                     </div>
 
-                    <img src={superSecretAdminImage} className='mt-3 w-96 h-40 rounded-xl shadow-md border border-neutral-300 p-2' alt='super secret admin image' />
+                    <img src={superSecretAdminImage} className='mt-3 w-96 h-40 rounded-xl p-2' alt='super secret admin image' />
                 </div>
             </div>
 

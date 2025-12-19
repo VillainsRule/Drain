@@ -15,7 +15,7 @@ import siteManager from '@/managers/SiteManager';
 
 import { useAppState } from '@/components/AppProvider';
 
-import icon from '@/assets/leak.jpeg';
+import Logo from '@/assets/Logo'
 
 const SideBar = observer(function SideBar() {
     const { screen, setScreen, setDomain } = useAppState();
@@ -31,7 +31,7 @@ const SideBar = observer(function SideBar() {
                 <div className='flex flex-col justify-between h-full w-full items-center'>
                     <div className='flex flex-col items-center gap-4 mb-4 w-full h-full'>
                         <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => setScreen('none')}>
-                            <img src={icon} className='w-12 h-12 rounded-xl shadow-md border border-neutral-300 p-2' alt='drain logo' />
+                            <Logo className='w-12 h-12 rounded-xl shadow-md border border-neutral-300 p-2' />
                             <h1 className='text-4xl font-extrabold tracking-tight text-neutral-800 drop-shadow-sm'>drain</h1>
                         </div>
 

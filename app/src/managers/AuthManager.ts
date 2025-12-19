@@ -28,16 +28,19 @@ class AuthManager {
         makeAutoObservable(this);
 
         this.checkAuth();
-        this.checkWebAuthn();
     }
 
-    async checkWebAuthn() {
-        try {
-            const { data } = await axios.post('/$/auth/secure/webauthn/enabled');
-            this.webAuthnEnabled = data.enabled;
-        } catch (error) {
-            console.error('error checking webauthn enabled:', error);
-        }
+    setAuth(user: typeof this.placeholderUser) {
+        this.loggedIn = true;
+        this.user = user;
+
+        siteManager.getSites();
+
+        this.fetchPasskeys();
+        this.fetchAPIKeys();
+
+        if (this.user.admin) adminManager.fetchAllUsers();
+        if (this.user.id === 1) adminManager.fetchInstanceInformation();
     }
 
     async checkAuth() {
@@ -45,19 +48,9 @@ class AuthManager {
             const { data } = await axios.post('/$/auth/account');
 
             this.hasInit = true;
+            this.webAuthnEnabled = data.isWebAuthnConfigured;
 
-            if (!data.error) {
-                this.loggedIn = true;
-                this.user = data.user;
-
-                siteManager.getSites();
-
-                this.fetchPasskeys();
-                this.fetchAPIKeys();
-
-                if (this.user.admin) adminManager.fetchAllUsers();
-                if (this.user.id === 1) adminManager.fetchInstanceInformation();
-            }
+            if (!data.error) this.setAuth(data.user);
         } catch (error) {
             console.error(error);
             alert('error checking authentication, try reloading?');
@@ -76,6 +69,13 @@ class AuthManager {
 
     isAdmin() {
         return !!this.user?.admin;
+    }
+
+    async logout() {
+        await axios.post('/$/auth/logout');
+
+        this.loggedIn = false;
+        this.user = this.placeholderUser;
     }
 }
 

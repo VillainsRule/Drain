@@ -11,11 +11,9 @@ import LogOut from 'lucide-react/icons/log-out';
 import UserCog from 'lucide-react/icons/user-cog';
 import Wrench from 'lucide-react/icons/wrench';
 
-import axios from '@/lib/axiosLike';
-
 import authManager from '@/managers/AuthManager';
 
-import icon from '@/assets/leak.jpeg';
+import Logo from '@/assets/Logo';
 
 const TopBar = observer(function TopBar() {
     const { lastScreen, screen, setScreen } = useAppState();
@@ -65,12 +63,7 @@ const TopBar = observer(function TopBar() {
 
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => {
-                                axios.post('/$/auth/logout').then((r) => {
-                                    if (r.data.error) alert(r.data.error);
-                                    else location.reload();
-                                })
-                            }} />
+                            <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => authManager.logout()} />
                         </TooltipTrigger>
                         <TooltipContent>
                             <span>Log Out</span>
@@ -82,7 +75,7 @@ const TopBar = observer(function TopBar() {
             {/* mobile bar */}
             <div className='fixed bottom-0 w-[calc(100%-48px)] flex md:hidden justify-between items-center py-5 px-6 z-30'>
                 <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => setScreen('none')}>
-                    <img src={icon} className='w-9 h-9' alt='drain logo' />
+                    <Logo className='w-9 h-9' />
                     <h1 className='text-3xl font-bold text-neutral-800 drop-shadow-md'>drain!</h1>
                 </div>
 

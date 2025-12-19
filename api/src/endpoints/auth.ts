@@ -18,13 +18,15 @@ import userDB from '../db/UserDB';
 import hasher from '../hasher';
 
 export default function auth(app: Elysia) {
+    const isWebAuthnConfigured = typeof Bun.env.RP_ID === 'string' && typeof Bun.env.RP_NAME === 'string';
+
     app.post('/$/auth/account', async ({ cookie: { session } }) => {
         if (typeof session.value !== 'string') return status(401, { error: 'not logged in' });
 
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        return { user: { id: user.id, username: user.username, admin: user.admin } };
+        return { user: { id: user.id, username: user.username, admin: user.admin }, isWebAuthnConfigured };
     });
 
     app.post('/$/auth/secure/credentials', async ({ body, cookie: { session } }) => {
@@ -120,12 +122,6 @@ export default function auth(app: Elysia) {
 
         return {};
     }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) });
-
-    const isWebAuthnConfigured: boolean = typeof Bun.env.RP_ID === 'string' && typeof Bun.env.RP_NAME === 'string';
-
-    app.post('/$/auth/secure/webauthn/enabled', async () => {
-        return { enabled: isWebAuthnConfigured };
-    });
 
     if (isWebAuthnConfigured) {
         interface MiniChallenge {

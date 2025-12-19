@@ -13,7 +13,7 @@ import axios from '@/lib/axiosLike'
 
 import authManager from '@/managers/AuthManager'
 
-import icon from '@/assets/leak.jpeg';
+import Logo from '@/assets/Logo'
 
 const Auth = observer(function Auth() {
     const [standardError, setStandardError] = useState<string>('');
@@ -34,7 +34,7 @@ const Auth = observer(function Auth() {
         <div className='min-h-screen flex items-center justify-center bg-gray-50'>
             <Card className='w-11/12 md:w-full max-w-md'>
                 <CardHeader className='text-center flex flex-row md:flex-col items-center gap-3'>
-                    <img src={icon} className='w-30 h-30 rounded-xl shadow-md border border-neutral-200 p-4 bg-white md:hidden mb-3' alt='drain logo' />
+                    <Logo className='w-30 h-30 rounded-xl shadow-md border border-neutral-200 p-4 bg-white md:hidden mb-3' />
 
                     <div className='flex flex-col'>
                         <CardTitle className='text-3xl font-bold'>Drain</CardTitle>
@@ -60,7 +60,7 @@ const Auth = observer(function Auth() {
                             username: usernameRef.current!.value,
                             password: passwordRef.current!.value
                         }).then((response) => {
-                            if (response.data.user) location.reload();
+                            if (response.data.user) authManager.setAuth(response.data.user);
                             else setStandardError(response.data.error);
                         })
                     }}>Log In</Button>

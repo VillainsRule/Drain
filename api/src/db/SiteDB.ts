@@ -51,8 +51,11 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
     }
 
     getUserSites(userId: number): BackendSite[] {
+        const user = userDB.getPublicUser(userId);
+        if (!user) return [];
+
         const allSites = Object.values(this.db.sites);
-        if (userDB.getPublicUser(userId)!.admin) return allSites;
+        if (user.admin) return allSites;
 
         const sites = allSites.filter(site => site.readers.includes(userId) || site.editors.includes(userId)).map(site => ({ ...site }));
         return sites;
