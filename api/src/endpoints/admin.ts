@@ -111,7 +111,7 @@ export default function admin(app: Elysia) {
         const user = userDB.whoIsSession(session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
-        const out = terminal.execSync('git pull', { encoding: 'utf8' }).toString();
+        const out = terminal.execSync('git pull', { encoding: 'utf8', cwd: drainHome }).toString();
         return { out };
     }, { cookie: t.Cookie({ session: t.String() }) });
 
