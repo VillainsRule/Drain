@@ -1,6 +1,7 @@
 import { Elysia, status, t } from 'elysia';
 
 import terminal from 'node:child_process';
+import path from 'node:path';
 
 import configDB from '../db/ConfigDB';
 import siteDB from '../db/SiteDB';
@@ -93,8 +94,10 @@ export default function admin(app: Elysia) {
         return {};
     }, { body: t.Object({ userId: t.Number(), newPassword: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
-    const commit = terminal.execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).toString().trim();
-    const isDev = terminal.execSync('git status --porcelain', { encoding: 'utf8' }).trim().length > 0;
+    const drainHome = path.join(import.meta.dirname, '..', '..', '..');
+
+    const commit = terminal.execSync('git rev-parse --short HEAD', { encoding: 'utf8', cwd: drainHome }).toString().trim();
+    const isDev = terminal.execSync('git status --porcelain', { encoding: 'utf8', cwd: drainHome }).trim().length > 0;
     const isUsingSystemd = !!process.env['INVOCATION_ID'];
 
     app.post('/$/admin/secure/instance', async ({ cookie: { session } }) => {
@@ -118,7 +121,7 @@ export default function admin(app: Elysia) {
 
         if (!isUsingSystemd) return status(400, { error: 'not using systemd' });
 
-        terminal.exec('systemctl --user restart yolkbot.service');
+        terminal.exec('systemctl restart drain.service');
 
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) });
