@@ -3,8 +3,6 @@ import path from 'node:path';
 import BaseDB from './BaseDB';
 import userDB from './UserDB';
 
-import getBalancer from '../balancer';
-
 import { BackendSite } from '../types';
 
 export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
@@ -61,18 +59,9 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
         return sites;
     }
 
-    async addKeyToSite(domain: string, token: string) {
-        const balancer = getBalancer(domain);
-        if (balancer) {
-            const balance = await balancer(token);
-            if (balance === 'invalid_key') return { error: 'balancer has determined this key is invalid.' };
-            if (balance === 'leaked_key') return { error: 'balancer has determined this key was flagged.' };
-            this.db.sites[domain].keys.push({ token, balance: isNaN(Number(balance)) ? balance : `$${balance}` });
-        } else this.db.sites[domain].keys.push({ token, balance: '?' });
-
+    async addKeyToSite(domain: string, token: string, balance: string = '?') {
+        this.db.sites[domain].keys.push({ token, balance });
         this.updateDB();
-
-        return {};
     }
 
     setKeyBalance(domain: string, token: string, balance: string) {

@@ -8,7 +8,7 @@ export default async function httpsProxy(proxy: string): Promise<string> {
         if (port < 1 || port > 65535) return 'invalid_key';
 
         for (let i = 0; i < 3; i++) {
-            const attempt = await fetch('https://myip.wtf/text', { proxy });
+            const attempt = await fetch('https://myip.wtf/text', { proxy, signal: AbortSignal.timeout(5000) });
 
             if (attempt.status === 407) return 'invalid_key';
             if (attempt.ok) return 'Valid!';

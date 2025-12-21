@@ -33,6 +33,8 @@ export default (app: Elysia) => {
         return {};
     }, { body: t.Object({ url: t.String() }), cookie: t.Cookie({ session: t.String() }) });
 
+    const usersRunningBalancer: number[] = [];
+
     app.post('/$/sites/addKey', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
@@ -41,6 +43,20 @@ export default (app: Elysia) => {
         if (siteDB.userAccessLevel(body.domain, user.id) === 'none' && !user.admin) return status(401, { error: 'no permission' });
 
         if (siteDB.keyExistsOn(body.domain, body.key)) return status(403, { error: 'key already exists' });
+
+        const balancer = getBalancer(body.domain);
+        if (balancer) {
+            if (usersRunningBalancer.includes(user.id)) return status(429, { error: 'you are already running a balancer request. please wait.' });
+            usersRunningBalancer.push(user.id);
+
+            const balance = await balancer(body.key);
+
+            usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
+
+            if (balance === 'invalid_key') return { error: 'balancer has determined this key is invalid.' };
+            if (balance === 'leaked_key') return { error: 'balancer has determined this key was flagged.' };
+            siteDB.setKeyBalance(body.domain, body.key, isNaN(Number(balance)) ? balance : `$${balance}`);
+        } else siteDB.addKeyToSite(body.domain, body.key);
 
         return await siteDB.addKeyToSite(body.domain, body.key);
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
@@ -61,7 +77,13 @@ export default (app: Elysia) => {
         const keyExists = siteDB.keyExistsOn(body.domain, body.key);
         if (!keyExists) return status(404, { error: 'key not found' });
 
+        if (usersRunningBalancer.includes(user.id)) return status(429, { error: 'you are already running a balancer request. please wait.' });
+        usersRunningBalancer.push(user.id);
+
         const balance = await balancer(body.key);
+
+        usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
+
         if (balance === 'invalid_key') return status(400, { error: 'balancer has determined the key is invalid' });
         if (balance === 'leaked_key') return status(400, { error: 'balancer has determined the key was flagged' });
 

@@ -39,11 +39,10 @@ const getBalancer = (domain: string) => {
         case 'mistral.ai': return mistralBalancer;
         case 'perplexity.ai': return perplexityBalancer;
         case 'together.ai': return togetherBalancer;
-        case 'vpnapi.io': return vpnApiBalancer; 
+        case 'vpnapi.io': return vpnApiBalancer;
         case '2captcha.com': return twoCaptchaBalancer;
         default:
             console.log('no balancer found for', domain);
-
             return null;
     }
 }
