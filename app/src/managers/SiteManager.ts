@@ -27,7 +27,7 @@ class SiteManager {
         get: () => this.sites.find(site => site.domain === this.domain)!,
         canBeSorted: () => this.site.get().keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),
         isReader: (userId: number) => this.site.get().readers.some((reader) => reader.id == userId) || this.site.get().editors.some((editor) => editor.id == userId),
-        isEditor: (userId: number) => this.site.get().editors.some((editor) => editor.id == userId) || authManager.isAdmin()
+        isEditor: (userId: number) => this.site.get().editors.some((editor) => editor.id == userId)
     }
 
     async getSites() {
