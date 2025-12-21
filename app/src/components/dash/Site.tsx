@@ -69,14 +69,14 @@ const Site = observer(function Site() {
                                         </TooltipContent>
                                     </Tooltip>
 
-                                    {siteManager.site.isEditor(authManager.user.id) && <Tooltip>
+                                    <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => setBulkAddDialogOpen(true)}><ListPlus /></Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <p>bulk add keys</p>
                                         </TooltipContent>
-                                    </Tooltip>}
+                                    </Tooltip>
 
                                     {siteManager.site.canBeSorted() && siteManager.site.isEditor(authManager.user.id) && <Tooltip>
                                         <TooltipTrigger asChild>

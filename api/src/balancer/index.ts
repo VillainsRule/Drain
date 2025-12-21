@@ -23,27 +23,29 @@ const capmonsterBalancer = createCaptchaBalancer('https://api.capmonster.cloud/g
 const twoCaptchaBalancer = createCaptchaBalancer('https://api.2captcha.com/getBalance');
 
 const getBalancer = (domain: string) => {
-    if (domain === 'aimlapi.com') return aimlBalancer;
-    if (domain === 'capmonster.cloud') return capmonsterBalancer;
-    if (domain === 'cartesia.ai') return cartesiaBalancer;
-    if (domain === 'cohere.com') return cohereBalancer;
-    if (domain === 'cors.sh') return corsShBalancer;
-    if (domain === 'deepgram.com') return deepgramBalancer;
-    if (domain === 'deepseek.com') return deepseekBalancer;
-    if (domain === 'elevenlabs.io') return elevenlabsBalancer;
-    if (domain === 'gemini.google') return geminiBalancer;
-    if (domain === 'groq.com') return groqBalancer;
-    if (domain === 'https.proxy') return httpsProxy;
-    if (domain === 'ipinfo.io') return ipinfoBalancer;
-    if (domain === 'mistral.ai') return mistralBalancer;
-    if (domain === 'perplexity.ai') return perplexityBalancer;
-    if (domain === 'together.ai') return togetherBalancer;
-    if (domain === 'vpnapi.io') return vpnApiBalancer; 
-    if (domain === '2captcha.com') return twoCaptchaBalancer;
+    switch (domain) {
+        case 'aimlapi.com': return aimlBalancer;
+        case 'capmonster.cloud': return capmonsterBalancer;
+        case 'cartesia.ai': return cartesiaBalancer;
+        case 'cohere.com': return cohereBalancer;
+        case 'cors.sh': return corsShBalancer;
+        case 'deepgram.com': return deepgramBalancer;
+        case 'deepseek.com': return deepseekBalancer;
+        case 'elevenlabs.io': return elevenlabsBalancer;
+        case 'gemini.google': return geminiBalancer;
+        case 'groq.com': return groqBalancer;
+        case 'https.proxy': return httpsProxy;
+        case 'ipinfo.io': return ipinfoBalancer;
+        case 'mistral.ai': return mistralBalancer;
+        case 'perplexity.ai': return perplexityBalancer;
+        case 'together.ai': return togetherBalancer;
+        case 'vpnapi.io': return vpnApiBalancer; 
+        case '2captcha.com': return twoCaptchaBalancer;
+        default:
+            console.log('no balancer found for', domain);
 
-    console.log('no balancer found for', domain);
-
-    return null;
+            return null;
+    }
 }
 
 export default getBalancer;
