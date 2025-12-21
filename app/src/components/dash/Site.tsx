@@ -78,7 +78,7 @@ const Site = observer(function Site() {
                                         </TooltipContent>
                                     </Tooltip>
 
-                                    {siteManager.site.canBeSorted() && siteManager.site.isEditor(authManager.user.id) && <Tooltip>
+                                    {siteManager.site.canBeSorted() && <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => {
                                                 fetch('/$/sites/sortKeys', {
@@ -132,7 +132,7 @@ const Site = observer(function Site() {
                                         </TooltipContent>
                                     </Tooltip>}
 
-                                    {siteManager.site.isEditor(authManager.user.id) && <Tooltip>
+                                    <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={async () => {
                                                 const allKeys = siteManager.site.get().keys.map(k => k.token).join('\n');
@@ -142,7 +142,7 @@ const Site = observer(function Site() {
                                         <TooltipContent>
                                             <p>copy all keys</p>
                                         </TooltipContent>
-                                    </Tooltip>}
+                                    </Tooltip>
                                 </div>
                             </div>
 

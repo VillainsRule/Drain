@@ -113,7 +113,6 @@ export default (app: Elysia) => {
 
         const domainInfo = siteDB.db.sites[body.domain];
         if (!domainInfo) return status(401, { error: 'no permission' });
-        if (!domainInfo.editors.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
 
         const result = siteDB.sortKeys(body.domain);
         return result;
