@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { autorun, makeAutoObservable } from 'mobx';
 
 import axios from '@/lib/axiosLike';
 
@@ -21,13 +21,19 @@ class SiteManager {
                 actuallyBlurred = false;
             }
         };
+
+        autorun(() => {
+            this.siteRef = this.sites.find(site => site.domain === this.domain)!;
+        });
     }
 
-    site = {
-        get: () => this.sites.find(site => site.domain === this.domain)!,
-        canBeSorted: () => this.site.get().keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),
-        isReader: (userId: number) => this.site.get().readers.includes(userId) || this.site.get().editors.includes(userId),
-        isEditor: (userId: number) => this.site.get().editors.includes(userId)
+    siteRef: FrontendSite = {} as FrontendSite;
+
+    current = {
+        site: this.siteRef,
+        isReader: (userId: number) => this.siteRef.readers.includes(userId) || this.siteRef.editors.includes(userId),
+        isEditor: (userId: number) => this.siteRef.editors.includes(userId),
+        sortable: () => this.siteRef.keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),
     }
 
     async getSites() {

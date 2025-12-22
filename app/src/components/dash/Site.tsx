@@ -46,7 +46,7 @@ const Site = observer(function Site() {
 
     return (
         <>
-            {!siteManager.site.get() ? (<>something went wrong.</>) : (
+            {!siteManager.siteRef ? (<>loading...</>) : (
                 <div className='flex justify-center items-center w-full h-full overflow-y-auto overflow-x-hidden drain-scrollbar'>
                     <Tabs className='mt-5 md:w-4/5 w-11/12 h-full' defaultValue='keys'>
                         {Boolean(authManager.isAdmin()) && (
@@ -58,7 +58,7 @@ const Site = observer(function Site() {
 
                         <TabsContent value='keys' className='flex flex-col flex-1 h-full'>
                             <div className='flex justify-between items-center flex-col lg:flex-row w-full mt-2 gap-3 lg:gap-0'>
-                                <h2 className='text-2xl font-bold'>{siteManager.site.get().domain} x{siteManager.site.get().keys.length}</h2>
+                                <h2 className='text-2xl font-bold'>{siteManager.domain} x{siteManager.siteRef.keys.length}</h2>
                                 <div className='flex gap-3'>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
@@ -78,13 +78,13 @@ const Site = observer(function Site() {
                                         </TooltipContent>
                                     </Tooltip>
 
-                                    {siteManager.site.canBeSorted() && <Tooltip>
+                                    {siteManager.current.sortable() && <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => {
                                                 fetch('/$/sites/sortKeys', {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ domain: siteManager.site.get().domain })
+                                                    body: JSON.stringify({ domain: siteManager.domain })
                                                 }).then((r) => r.json()).then((data) => {
                                                     if (data.error) {
                                                         console.error(data);
@@ -101,13 +101,13 @@ const Site = observer(function Site() {
                                     {authManager.isAdmin() && <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button className='w-12 py-2 rounded-md transition-colors duration-150 hidden md:flex' onClick={async () => {
-                                                const hasOver50Keys = siteManager.site.get().keys.length > 50;
+                                                const hasOver50Keys = siteManager.siteRef.keys.length > 50;
                                                 if (hasOver50Keys && !confirm('this site has over 50 keys, rechecking all of them MAY HIT RATELIMITS AND GET THE CHECKER IP BANNED. are you sure you want to proceed?')) return;
 
-                                                for (const key of siteManager.site.get().keys) {
+                                                for (const key of siteManager.siteRef.keys) {
                                                     await new Promise((r) => {
                                                         axios.post('/$/sites/balancer', {
-                                                            domain: siteManager.site.get().domain,
+                                                            domain: siteManager.domain,
                                                             key: key.token
                                                         }).then((resp) => {
                                                             if (resp.data.error) {
@@ -135,7 +135,7 @@ const Site = observer(function Site() {
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={async () => {
-                                                const allKeys = siteManager.site.get().keys.map(k => k.token).join('\n');
+                                                const allKeys = siteManager.siteRef.keys.map(k => k.token).join('\n');
                                                 await navigator.clipboard.writeText(allKeys);
                                             }}><Copy /></Button>
                                         </TooltipTrigger>
@@ -147,7 +147,7 @@ const Site = observer(function Site() {
                             </div>
 
                             <div className='grow flex flex-col items-center justify-start gap-1 w-full mt-4'>
-                                {siteManager.site.get().keys.map((key, i) => (
+                                {siteManager.siteRef.keys.map((key, i) => (
                                     <div key={i} className='flex items-center justify-center w-full rounded-md md:px-7 hover:bg-gray-50 transition-colors duration-125 py-2 cursor-pointer gap-2 md:gap-5' style={{
                                         color: validKeys.includes(key.token) ? 'green' : invalidKeys.includes(key.token) ? 'red' : ''
                                     }}>
@@ -160,9 +160,9 @@ const Site = observer(function Site() {
                                             <Copy className='h-4 w-4' />
                                         </Button>
 
-                                        {Boolean(siteManager.site.get().supportsBalancer && (siteManager.site.isEditor(authManager.user.id) || authManager.user.admin)) && <Button variant='outline' size='sm' onClick={() => {
+                                        {Boolean(siteManager.siteRef.supportsBalancer && (siteManager.current.isEditor(authManager.user.id) || authManager.user.admin)) && <Button variant='outline' size='sm' onClick={() => {
                                             axios.post('/$/sites/balancer', {
-                                                domain: siteManager.site.get().domain,
+                                                domain: siteManager.domain,
                                                 key: key.token
                                             }).then((resp) => {
                                                 if (resp.data.error) {
@@ -183,7 +183,7 @@ const Site = observer(function Site() {
 
                                         {authManager.isAdmin() && <Button variant='destructive' size='sm' className='hidden md:flex' onClick={() => {
                                             axios.post('/$/sites/removeKey', {
-                                                domain: siteManager.site.get().domain,
+                                                domain: siteManager.domain,
                                                 key: key.token
                                             }).then((resp) => {
                                                 if (resp.data.error) {
@@ -203,19 +203,19 @@ const Site = observer(function Site() {
 
                         {authManager.isAdmin() && <TabsContent value='access' className='flex flex-col flex-1 h-full'>
                             <div className='flex justify-between items-center flex-col lg:flex-row gap-3 lg:gap-0 w-full mt-2'>
-                                <h2 className='text-2xl font-bold'>access@{siteManager.site.get().domain}</h2>
+                                <h2 className='text-2xl font-bold'>access@{siteManager.domain}</h2>
                                 <div className='flex gap-3'>
                                     <Button className='w-40 py-2 rounded-md transition-colors duration-150' onClick={() => setAddUserDialogOpen(true)}>invite user</Button>
                                 </div>
                             </div>
 
                             <div className='grow flex flex-col items-center justify-start gap-1 w-full mt-4'>
-                                {[...siteManager.site.get().editors, ...siteManager.site.get().readers].map((userId, i) => {
-                                    const role = siteManager.site.isEditor(userId) ? 'editor' : 'reader';
+                                {[...siteManager.siteRef.editors, ...siteManager.siteRef.readers].map((userId, i) => {
+                                    const role = siteManager.current.isEditor(userId) ? 'editor' : 'reader';
 
                                     const changeRole = (newRole: 'reader' | 'editor') => {
                                         axios.post('/$/sites/access/setRole', {
-                                            domain: siteManager.site.get().domain,
+                                            domain: siteManager.domain,
                                             userId,
                                             role: newRole
                                         }).then((resp) => {
@@ -248,7 +248,7 @@ const Site = observer(function Site() {
 
                                                 <Button variant='destructive' onClick={() => {
                                                     axios.post('/$/sites/access/removeUser', {
-                                                        domain: siteManager.site.get().domain,
+                                                        domain: siteManager.domain,
                                                         userId
                                                     }).then((resp) => {
                                                         if (resp.data.error) {
@@ -272,7 +272,7 @@ const Site = observer(function Site() {
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>add key</DialogTitle>
-                                <DialogDescription>add a key to {siteManager.site.get().domain}!</DialogDescription>
+                                <DialogDescription>add a key to {siteManager.domain}!</DialogDescription>
                             </DialogHeader>
 
                             <Input placeholder={fakeKeys[0]} id='keyAddInput' className='w-full' onKeyUp={(e) => e.key === 'Enter' && (document.querySelector('#keyAddButton') as HTMLButtonElement).click()} />
@@ -281,7 +281,7 @@ const Site = observer(function Site() {
 
                             <Button className='w-3/4' id='keyAddButton' onClick={() => {
                                 axios.post('/$/sites/addKey', {
-                                    domain: siteManager.site.get().domain,
+                                    domain: siteManager.domain,
                                     key: (document.getElementById('keyAddInput') as HTMLInputElement).value
                                 }).then((resp) => {
                                     if (resp.data.error) setKeyAddError(resp.data.error);
@@ -305,7 +305,7 @@ const Site = observer(function Site() {
                         <DialogContent className='max-h-9/10'>
                             <DialogHeader>
                                 <DialogTitle>bulk add keys</DialogTitle>
-                                <DialogDescription>add multiple keys to {siteManager.site.get().domain}!</DialogDescription>
+                                <DialogDescription>add multiple keys to {siteManager.domain}!</DialogDescription>
                             </DialogHeader>
 
                             <Textarea placeholder={fakeKeys.join('\n')} id='bulkAddTextarea' className='max-h-74 overflow-auto' />
@@ -322,7 +322,7 @@ const Site = observer(function Site() {
                                     const key = keys[i];
 
                                     axios.post('/$/sites/addKey', {
-                                        domain: siteManager.site.get().domain,
+                                        domain: siteManager.domain,
                                         key
                                     }).then((resp) => {
                                         if (resp.data.error) setBulkAddError(`${key}: ${resp.data.error}`);
@@ -347,18 +347,18 @@ const Site = observer(function Site() {
                         <DialogContent className='max-h-9/10'>
                             <DialogHeader>
                                 <DialogTitle>invite a user</DialogTitle>
-                                <DialogDescription>invite a user to {siteManager.site.get().domain}!</DialogDescription>
+                                <DialogDescription>invite a user to {siteManager.domain}!</DialogDescription>
                             </DialogHeader>
 
                             <AutoComplete options={adminManager.users
-                                .filter(e => !e.admin && !siteManager.site.isReader(e.id))
+                                .filter(e => !e.admin && !siteManager.current.isReader(e.id))
                                 .map(e => ({ value: e.username, label: '@' + e.username }))} onValueChange={(e) => addUserSetSelected(e.value)} />
 
                             {addUserError && (<div className='text-red-500'>{addUserError}</div>)}
 
                             <Button className='w-3/4' onClick={async () => {
                                 axios.post('/$/sites/access/addUser', {
-                                    domain: siteManager.site.get().domain,
+                                    domain: siteManager.domain,
                                     username: addUserSelected
                                 }).then((resp) => {
                                     if (resp.data.error) setAddUserError(resp.data.error);
