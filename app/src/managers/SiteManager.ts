@@ -30,7 +30,6 @@ class SiteManager {
     siteRef: FrontendSite = {} as FrontendSite;
 
     current = {
-        site: this.siteRef,
         isReader: (userId: number) => this.siteRef.readers.includes(userId) || this.siteRef.editors.includes(userId),
         isEditor: (userId: number) => this.siteRef.editors.includes(userId),
         sortable: () => this.siteRef.keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),

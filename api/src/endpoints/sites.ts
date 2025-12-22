@@ -137,8 +137,8 @@ export default (app: Elysia) => {
         const domainInfo = siteDB.db.sites[body.domain];
         if (!domainInfo) return status(404, { error: 'site does not exist' });
 
-        const doesExist = userDB.userExists(body.userId);
-        if (!doesExist) return status(404, { error: 'user not found' });
+        const userExists = userDB.userExists(body.userId);
+        if (!userExists) return status(404, { error: 'user not found' });
 
         if (body.role === 'reader') {
             if (!domainInfo.readers.includes(body.userId)) domainInfo.readers.push(body.userId);
@@ -160,8 +160,8 @@ export default (app: Elysia) => {
         const domainInfo = siteDB.db.sites[body.domain];
         if (!domainInfo) return status(404, { error: 'site does not exist' });
 
-        const targetUser = userDB.userExists(body.userId);
-        if (!targetUser) return status(404, { error: 'user not found' });
+        const userExists = userDB.userExists(body.userId);
+        if (!userExists) return status(404, { error: 'user not found' });
 
         domainInfo.readers = domainInfo.readers.filter(id => id !== body.userId);
         domainInfo.editors = domainInfo.editors.filter(id => id !== body.userId);
