@@ -15,8 +15,8 @@ export interface SiteKey {
 export interface FrontendSite {
     domain: string;
     public: boolean;
-    readers: PublicUser[];
-    editors: PublicUser[];
+    readers: number[];
+    editors: number[];
     keys: SiteKey[];
     supportsBalancer: boolean;
 }

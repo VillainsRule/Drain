@@ -46,22 +46,13 @@ export interface SiteKey {
     balance: string;
 }
 
-interface BaseSite {
+interface Site {
     domain: string;
     public: boolean;
-    keys: SiteKey[];
-    supportsBalancer?: boolean;
-}
-
-export interface FrontendSite extends BaseSite {
-    readers: PublicUser[];
-    editors: PublicUser[];
-    supportsBalancer: boolean;
-}
-
-export interface BackendSite extends BaseSite {
     readers: number[];
     editors: number[];
+    keys: SiteKey[];
+    supportsBalancer?: boolean;
 }
 
 export interface IConfigDB {

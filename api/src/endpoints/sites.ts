@@ -10,13 +10,7 @@ export default (app: Elysia) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const rawSites = siteDB.getUserSites(user.id);
-        const sites = rawSites.map((site) => ({
-            ...site,
-            readers: site.readers.map((userId) => userDB.getPublicUser(userId)!),
-            editors: site.editors.map((userId) => userDB.getPublicUser(userId)!)
-        }));
-
+        const sites = siteDB.getUserSites(user.id);
         sites.forEach((site) => (site.supportsBalancer = !!getBalancer(site.domain)));
 
         return { sites };
@@ -143,21 +137,21 @@ export default (app: Elysia) => {
         const domainInfo = siteDB.db.sites[body.domain];
         if (!domainInfo) return status(404, { error: 'site does not exist' });
 
-        const targetUser = userDB.getUserByUsername(body.username);
-        if (!targetUser) return status(404, { error: 'user not found' });
+        const doesExist = userDB.userExists(body.userId);
+        if (!doesExist) return status(404, { error: 'user not found' });
 
         if (body.role === 'reader') {
-            if (!domainInfo.readers.includes(targetUser.id)) domainInfo.readers.push(targetUser.id);
-            domainInfo.editors = domainInfo.editors.filter(id => id !== targetUser.id);
+            if (!domainInfo.readers.includes(body.userId)) domainInfo.readers.push(body.userId);
+            domainInfo.editors = domainInfo.editors.filter(id => id !== body.userId);
         } else {
-            if (!domainInfo.editors.includes(targetUser.id)) domainInfo.editors.push(targetUser.id);
-            domainInfo.readers = domainInfo.readers.filter(id => id !== targetUser.id);
+            if (!domainInfo.editors.includes(body.userId)) domainInfo.editors.push(body.userId);
+            domainInfo.readers = domainInfo.readers.filter(id => id !== body.userId);
         }
 
         siteDB.updateDB();
 
         return {};
-    }, { body: t.Object({ domain: t.String(), username: t.String(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), userId: t.Number(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/sites/access/removeUser', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
@@ -166,16 +160,16 @@ export default (app: Elysia) => {
         const domainInfo = siteDB.db.sites[body.domain];
         if (!domainInfo) return status(404, { error: 'site does not exist' });
 
-        const targetUser = userDB.getUserByUsername(body.username);
+        const targetUser = userDB.userExists(body.userId);
         if (!targetUser) return status(404, { error: 'user not found' });
 
-        domainInfo.readers = domainInfo.readers.filter(id => id !== targetUser.id);
-        domainInfo.editors = domainInfo.editors.filter(id => id !== targetUser.id);
+        domainInfo.readers = domainInfo.readers.filter(id => id !== body.userId);
+        domainInfo.editors = domainInfo.editors.filter(id => id !== body.userId);
 
         siteDB.updateDB();
 
         return {};
-    }, { body: t.Object({ domain: t.String(), username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/sites/delete', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);

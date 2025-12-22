@@ -26,8 +26,8 @@ class SiteManager {
     site = {
         get: () => this.sites.find(site => site.domain === this.domain)!,
         canBeSorted: () => this.site.get().keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),
-        isReader: (userId: number) => this.site.get().readers.some((reader) => reader.id == userId) || this.site.get().editors.some((editor) => editor.id == userId),
-        isEditor: (userId: number) => this.site.get().editors.some((editor) => editor.id == userId)
+        isReader: (userId: number) => this.site.get().readers.includes(userId) || this.site.get().editors.includes(userId),
+        isEditor: (userId: number) => this.site.get().editors.includes(userId)
     }
 
     async getSites() {

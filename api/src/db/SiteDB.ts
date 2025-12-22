@@ -3,9 +3,9 @@ import path from 'node:path';
 import BaseDB from './BaseDB';
 import userDB from './UserDB';
 
-import { BackendSite } from '../types';
+import { Site } from '../types';
 
-export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
+export class SiteDB extends BaseDB<{ sites: Record<string, Site> }> {
     constructor() {
         super(path.join(import.meta.dirname, '..', '..', 'db', 'sites.db'));
     }
@@ -48,7 +48,7 @@ export class SiteDB extends BaseDB<{ sites: Record<string, BackendSite> }> {
         return {};
     }
 
-    getUserSites(userId: number): BackendSite[] {
+    getUserSites(userId: number): Site[] {
         const user = userDB.getPublicUser(userId);
         if (!user) return [];
 

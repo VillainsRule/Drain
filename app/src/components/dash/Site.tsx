@@ -201,7 +201,7 @@ const Site = observer(function Site() {
                             </div>
                         </TabsContent>
 
-                        <TabsContent value='access' className='flex flex-col flex-1 h-full'>
+                        {authManager.isAdmin() && <TabsContent value='access' className='flex flex-col flex-1 h-full'>
                             <div className='flex justify-between items-center flex-col lg:flex-row gap-3 lg:gap-0 w-full mt-2'>
                                 <h2 className='text-2xl font-bold'>access@{siteManager.site.get().domain}</h2>
                                 <div className='flex gap-3'>
@@ -210,28 +210,28 @@ const Site = observer(function Site() {
                             </div>
 
                             <div className='grow flex flex-col items-center justify-start gap-1 w-full mt-4'>
-                                {[...siteManager.site.get().editors, ...siteManager.site.get().readers].map((user, i) => {
-                                    const role = siteManager.site.isEditor(user.id) ? 'editor' : 'reader';
+                                {[...siteManager.site.get().editors, ...siteManager.site.get().readers].map((userId, i) => {
+                                    const role = siteManager.site.isEditor(userId) ? 'editor' : 'reader';
 
                                     const changeRole = (newRole: 'reader' | 'editor') => {
                                         axios.post('/$/sites/access/setRole', {
                                             domain: siteManager.site.get().domain,
-                                            username: user.username,
+                                            userId,
                                             role: newRole
                                         }).then((resp) => {
                                             if (resp.data.error) {
                                                 console.error(resp.data);
                                                 alert(resp.data.error);
                                             } else siteManager.getSites();
-                                        }).catch((err) => {
-                                            console.error(err);
-                                        });
+                                        }).catch((err) => console.error(err));
                                     }
+
+                                    const u = adminManager.getUser(userId);
 
                                     return (
                                         <div className='flex justify-between w-full py-3 px-4 md:px-5 border rounded-md' key={i}>
                                             <div className='flex items-center gap-3'>
-                                                <span className='text-lg font-bold'>@{user.username}</span>
+                                                <span className='text-lg font-bold'>@{u?.username}</span>
                                             </div>
 
                                             <div className='flex gap-3'>
@@ -249,7 +249,7 @@ const Site = observer(function Site() {
                                                 <Button variant='destructive' onClick={() => {
                                                     axios.post('/$/sites/access/removeUser', {
                                                         domain: siteManager.site.get().domain,
-                                                        username: user.username
+                                                        userId
                                                     }).then((resp) => {
                                                         if (resp.data.error) {
                                                             console.error(resp.data);
@@ -265,7 +265,7 @@ const Site = observer(function Site() {
                                     )
                                 })}
                             </div>
-                        </TabsContent>
+                        </TabsContent>}
                     </Tabs>
 
                     <Dialog open={addKeyDialogOpen} onOpenChange={setAddKeyDialogOpen}>

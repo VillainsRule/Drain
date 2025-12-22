@@ -29,6 +29,10 @@ class AdminManager {
         const req = await axios.post('/$/admin/secure/instance');
         this.instanceInformation = req.data;
     }
+
+    getUser(id: number) {
+        return this.users.find(u => u.id === id);
+    }
 }
 
 const adminManager = new AdminManager();

@@ -21,7 +21,7 @@ export default function auth(app: Elysia) {
     const isWebAuthnConfigured = typeof Bun.env.RP_ID === 'string' && typeof Bun.env.RP_NAME === 'string';
 
     app.post('/$/auth/account', async ({ cookie: { session } }) => {
-        if (typeof session.value !== 'string') return status(401, { error: 'not logged in' });
+        if (typeof session.value !== 'string') return status(401, { error: 'not logged in', isWebAuthnConfigured });
 
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });

@@ -276,6 +276,10 @@ export class UserDB extends BaseDB<UserDBType> {
 
         return apiKey.key;
     }
+
+    userExists(id: number): boolean {
+        return this.db.users.some(u => u.id === id);
+    }
 }
 
 const userDB = new UserDB();
