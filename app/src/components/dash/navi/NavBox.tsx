@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import Plus from 'lucide-react/icons/plus';
@@ -12,7 +13,6 @@ import axios from '@/lib/axiosLike';
 
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 const NavBox = observer(function NavBox() {
     const { pathname } = useLocation();
