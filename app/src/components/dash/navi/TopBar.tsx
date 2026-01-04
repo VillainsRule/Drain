@@ -1,6 +1,6 @@
+import { useEffect, type Dispatch, type SetStateAction } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-
-import { useAppState } from '@/components/AppProvider';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
@@ -15,8 +15,20 @@ import authManager from '@/managers/AuthManager';
 
 import Logo from '@/assets/Logo';
 
-const TopBar = observer(function TopBar() {
-    const { lastScreen, screen, setScreen } = useAppState();
+const TopBar = observer(function TopBar({ setIsNavboxOpen }: { setIsNavboxOpen: Dispatch<SetStateAction<boolean>> }) {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const listener = () => {
+            if (window.innerWidth >= 768) setIsNavboxOpen(false);
+        }
+
+        document.addEventListener('resize', listener);
+
+        return () => {
+            document.removeEventListener('resize', listener);
+        };
+    }, []);
 
     return (
         <>
@@ -27,7 +39,7 @@ const TopBar = observer(function TopBar() {
                 <div className='flex items-center gap-6'>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Code className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('apikeys.user')} />
+                            <Code className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => navigate('/user/apiKeys')} />
                         </TooltipTrigger>
                         <TooltipContent>
                             <span>Drain API Keys</span>
@@ -36,7 +48,7 @@ const TopBar = observer(function TopBar() {
 
                     {authManager.webAuthnEnabled && <Tooltip>
                         <TooltipTrigger asChild>
-                            <Fingerprint className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('passkeys.user')} />
+                            <Fingerprint className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => navigate('/user/passkeys')} />
                         </TooltipTrigger>
                         <TooltipContent>
                             <span>Passkeys</span>
@@ -45,7 +57,7 @@ const TopBar = observer(function TopBar() {
 
                     {authManager.isAdmin() && <Tooltip>
                         <TooltipTrigger asChild>
-                            <Wrench className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('config.admin')} />
+                            <Wrench className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => navigate('/admin/config')} />
                         </TooltipTrigger>
                         <TooltipContent>
                             <span>Instance Config</span>
@@ -54,7 +66,7 @@ const TopBar = observer(function TopBar() {
 
                     {authManager.isAdmin() && <Tooltip>
                         <TooltipTrigger asChild>
-                            <UserCog className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => setScreen('users.admin')} />
+                            <UserCog className='w-6 h-6 cursor-pointer text-gray-700' onClick={() => navigate('/admin/users')} />
                         </TooltipTrigger>
                         <TooltipContent>
                             <span>User Management</span>
@@ -74,12 +86,12 @@ const TopBar = observer(function TopBar() {
 
             {/* mobile bar */}
             <div className='fixed bottom-0 w-[calc(100%-48px)] flex md:hidden justify-between items-center py-5 px-6 z-30'>
-                <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => setScreen('none')}>
+                <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => navigate('/')}>
                     <Logo className='w-9 h-9' />
                     <h1 className='text-3xl font-bold text-neutral-800 drop-shadow-md'>drain!</h1>
                 </div>
 
-                <Hamburger className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setScreen(screen === 'navbox' ? lastScreen : 'navbox')} />
+                <Hamburger className='w-8 h-8 cursor-pointer text-gray-700' onClick={() => setIsNavboxOpen(o => !o)} />
             </div>
         </>
     )

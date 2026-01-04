@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 
 import { startAuthentication } from '@simplewebauthn/browser'
@@ -16,6 +17,8 @@ import authManager from '@/managers/AuthManager'
 import Logo from '@/assets/Logo'
 
 const Auth = observer(function Auth() {
+    const navigate = useNavigate();
+
     const [standardError, setStandardError] = useState<string>('');
     const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
@@ -24,11 +27,15 @@ const Auth = observer(function Auth() {
     const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
     const [inviteError, setInviteError] = useState<string>('');
     const inviteCodeRef = useRef<HTMLInputElement>(null);
-    
+
     const [inviteDialog2Open, setInviteDialog2Open] = useState(false);
     const [inviteUsername, setInviteUsername] = useState<string>('');
     const [inviteCode, setInviteCode] = useState<string>('');
     const invitePasswordRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (authManager.user.id) navigate('/');
+    }, []);
 
     return (
         <div className='min-h-screen flex items-center justify-center bg-gray-50'>
@@ -60,8 +67,10 @@ const Auth = observer(function Auth() {
                             username: usernameRef.current!.value,
                             password: passwordRef.current!.value
                         }).then((response) => {
-                            if (response.data.user) authManager.setAuth(response.data.user);
-                            else setStandardError(response.data.error);
+                            if (response.data.user) {
+                                authManager.setAuth(response.data.user);
+                                navigate('/');
+                            } else setStandardError(response.data.error);
                         })
                     }}>Log In</Button>
 

@@ -16,6 +16,15 @@ export default defineConfig({
         }
     },
 
+    server: {
+        proxy: {
+            '^/$/.*': {
+                target: 'http://localhost:4422',
+                changeOrigin: true
+            }
+        }
+    },
+
     build: {
         rollupOptions: {
             output: {
@@ -23,6 +32,7 @@ export default defineConfig({
                 entryFileNames: '$/[hash].[name].js',
                 assetFileNames: '$/[hash].[name][extname]'
             }
-        }
+        },
+        chunkSizeWarningLimit: 750
     }
 })

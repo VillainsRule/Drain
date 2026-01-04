@@ -4,7 +4,7 @@
     "type": "module",
     "main": "src/main.ts",
     "scripts": {
-        "dev": "bun --watch src/main.ts"
+        "dev": "CORS=1 bun --watch src/main.ts"
     },
     "dependencies": {
         "@simplewebauthn/server": "^13.2.2",

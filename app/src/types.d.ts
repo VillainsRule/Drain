@@ -14,11 +14,11 @@ export interface SiteKey {
 
 export interface FrontendSite {
     domain: string;
-    public: boolean;
     readers: number[];
     editors: number[];
     keys: SiteKey[];
     supportsBalancer: boolean;
+    resolvedReaders: Record<number, string>;
 }
 
 export interface InstanceConfiguration {

@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { configure, makeAutoObservable } from 'mobx';
 
 import axios from '@/lib/axiosLike';
 
@@ -6,6 +6,8 @@ import adminManager from './AdminManager';
 import siteManager from './SiteManager';
 
 import type { APIKey } from '@/types';
+
+configure({ enforceActions: 'never' });
 
 class AuthManager {
     hasInit = false;
@@ -73,9 +75,7 @@ class AuthManager {
 
     async logout() {
         await axios.post('/$/auth/logout');
-
-        this.loggedIn = false;
-        this.user = this.placeholderUser;
+        location.reload();
     }
 }
 

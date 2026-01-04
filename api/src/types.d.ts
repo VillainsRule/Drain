@@ -48,7 +48,6 @@ export interface SiteKey {
 
 interface Site {
     domain: string;
-    public: boolean;
     readers: number[];
     editors: number[];
     keys: SiteKey[];

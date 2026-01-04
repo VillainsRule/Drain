@@ -34,18 +34,17 @@ export class SiteDB extends BaseDB<{ sites: Record<string, Site> }> {
         return site.keys.some(key => key.token === token);
     }
 
-    addSite(domain: string): { error?: string } {
+    addSite(domain: string, extraEditorId?: number) {
+        if (this.db.sites[domain]) return;
+
         this.db.sites[domain] = {
             domain,
-            public: false,
             readers: [],
-            editors: [],
+            editors: extraEditorId ? [extraEditorId] : [],
             keys: []
         };
 
         this.updateDB();
-
-        return {};
     }
 
     getUserSites(userId: number): Site[] {

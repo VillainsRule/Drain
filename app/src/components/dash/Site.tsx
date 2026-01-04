@@ -46,10 +46,10 @@ const Site = observer(function Site() {
 
     return (
         <>
-            {!siteManager.siteRef ? (<>loading...</>) : (
+            {!siteManager.siteRef ? (<>loading site (no siteRef)...</>) : (
                 <div className='flex justify-center items-center w-full h-full overflow-y-auto overflow-x-hidden drain-scrollbar'>
                     <Tabs className='mt-5 md:w-4/5 w-11/12 h-full' defaultValue='keys'>
-                        {Boolean(authManager.isAdmin()) && (
+                        {(authManager.isAdmin() || siteManager.current.isEditor(authManager.user.id)) && (
                             <TabsList className='w-full'>
                                 <TabsTrigger value='keys'>keys</TabsTrigger>
                                 <TabsTrigger value='access'>access</TabsTrigger>
@@ -201,7 +201,7 @@ const Site = observer(function Site() {
                             </div>
                         </TabsContent>
 
-                        {authManager.isAdmin() && <TabsContent value='access' className='flex flex-col flex-1 h-full'>
+                        {(authManager.isAdmin() || siteManager.current.isEditor(authManager.user.id)) && <TabsContent value='access' className='flex flex-col flex-1 h-full'>
                             <div className='flex justify-between items-center flex-col lg:flex-row gap-3 lg:gap-0 w-full mt-2'>
                                 <h2 className='text-2xl font-bold'>access@{siteManager.domain}</h2>
                                 <div className='flex gap-3'>
@@ -226,41 +226,47 @@ const Site = observer(function Site() {
                                         }).catch((err) => console.error(err));
                                     }
 
-                                    const u = adminManager.getUser(userId);
+                                    const resolvedUsername = adminManager.getUser(userId)?.username || siteManager.siteRef.resolvedReaders[userId] || (userId == authManager.user.id ? authManager.user.username : null);
 
                                     return (
-                                        <div className='flex justify-between w-full py-3 px-4 md:px-5 border rounded-md' key={i}>
-                                            <div className='flex items-center gap-3'>
-                                                <span className='text-lg font-bold'>@{u?.username}</span>
-                                            </div>
+                                        <div className='w-full py-3 px-4 md:px-5 border rounded-md' key={i}>
+                                            <Tooltip>
+                                                <TooltipTrigger className='flex justify-between w-full'>
+                                                    <div className='flex items-center gap-3'>
+                                                        <span className='text-lg font-bold'>{resolvedUsername || '?'}</span>
+                                                    </div>
 
-                                            <div className='flex gap-3'>
-                                                <Select value={role} onValueChange={(value) => changeRole(value as 'reader' | 'editor')}>
-                                                    <SelectTrigger>
-                                                        <SelectValue>role: {role}</SelectValue>
-                                                    </SelectTrigger>
+                                                    <div className='flex gap-3'>
+                                                        <Select value={role} onValueChange={(value) => changeRole(value as 'reader' | 'editor')} disabled={!resolvedUsername}>
+                                                            <SelectTrigger>
+                                                                <SelectValue>role: {role}</SelectValue>
+                                                            </SelectTrigger>
 
-                                                    <SelectContent>
-                                                        <SelectItem value='reader'>Viewer</SelectItem>
-                                                        <SelectItem value='editor'>Editor</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                            <SelectContent>
+                                                                <SelectItem value='reader'>Viewer</SelectItem>
+                                                                <SelectItem value='editor'>Editor</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
 
-                                                <Button variant='destructive' onClick={() => {
-                                                    axios.post('/$/sites/access/removeUser', {
-                                                        domain: siteManager.domain,
-                                                        userId
-                                                    }).then((resp) => {
-                                                        if (resp.data.error) {
-                                                            console.error(resp.data);
-                                                            alert(resp.data.error);
-                                                        } else siteManager.getSites();
-                                                    });
-                                                }}>
-                                                    <span className='hidden md:flex'>revoke access</span>
-                                                    <Trash className='h-4 w-4 md:hidden' />
-                                                </Button>
-                                            </div>
+                                                        <Button variant='destructive' onClick={() => {
+                                                            axios.post('/$/sites/access/removeUser', {
+                                                                domain: siteManager.domain,
+                                                                userId
+                                                            }).then((resp) => {
+                                                                if (resp.data.error) {
+                                                                    console.error(resp.data);
+                                                                    alert(resp.data.error);
+                                                                } else siteManager.getSites();
+                                                            });
+                                                        }}>
+                                                            <span className='hidden md:flex'>revoke access</span>
+                                                            <Trash className='h-4 w-4 md:hidden' />
+                                                        </Button>
+                                                    </div>
+                                                </TooltipTrigger>
+
+                                                {!resolvedUsername && <TooltipContent>this user is another editor, which you cannot view or modify</TooltipContent>}
+                                            </Tooltip>
                                         </div>
                                     )
                                 })}

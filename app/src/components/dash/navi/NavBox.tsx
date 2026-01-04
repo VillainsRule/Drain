@@ -12,11 +12,11 @@ import axios from '@/lib/axiosLike';
 
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
-
-import { useAppState } from '@/components/AppProvider';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const NavBox = observer(function NavBox() {
-    const { screen, setScreen, setDomain } = useAppState();
+    const { pathname } = useLocation();
+    const navigate = useNavigate();
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [siteAddError, setSiteAddError] = useState('');
@@ -34,17 +34,18 @@ const NavBox = observer(function NavBox() {
                                     <ContextMenuTrigger asChild>
                                         <div
                                             className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer
-                                            ${screen === 'site' && siteManager.domain === site.domain ? 'bg-blue-100 border border-blue-300 shadow' : 'hover:bg-neutral-100'}`}
+                                            ${pathname.startsWith('/domain/') && siteManager.domain === site.domain ? 'bg-blue-100 border border-blue-300 shadow' : 'hover:bg-neutral-100'}`}
                                             onClick={e => {
                                                 if (!(e.target as HTMLElement).classList.contains('no-click')) {
-                                                    setDomain(site.domain);
-                                                    setScreen('site');
+                                                    siteManager.domain = site.domain;
+                                                    navigate('/domain/' + site.domain);
                                                 }
                                             }}
                                         >
-                                            <span className={`text-lg font-medium ${screen === 'site' && siteManager.domain === site.domain ? 'text-blue-700' : 'text-neutral-800'}`}>{site.domain}</span>
+                                            <span className={`text-lg font-medium ${pathname.startsWith('/domain/') && siteManager.domain === site.domain ? 'text-blue-700' : 'text-neutral-800'}`}>{site.domain}</span>
                                         </div>
                                     </ContextMenuTrigger>
+
                                     <ContextMenuContent>
                                         <ContextMenuItem
                                             className='no-click'
@@ -52,6 +53,7 @@ const NavBox = observer(function NavBox() {
                                         >
                                             Copy URL
                                         </ContextMenuItem>
+
                                         {authManager.isAdmin() && (
                                             <ContextMenuItem
                                                 className='text-red-500 no-click'
@@ -61,8 +63,8 @@ const NavBox = observer(function NavBox() {
                                                             alert(resp.data.error);
                                                         } else {
                                                             siteManager.getSites();
-                                                            setDomain('');
-                                                            setScreen('none');
+                                                            siteManager.domain = '';
+                                                            navigate('/');
                                                         }
                                                     });
                                                 }}

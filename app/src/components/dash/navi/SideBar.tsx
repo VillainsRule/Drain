@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import Plus from 'lucide-react/icons/plus';
@@ -13,12 +14,11 @@ import axios from '@/lib/axiosLike';
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
 
-import { useAppState } from '@/components/AppProvider';
-
 import Logo from '@/assets/Logo'
 
 const SideBar = observer(function SideBar() {
-    const { screen, setScreen, setDomain } = useAppState();
+    const { pathname } = useLocation();
+    const navigate = useNavigate();
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [siteAddError, setSiteAddError] = useState('');
@@ -30,7 +30,7 @@ const SideBar = observer(function SideBar() {
             <div className='border-neutral-200 w-72 h-full flex flex-col px-6 py-8 fixed left-0 top-0 bottom-0 z-20'>
                 <div className='flex flex-col justify-between h-full w-full items-center'>
                     <div className='flex flex-col items-center gap-4 mb-4 w-full h-full'>
-                        <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => setScreen('none')}>
+                        <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => navigate('/')}>
                             <Logo className='w-12 h-12 rounded-xl shadow-md border border-neutral-300 p-2' />
                             <h1 className='text-4xl font-extrabold tracking-tight text-neutral-800 drop-shadow-sm'>drain</h1>
                         </div>
@@ -53,15 +53,15 @@ const SideBar = observer(function SideBar() {
                                     <ContextMenuTrigger asChild>
                                         <div
                                             className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer
-                                            ${screen === 'site' && siteManager.domain === site.domain ? 'bg-blue-100 border border-blue-300 shadow' : 'hover:bg-neutral-100'}`}
+                                            ${pathname.startsWith('/domain/') && siteManager.domain === site.domain ? 'bg-blue-100 border border-blue-300 shadow' : 'hover:bg-neutral-100'}`}
                                             onClick={e => {
                                                 if (!(e.target as HTMLElement).classList.contains('no-click')) {
-                                                    setDomain(site.domain);
-                                                    setScreen('site');
+                                                    siteManager.domain = site.domain;
+                                                    navigate('/domain/' + site.domain);
                                                 }
                                             }}
                                         >
-                                            <span className={`text-lg font-medium ${screen === 'site' && siteManager.domain === site.domain ? 'text-blue-700' : 'text-neutral-800'}`}>{site.domain}</span>
+                                            <span className={`text-lg font-medium ${pathname.startsWith('/domain/') && siteManager.domain === site.domain ? 'text-blue-700' : 'text-neutral-800'}`}>{site.domain}</span>
                                         </div>
                                     </ContextMenuTrigger>
                                     <ContextMenuContent>
@@ -80,8 +80,8 @@ const SideBar = observer(function SideBar() {
                                                             alert(resp.data.error);
                                                         } else {
                                                             siteManager.getSites();
-                                                            setDomain('');
-                                                            setScreen('none');
+                                                            siteManager.domain === '';
+                                                            navigate('/');
                                                         }
                                                     });
                                                 }}

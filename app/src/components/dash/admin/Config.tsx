@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import { Button } from '@/components/shadcn/button';
@@ -10,8 +11,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/too
 import adminManager from '@/managers/AdminManager';
 import siteManager from '@/managers/SiteManager';
 
-import { useAppState } from '@/components/AppProvider';
-
 import Github from 'lucide-react/icons/github';
 import Power from 'lucide-react/icons/power';
 import Users from 'lucide-react/icons/users';
@@ -19,7 +18,7 @@ import Users from 'lucide-react/icons/users';
 import superSecretAdminImage from '@/assets/superSecretAdminImage.png';
 
 const AdminConfig = observer(function AdminConfig() {
-    const { setScreen } = useAppState();
+    const navigate = useNavigate();
 
     const [gitOutput, setGitOutput] = useState<string>('');
 
@@ -53,7 +52,7 @@ const AdminConfig = observer(function AdminConfig() {
                     <div className={`flex justify-center gap-3 ${adminManager.instanceInformation.isDev && !adminManager.instanceInformation.isUsingSystemd ? 'md:hidden' : ''}`}>
                         <Tooltip>
                             <TooltipTrigger>
-                                <Button className='md:hidden' onClick={() => setScreen('users.admin')}><Users /></Button>
+                                <Button className='md:hidden' onClick={() => navigate('/admin/users')}><Users /></Button>
                             </TooltipTrigger>
 
                             <TooltipContent>
