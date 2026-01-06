@@ -4,6 +4,7 @@ bun.lock
 
 # protected
 api/db
+keys.txt
 .env
 
 # builds
