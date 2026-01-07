@@ -1,5 +1,4 @@
-const searchQuery = '';
-const keyRegex = /regex/g;
+import { GITHUB_CONFIG } from './.config';
 
 import fs from 'fs';
 import path from 'path';
@@ -35,7 +34,7 @@ const searchGitHub = async (query: string, page: string = '1') => {
 
 const searchTimestamps: number[] = [];
 
-const rateLimitedSearchGitHub = async (query: string, page: string = '1') => {
+const rateLimitedSearchGitHub = async (query: string, page: string = '1'): Promise<any> => {
     const now = Date.now();
 
     while (searchTimestamps.length && now - searchTimestamps[0] > 60000) searchTimestamps.shift();
@@ -51,7 +50,7 @@ const rateLimitedSearchGitHub = async (query: string, page: string = '1') => {
     return searchGitHub(query, page);
 }
 
-const fetchFileContent = async (url: string) => {
+const fetchFileContent = async (url: string): Promise<any> => {
     const response = await fetch(url, { headers });
     if (response.ok) return response.json();
     else {
@@ -66,8 +65,10 @@ const processItems = async (items: any[]) => {
             const contentResults = await fetchFileContent(item.url);
             if (contentResults) {
                 const fileContent = Buffer.from(contentResults.content, 'base64').toString('utf-8');
-                const matches = fileContent.match(keyRegex);
-                if (matches) matches.forEach((key) => matchedKeys.add(key));
+                const matches = fileContent.match(GITHUB_CONFIG.regex);
+                if (matches) matches.forEach((key) => {
+                    if (!key.toLowerCase().includes('abc') && !key.toLowerCase().includes('xxxxx')) matchedKeys.add(key)
+                });
             }
         }
     }
@@ -83,7 +84,7 @@ const saveKeys = () => {
 }
 
 try {
-    const firstResults = await rateLimitedSearchGitHub(searchQuery, '1');
+    const firstResults = await rateLimitedSearchGitHub(GITHUB_CONFIG.searchQuery, '1');
     const totalCount = firstResults.total_count;
     const perPage = 100;
     const totalPages = Math.ceil(totalCount / perPage);
@@ -95,7 +96,7 @@ try {
     saveKeys();
 
     for (let page = 2; page <= totalPages; page++) {
-        const pageResults = await rateLimitedSearchGitHub(searchQuery, page.toString());
+        const pageResults = await rateLimitedSearchGitHub(GITHUB_CONFIG.searchQuery, page.toString());
         await processItems(pageResults.items);
         console.log(`processed page ${page}`);
         saveKeys();
