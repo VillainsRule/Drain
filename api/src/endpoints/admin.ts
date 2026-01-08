@@ -97,14 +97,14 @@ export default function admin(app: Elysia) {
     const drainHome = path.join(import.meta.dirname, '..', '..', '..');
 
     const commit = terminal.execSync('git rev-parse --short HEAD', { encoding: 'utf8', cwd: drainHome }).toString().trim();
-    const isDev = terminal.execSync('git status --porcelain', { encoding: 'utf8', cwd: drainHome }).trim().length > 0;
+    const localChanges = terminal.execSync('git status --porcelain', { encoding: 'utf8', cwd: drainHome }).trim().length > 0;
     const isUsingSystemd = !!process.env['INVOCATION_ID'];
 
     app.post('/$/admin/secure/instance', async ({ cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
-        return { commit, isDev, isUsingSystemd, config: configDB.db };
+        return { commit, localChanges, isUsingSystemd, config: configDB.db };
     }, { cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/admin/secure/gitPull', async ({ cookie: { session } }) => {

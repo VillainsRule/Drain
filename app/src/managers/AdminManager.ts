@@ -9,11 +9,9 @@ class AdminManager {
 
     instanceInformation: InstanceInformation = {
         commit: 'unknown',
-        isDev: true,
+        localChanges: true,
         isUsingSystemd: false,
-        config: {
-            useProxiesForBalancer: false
-        }
+        config: { useProxiesForBalancer: false }
     };
 
     constructor() {

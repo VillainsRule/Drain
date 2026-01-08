@@ -81,14 +81,10 @@ const Site = observer(function Site() {
                                     {siteManager.current.sortable() && <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => {
-                                                fetch('/$/sites/sortKeys', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ domain: siteManager.domain })
-                                                }).then((r) => r.json()).then((data) => {
-                                                    if (data.error) {
-                                                        console.error(data);
-                                                        alert(data.error);
+                                                axios.post('/$/sites/sortKeys', { domain: siteManager.domain }).then((res) => {
+                                                    if (res.data.error) {
+                                                        console.error(res.data);
+                                                        alert(res.data.error);
                                                     } else siteManager.getSites();
                                                 })
                                             }}><ArrowDownWideNarrow /></Button>

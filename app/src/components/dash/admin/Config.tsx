@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/components/shadcn/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
+import axios from '@/lib/axiosLike';
+
 import adminManager from '@/managers/AdminManager';
 import siteManager from '@/managers/SiteManager';
 
@@ -34,22 +36,19 @@ const AdminConfig = observer(function AdminConfig() {
                         <h2 className='text-lg text-center font-medium'>total keys: {siteManager.sites.reduce((acc, site) => acc + site.keys.length, 0)}</h2>
 
                         <h2 className='text-lg text-center font-medium mt-4'>instance commit: {adminManager.instanceInformation.commit}</h2>
-                        <h2 className='text-lg text-center font-medium'>is drain dev?: {adminManager.instanceInformation.isDev.toString()}</h2>
+                        <h2 className='text-lg text-center font-medium'>has local changes?: {adminManager.instanceInformation.localChanges.toString()}</h2>
                     </div>
 
                     <div className='flex items-center gap-3'>
                         <Checkbox id='useProxiesBalancer' checked={adminManager.instanceInformation.config.useProxiesForBalancer} onCheckedChange={(isChecked) => {
                             adminManager.instanceInformation.config.useProxiesForBalancer = !!isChecked;
-                            fetch('/$/admin/secure/setConfig', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ config: adminManager.instanceInformation.config })
-                            }).then(() => adminManager.fetchInstanceInformation());
+                            axios.post('/$/admin/secure/setConfig', { config: adminManager.instanceInformation.config })
+                                .then(() => adminManager.fetchInstanceInformation());
                         }} />
                         {siteManager.siteExists('https.proxy') && <Label htmlFor='useProxiesBalancer'>use proxies from "https.proxy" for balancer</Label>}
                     </div>
 
-                    <div className={`flex justify-center gap-3 ${adminManager.instanceInformation.isDev && !adminManager.instanceInformation.isUsingSystemd ? 'md:hidden' : ''}`}>
+                    <div className={`flex justify-center gap-3 ${adminManager.instanceInformation.localChanges && !adminManager.instanceInformation.isUsingSystemd ? 'md:hidden' : ''}`}>
                         <Tooltip>
                             <TooltipTrigger>
                                 <Button className='md:hidden' onClick={() => navigate('/admin/users')}><Users /></Button>
@@ -60,14 +59,9 @@ const AdminConfig = observer(function AdminConfig() {
                             </TooltipContent>
                         </Tooltip>
 
-                        {!adminManager.instanceInformation.isDev && <Tooltip>
+                        {!adminManager.instanceInformation.localChanges && <Tooltip>
                             <TooltipTrigger onClick={() => {
-                                fetch('/$/admin/secure/gitPull', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    }
-                                }).then(r => r.json()).then(data => setGitOutput(data.out || 'no git output...thats odd!'));
+                                axios.post('/$/admin/secure/gitPull').then((res) => setGitOutput(res.data.out || 'no git output...thats odd!'));
                             }}>
                                 <Button className='md:hidden'><Github /></Button>
                                 <Button className='hidden md:flex'>git pull</Button>
@@ -80,13 +74,8 @@ const AdminConfig = observer(function AdminConfig() {
 
                         {adminManager.instanceInformation.isUsingSystemd && <Tooltip>
                             <TooltipTrigger onClick={() => {
-                                fetch('/$/admin/secure/systemdRestart', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    }
-                                }).then(r => r.json()).then(data => {
-                                    if (data.error) return alert(data.error);
+                                axios.post('/$/admin/secure/systemdRestart').then((res) => {
+                                    if (res.data.error) return alert(res.data.error);
 
                                     alert('systemd restart triggered successfully.');
                                     setTimeout(() => location.reload(), 2000);

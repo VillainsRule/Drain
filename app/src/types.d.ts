@@ -27,7 +27,7 @@ export interface InstanceConfiguration {
 
 export interface InstanceInformation {
     commit: string;
-    isDev: boolean;
+    localChanges: boolean;
     isUsingSystemd: boolean;
     config: InstanceConfiguration;
 }
