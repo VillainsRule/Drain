@@ -5,7 +5,7 @@ import axios from '@/lib/axiosLike';
 import adminManager from './AdminManager';
 import siteManager from './SiteManager';
 
-import type { APIKey } from '@/types';
+import type { APIKey, PublicUser } from '@/types';
 
 configure({ enforceActions: 'never' });
 
@@ -17,9 +17,9 @@ class AuthManager {
         id: 0,
         username: '',
         admin: 0
-    };
+    } as const;
 
-    user = this.placeholderUser;
+    user: PublicUser = this.placeholderUser;
 
     passkeys: Array<{ name: string; lastUsed: string }> = [];
     apiKeys: APIKey[] = [];
@@ -32,7 +32,7 @@ class AuthManager {
         this.checkAuth();
     }
 
-    setAuth(user: typeof this.placeholderUser) {
+    setAuth(user: PublicUser) {
         this.loggedIn = true;
         this.user = user;
 
@@ -45,14 +45,17 @@ class AuthManager {
         if (this.user.id === 1) adminManager.fetchInstanceInformation();
     }
 
-    async checkAuth() {
+    async checkAuth(fullRefresh: boolean = true) {
         try {
             const { data } = await axios.post('/$/auth/account');
 
             this.hasInit = true;
             this.webAuthnEnabled = data.isWebAuthnConfigured;
 
-            if (!data.error) this.setAuth(data.user);
+            if (!data.error) {
+                if (fullRefresh) this.setAuth(data.user);
+                else this.user = data.user;
+            }
         } catch (error) {
             console.error(error);
             alert('error checking authentication, try reloading?');
