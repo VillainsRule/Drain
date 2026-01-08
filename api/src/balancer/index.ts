@@ -22,6 +22,8 @@ const perplexityBalancer = createBasicBalancer('https://api.perplexity.ai/async/
 const capmonsterBalancer = createCaptchaBalancer('https://api.capmonster.cloud/getBalance');
 const twoCaptchaBalancer = createCaptchaBalancer('https://api.2captcha.com/getBalance');
 
+const warnedDomains = new Set<string>([]);
+
 const getBalancer = (domain: string) => {
     switch (domain) {
         case 'aimlapi.com': return aimlBalancer;
@@ -41,9 +43,14 @@ const getBalancer = (domain: string) => {
         case 'together.ai': return togetherBalancer;
         case 'vpnapi.io': return vpnApiBalancer;
         case '2captcha.com': return twoCaptchaBalancer;
-        default:
-            console.log('no balancer found for', domain);
+        default: {
+            if (!warnedDomains.has(domain)) {
+                console.warn(`No balancer configured for domain: ${domain}`);
+                warnedDomains.add(domain);
+            }
+
             return null;
+        }
     }
 }
 
