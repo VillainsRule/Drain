@@ -45,14 +45,17 @@ class AuthManager {
         if (this.user.id === 1) adminManager.fetchInstanceInformation();
     }
 
-    async checkAuth() {
+    async checkAuth(fullRefresh: boolean = true) {
         try {
             const { data } = await axios.post('/$/auth/account');
 
             this.hasInit = true;
             this.webAuthnEnabled = data.isWebAuthnConfigured;
 
-            if (!data.error) this.setAuth(data.user);
+            if (!data.error) {
+                if (fullRefresh) this.setAuth(data.user);
+                else this.user = data.user;
+            }
         } catch (error) {
             console.error(error);
             alert('error checking authentication, try reloading?');
