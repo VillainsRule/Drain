@@ -11,14 +11,16 @@ export default (app: Elysia) => {
         if (!user) return status(401, { error: 'not logged in' });
 
         const sites = siteDB.getUserSites(user.id);
-        sites.forEach((site: any) => {
+        const publicSites = sites.map((site: any) => {
             site.supportsBalancer = !!getBalancer(site.domain);
 
             if (site.editors.includes(user.id))
                 site.resolvedReaders = Object.fromEntries(site.readers.map((id: number) => [id, userDB.getPublicUser(id)?.username]));
+
+            return site;
         });
 
-        return { sites };
+        return { sites: publicSites };
     }, { cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/sites/create', async ({ body, cookie: { session } }) => {

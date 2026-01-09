@@ -1,25 +1,38 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+const dbRootPath = path.join(import.meta.dirname, '..', '..', 'db');
+
+// START V0 TO V1 MIGRATION
+const oldFiles = ['config.db', 'sites.db', 'users.db'];
+if (fs.existsSync(path.join(dbRootPath, 'users.db'))) oldFiles.forEach((filename) => {
+    const v1FolderPath = path.join(dbRootPath, 'v1');
+    if (!fs.existsSync(v1FolderPath)) fs.mkdirSync(v1FolderPath);
+
+    const oldPath = path.join(import.meta.dirname, '..', '..', 'db', filename);
+    if (fs.existsSync(oldPath)) fs.renameSync(oldPath, path.join(v1FolderPath, filename));
+});
+// END V0 TO V1 MIGRATION
+
 class BaseDB<DBType> {
     path: string;
     db: DBType;
 
-    constructor(dbPath: string) {
-        this.path = dbPath;
+    constructor(filename: string, version: number = 1) {
+        this.path = path.join(dbRootPath, `v${version}`, filename);
 
-        let mustRunMigrations = false;
+        let alreadyExisted = false;
 
-        if (!fs.existsSync(dbPath)) {
-            fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-            fs.writeFileSync(dbPath, '');
+        if (!fs.existsSync(this.path)) {
+            fs.mkdirSync(path.dirname(this.path), { recursive: true });
+            fs.writeFileSync(this.path, '');
             this.initializeData();
             this.updateDB();
-        } else mustRunMigrations = true;
+        } else alreadyExisted = true;
 
         this.getDB();
 
-        if (mustRunMigrations) this.runDBMigrations();
+        if (alreadyExisted) this.runDBMigrations();
 
         setInterval(() => this.updateDB(), 5000);
         process.on('exit', () => this.updateDB());

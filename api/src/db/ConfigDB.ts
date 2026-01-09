@@ -1,12 +1,10 @@
-import path from 'node:path';
-
 import BaseDB from './BaseDB';
 
 import { IConfigDB } from '../types';
 
 export class ConfigDB extends BaseDB<IConfigDB> {
     constructor() {
-        super(path.join(import.meta.dirname, '..', '..', 'db', 'config.db'));
+        super('config.db', 1);
     }
 
     initializeData() {

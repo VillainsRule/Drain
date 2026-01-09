@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import BaseDB from './BaseDB';
 import userDB from './UserDB';
 
@@ -7,7 +5,7 @@ import { Site } from '../types';
 
 export class SiteDB extends BaseDB<{ sites: Record<string, Site> }> {
     constructor() {
-        super(path.join(import.meta.dirname, '..', '..', 'db', 'sites.db'));
+        super('sites.db', 1);
     }
 
     initializeData() {

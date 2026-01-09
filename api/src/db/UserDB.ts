@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import path from 'node:path';
 
 import BaseDB from './BaseDB';
 import siteDB from './SiteDB';
@@ -43,7 +42,7 @@ const getRelativeTime = (timestamp: number): string => {
 
 export class UserDB extends BaseDB<UserDBType> {
     constructor() {
-        super(path.join(import.meta.dirname, '..', '..', 'db', 'users.db'));
+        super('users.db', 1);
     }
 
     initializeData() {
