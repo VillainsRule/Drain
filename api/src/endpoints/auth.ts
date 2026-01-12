@@ -26,7 +26,7 @@ export default function auth(app: Elysia) {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        return { user: { id: user.id, username: user.username, admin: user.admin }, isWebAuthnConfigured };
+        return { user: { id: user.id, username: user.username, admin: user.admin, order: user.order }, isWebAuthnConfigured };
     });
 
     app.post('/$/auth/secure/credentials', async ({ body, cookie: { session } }) => {

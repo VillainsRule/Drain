@@ -28,6 +28,7 @@ export interface PublicUser {
     id: number;
     username: string;
     admin: 0 | 1;
+    order?: string[];
     stillPendingLogin?: boolean;
 }
 

@@ -279,6 +279,14 @@ export class UserDB extends BaseDB<UserDBType> {
     userExists(id: number): boolean {
         return this.db.users.some(u => u.id === id);
     }
+
+    modifySiteOrder(userId: number, newOrder: string[]): void {
+        const user = this.db.users.find(u => u.id === userId);
+        if (!user) throw new Error('User not found');
+
+        user.order = newOrder;
+        this.updateDB();
+    }
 }
 
 const userDB = new UserDB();

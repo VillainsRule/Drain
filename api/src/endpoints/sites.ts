@@ -191,4 +191,14 @@ export default (app: Elysia) => {
 
         return {};
     }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+
+    app.post('/$/sites/order', async ({ body, cookie: { session } }) => {
+        const user = userDB.whoIsSession(session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        user.order = body.order;
+        userDB.updateDB();
+
+        return {};
+    }, { body: t.Object({ order: t.Array(t.String()) }), cookie: t.Cookie({ session: t.String() }) });
 }
