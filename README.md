@@ -20,9 +20,11 @@
 
 Drain is an API key manager, and the biggest aspect is the vast permission system.
 
-The core administrator account is named "admin". admin has access to all sites and all users. admin cannot be demoted or deleted. Only admin can change the admin account password. admin has access to all sites, forever. Do not lose the password to admin; you will effectively be unable to control your instance. admin's user ID is always 1. The user ID 1 itself has special permissions; do not try to assign other users "1". If you manually change the database while Drain is running, Drain will automatically overwrite your changes. Turn off Drain to do any manual database changes.
+The core administrator account is named "admin". admin has access to all sites and all users. admin cannot be demoted or deleted. Only admin can change the admin account password. admin has access to all sites, forever. admin's user ID is always 1. The user ID 1 itself has special permissions; do not try to assign other users "1".
 
-admin's default password is "admin". Change it immediately after your first login in the users button at the top right.
+admin's default password is "admin". Change it immediately after your first login in the users button at the top right. If you accidentally forget the "admin" password, run `bun cli/tools/resetAdmin` to reset it back to "admin".
+
+If you manually change any database files while Drain is running, Drain will automatically overwrite your changes. Turn off Drain to do any manual database changes.
 
 There are two main concepts in Drain: users and sites. Users are people who can log into the Drain instance. Sites are collections of API keys with specific permissions.
 

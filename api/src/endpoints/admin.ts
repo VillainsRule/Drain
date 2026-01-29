@@ -33,20 +33,20 @@ export default function admin(app: Elysia) {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const target = userDB.getUserByUsername(body.username);
-        if (!target) return status(404, { error: 'user not found' });
+        const doesExist = userDB.userExists(body.userId);
+        if (!doesExist) return status(404, { error: 'user not found' });
 
-        const targetSites = siteDB.getUserSites(target.id);
+        const targetSites = siteDB.getUserSites(body.userId);
         if (!targetSites) return status(404, { error: 'user not found' });
 
         const sites: { [key: string]: 'reader' | 'editor' } = {};
 
         targetSites.forEach((site) => {
-            sites[site.domain] = site.readers.includes(target.id) ? 'reader' : 'editor';
+            sites[site.domain] = site.readers.includes(body.userId) ? 'reader' : 'editor';
         });
 
         return { sites };
-    }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/admin/secure/deleteUser', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);

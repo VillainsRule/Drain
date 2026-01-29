@@ -23,6 +23,6 @@
         "noEmitOnError": true,
         "exactOptionalPropertyTypes": true
     },
-    "include": ["github.ts"],
+    "include": ["tools"],
     "exclude": ["node_modules"]
 }

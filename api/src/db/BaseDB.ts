@@ -18,7 +18,30 @@ class BaseDB<DBType> {
     path: string;
     db: DBType;
 
-    constructor(filename: string, version: number = 1) {
+    disableProxy: boolean;
+
+    private dbHandler = {
+        set: (target: any, prop: string | symbol, value: any) => {
+            target[prop] = value;
+            this.updateDB();
+            return true;
+        },
+        get: (target: any, prop: string | symbol) => {
+            const value = target[prop];
+
+            if (value !== null && typeof value === 'object')
+                return new Proxy(value, this.dbHandler);
+
+            return value;
+        }
+    };
+
+    // proxies are something i may decide to use later
+    // right now i'm not sure how many cases they cover
+    // stuff may not save, i'm happy w/ updateDB for now
+    constructor(filename: string, version: number = 1, disableProxy: boolean = true) {
+        if (disableProxy) this.disableProxy = true;
+
         this.path = path.join(dbRootPath, `v${version}`, filename);
 
         let alreadyExisted = false;
@@ -34,7 +57,7 @@ class BaseDB<DBType> {
 
         if (alreadyExisted) this.runDBMigrations();
 
-        setInterval(() => this.updateDB(), 5000);
+        setInterval(() => this.updateDB(), 15000);
         process.on('exit', () => this.updateDB());
     }
 
@@ -43,7 +66,8 @@ class BaseDB<DBType> {
 
     getDB() {
         let file = fs.readFileSync(this.path, 'utf-8');
-        this.db = JSON.parse(file);
+        const parsedData = JSON.parse(file);
+        this.db = this.disableProxy ? parsedData : new Proxy(parsedData, this.dbHandler) as DBType;
     }
 
     updateDB() {

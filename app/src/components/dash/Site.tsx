@@ -39,7 +39,7 @@ const Site = observer(function Site() {
 
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
     const [addUserError, setAddUserError] = useState('');
-    const [addUserSelected, addUserSetSelected] = useState('');
+    const [addUserSelectedId, setAddUserSelectedId] = useState(0);
 
     const [validKeys, setValidKeys] = useState<string[]>([]);
     const [invalidKeys, setInvalidKeys] = useState<string[]>([]);
@@ -354,14 +354,14 @@ const Site = observer(function Site() {
 
                             <AutoComplete options={adminManager.users
                                 .filter(e => !e.admin && !siteManager.current.isReader(e.id))
-                                .map(e => ({ value: e.username, label: '@' + e.username }))} onValueChange={(e) => addUserSetSelected(e.value)} />
+                                .map(e => ({ value: e.id.toString(), label: '@' + e.username }))} onValueChange={(e) => setAddUserSelectedId(Number(e.value))} />
 
                             {addUserError && (<div className='text-red-500'>{addUserError}</div>)}
 
                             <Button className='w-3/4' onClick={async () => {
                                 axios.post('/$/sites/access/addUser', {
                                     domain: siteManager.domain,
-                                    username: addUserSelected
+                                    userId: addUserSelectedId
                                 }).then((resp) => {
                                     if (resp.data.error) setAddUserError(resp.data.error);
                                     else {

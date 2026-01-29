@@ -4,7 +4,7 @@ import { IConfigDB } from '../types';
 
 export class ConfigDB extends BaseDB<IConfigDB> {
     constructor() {
-        super('config.db', 1);
+        super('config.db', 1, true);
     }
 
     initializeData() {

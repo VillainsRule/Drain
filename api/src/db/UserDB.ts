@@ -61,7 +61,7 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     getUserByUsername(username: string): User | null {
-        return this.db.users.find(user => user.username.toLowerCase() === username.toLowerCase()) || null;
+        return this.db.users.find((u) => u.username.toLowerCase() === username.toLowerCase()) || null;
     }
 
     createUser(username: string, inviteCode: string): void {
@@ -79,7 +79,7 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     addSession(userId: number, token: string): void {
-        const user = this.db.users.find(user => user.id === userId);
+        const user = this.db.users.find((u) => u.id === userId);
         if (!user) throw new Error('User not found');
 
         this.db.sessions[token] = { userId, createdAt: Date.now() };
@@ -91,7 +91,7 @@ export class UserDB extends BaseDB<UserDBType> {
         const sessionData = this.db.sessions[session];
         if (!sessionData) return null;
 
-        const user = this.db.users.find(user => user.id === sessionData.userId);
+        const user = this.db.users.find((u) => u.id === sessionData.userId);
         if (!user) return null;
 
         return user;
@@ -107,12 +107,12 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     getPublicUser(userId: number): PublicUser | null {
-        const u = this.db.users.find(u => u.id === userId);
+        const u = this.db.users.find((u) => u.id === userId);
         return u ? { id: u.id, username: u.username, admin: u.admin } : null;
     }
 
     deleteUser(userId: number): void {
-        this.db.users = this.db.users.filter(u => u.id !== userId);
+        this.db.users = this.db.users.filter((u) => u.id !== userId);
 
         for (const session in this.db.sessions) {
             if (this.db.sessions[session].userId === userId) {
@@ -126,7 +126,7 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     setUserAdmin(userId: number, isAdmin: boolean): void {
-        const user = this.db.users.find(u => u.id === userId);
+        const user = this.db.users.find((u) => u.id === userId);
         if (!user) throw new Error('User not found');
 
         user.admin = isAdmin ? 1 : 0;
@@ -135,7 +135,7 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     setUserPassword(userId: number, newPassword: string): void {
-        const user = this.db.users.find(u => u.id === userId);
+        const user = this.db.users.find((u) => u.id === userId);
         if (!user) throw new Error('User not found');
 
         user.password = hasher.encode(newPassword);
@@ -150,11 +150,11 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     getCode(code: string): User | null {
-        return this.db.users.find(user => user.code === code) || null;
+        return this.db.users.find((u) => u.code === code) || null;
     }
 
     purgeCodeOf(userId: number): void {
-        const user = this.db.users.find(u => u.id === userId);
+        const user = this.db.users.find((u) => u.id === userId);
         if (!user) throw new Error('User not found');
 
         delete user.code;
@@ -163,7 +163,7 @@ export class UserDB extends BaseDB<UserDBType> {
     }
 
     getPasskeyIDsForUser(userId: number): { id: string }[] {
-        return this.db.passkeys.filter(pk => pk.userId === userId).map(pk => ({ id: pk.id }));
+        return this.db.passkeys.filter((pk) => pk.userId === userId).map(pk => ({ id: pk.id }));
     }
 
     addPasskey(passkey: Passkey): void {

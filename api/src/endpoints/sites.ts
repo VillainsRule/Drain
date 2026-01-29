@@ -97,7 +97,8 @@ export default (app: Elysia) => {
         const user = userDB.whoIsSession(session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[body.domain];
+        const domainInfo = siteDB.getSite(body.domain);
+        if (!domainInfo) return status(404, { error: 'site does not exist' });
         if (!domainInfo.keys.some(key => key.token === body.key)) return status(404, { error: 'key not found' });
 
         const keyExists = siteDB.keyExistsOn(body.domain, body.key);
@@ -112,7 +113,7 @@ export default (app: Elysia) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[body.domain];
+        const domainInfo = siteDB.getSite(body.domain);
         if (!domainInfo) return status(401, { error: 'no permission' });
 
         const result = siteDB.sortKeys(body.domain);
@@ -123,26 +124,26 @@ export default (app: Elysia) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[body.domain];
+        const domainInfo = siteDB.getSite(body.domain);
         if (!domainInfo) return status(404, { error: 'site does not exist' });
         if (siteDB.userAccessLevel(body.domain, user.id) !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
 
-        const targetUser = userDB.getUserByUsername(body.username);
-        if (!targetUser) return status(404, { error: 'user not found' });
+        const doesExist = userDB.userExists(body.userId);
+        if (!doesExist) return status(404, { error: 'user not found' });
 
-        if (domainInfo.readers.includes(targetUser.id)) return status(403, { error: 'user already has access to site' });
+        if (domainInfo.readers.includes(body.userId)) return status(403, { error: 'user already has access to site' });
 
-        domainInfo.readers.push(targetUser.id);
+        domainInfo.readers.push(body.userId);
         siteDB.updateDB();
 
         return {};
-    }, { body: t.Object({ domain: t.String(), username: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
 
     app.post('/$/sites/access/setRole', async ({ body, cookie: { session } }) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[body.domain];
+        const domainInfo = siteDB.getSite(body.domain);
         if (!domainInfo) return status(404, { error: 'site does not exist' });
         if (siteDB.userAccessLevel(body.domain, user.id) !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
 
@@ -166,7 +167,7 @@ export default (app: Elysia) => {
         const user = userDB.whoIsSession(session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.db.sites[body.domain];
+        const domainInfo = siteDB.getSite(body.domain);
         if (!domainInfo) return status(404, { error: 'site does not exist' });
         if (siteDB.userAccessLevel(body.domain, user.id) !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
 

@@ -1,14 +1,14 @@
-import { GITHUB_CONFIG } from './.config';
+import { GITHUB_CONFIG } from '../.config';
 
 import fs from 'fs';
 import path from 'path';
 
 const apiKeys = path.join(import.meta.dirname, 'keys.txt');
 
-const githubToken = process.env.GITHUB_TOKEN;
+const githubToken = GITHUB_CONFIG.githubUserToken;
 
 if (!githubToken) {
-    console.error('GITHUB_TOKEN environment variable not set');
+    console.error('githubUserToken config value not set');
     process.exit(1);
 }
 

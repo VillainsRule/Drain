@@ -16,6 +16,10 @@ export class SiteDB extends BaseDB<{ sites: Record<string, Site> }> {
         return !!this.db.sites[domain];
     }
 
+    getSite(domain: string): Site | null {
+        return this.db.sites[domain] || null;
+    }
+
     userAccessLevel(domain: string, userId: number): 'none' | 'reader' | 'editor' {
         const site = this.db.sites[domain];
         if (!site) return 'none';

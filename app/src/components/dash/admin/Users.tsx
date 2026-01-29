@@ -29,37 +29,21 @@ const Users = observer(function Users() {
     const addUserSubmitRef = useRef<HTMLButtonElement>(null);
 
     const [userSitesDialogOpen, setUserSitesDialogOpen] = useState(false);
-    const [userSitesDialogTarget, setUserSitesDialogTarget] = useState('');
+    const [userSitesDialogTargetId, setUserSitesDialogTargetId] = useState(0);
+    const [userSitesDialogTargetName, setUserSitesDialogTargetName] = useState('');
     const [userSitesDialogList, setUserSitesDialogList] = useState<UserSitesThingy>({});
 
     const [inviteCode, setInviteCode] = useState('');
 
-    const changeRole = (username: string, domain: string, newRole: 'reader' | 'editor') => {
-        axios.post('/$/sites/access/setRole', {
-            domain: domain,
-            username: username,
-            role: newRole
-        }).then((resp) => {
-            if (resp.data.error) {
-                console.error(resp.data);
-                alert(resp.data.error);
-            } else siteManager.getSites();
-        }).catch((err) => {
-            console.error(err);
-        });
-    }
-
     const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
-    const [changePasswordTarget, setChangePasswordTarget] = useState(0);
+    const [changePasswordTargetId, setChangePasswordTargetId] = useState(0);
     const [changePasswordTargetName, setChangePasswordTargetName] = useState('');
     const changePasswordRef = useRef<HTMLInputElement>(null);
     const changePasswordSubmitRef = useRef<HTMLButtonElement>(null);
 
-    const grabUserSitesDialogList = (username: string) => {
-        axios.post('/$/admin/secure/getUserSites', { username }).then((res) => {
-            setUserSitesDialogList(res.data.sites);
-        });
-    }
+    const grabUserSitesDialogList = (userId: number) =>
+        axios.post('/$/admin/secure/getUserSites', { userId }).then((res) =>
+            setUserSitesDialogList(res.data.sites));
 
     return (
         <>
@@ -85,7 +69,7 @@ const Users = observer(function Users() {
                                         <TooltipProvider>
                                             <TooltipTrigger>
                                                 <Button disabled={(!!(authManager.user.id !== 1 && user.admin && user.id !== authManager.user.id)) || user.stillPendingLogin} onClick={() => {
-                                                    setChangePasswordTarget(user.id);
+                                                    setChangePasswordTargetId(user.id);
                                                     setChangePasswordTargetName(user.username);
                                                     setChangePasswordDialogOpen(true);
                                                 }}>
@@ -104,8 +88,9 @@ const Users = observer(function Users() {
                                             <TooltipTrigger>
                                                 <Button disabled={user.id === 1} onClick={() => {
                                                     setUserSitesDialogOpen(true);
-                                                    setUserSitesDialogTarget(user.username);
-                                                    grabUserSitesDialogList(user.username);
+                                                    setUserSitesDialogTargetId(user.id);
+                                                    setUserSitesDialogTargetName(user.username);
+                                                    grabUserSitesDialogList(user.id);
                                                 }}>
                                                     <ScanSearch className='h-4 w-4 md:hidden' />
                                                     <span className='hidden md:flex'>site access</span>
@@ -185,7 +170,7 @@ const Users = observer(function Users() {
                 <DialogContent className='max-h-3/4 overflow-y-auto overflow-x-hidden'>
                     <DialogHeader>
                         <DialogTitle>user manager!</DialogTitle>
-                        <DialogDescription>@{userSitesDialogTarget}'s site access</DialogDescription>
+                        <DialogDescription>@{userSitesDialogTargetName}'s site access</DialogDescription>
                     </DialogHeader>
 
                     <div className='flex flex-col w-full py-3 px-6 gap-3 border rounded-md'>
@@ -197,8 +182,22 @@ const Users = observer(function Users() {
 
                                 <div className='flex gap-3'>
                                     <Select value={role} onValueChange={(value) => {
-                                        changeRole(userSitesDialogTarget, domain, value as 'reader' | 'editor');
-                                        grabUserSitesDialogList(userSitesDialogTarget);
+                                        const newRole = value as 'reader' | 'editor';
+                                        axios.post('/$/sites/access/setRole', {
+                                            domain: domain,
+                                            userId: userSitesDialogTargetId,
+                                            role: newRole
+                                        }).then((resp) => {
+                                            if (resp.data.error) {
+                                                console.error(resp.data);
+                                                alert(resp.data.error);
+                                            } else {
+                                                siteManager.getSites();
+                                                grabUserSitesDialogList(userSitesDialogTargetId);
+                                            }
+                                        }).catch((err) => {
+                                            console.error(err);
+                                        });
                                     }}>
                                         <SelectTrigger>
                                             <SelectValue>role: {role}</SelectValue>
@@ -211,11 +210,11 @@ const Users = observer(function Users() {
                                     </Select>
 
                                     <Button variant='destructive' onClick={() => {
-                                        axios.post('/$/sites/access/removeUser', { domain, username: userSitesDialogTarget }).then((resp) => {
+                                        axios.post('/$/sites/access/removeUser', { domain, userId: userSitesDialogTargetId }).then((resp) => {
                                             if (resp.data.error) {
                                                 console.error(resp.data);
                                                 alert(resp.data.error);
-                                            } else grabUserSitesDialogList(userSitesDialogTarget);
+                                            } else grabUserSitesDialogList(userSitesDialogTargetId);
                                         });
                                     }}>remove user</Button>
                                 </div>
@@ -239,9 +238,9 @@ const Users = observer(function Users() {
                     <Button className='w-3/4' ref={changePasswordSubmitRef} onClick={() => {
                         const newPassword = changePasswordRef.current?.value;
 
-                        axios.post('/$/admin/secure/setUserPassword', { userId: changePasswordTarget, newPassword }).then(() => {
+                        axios.post('/$/admin/secure/setUserPassword', { userId: changePasswordTargetId, newPassword }).then(() => {
                             setChangePasswordDialogOpen(false);
-                            if (changePasswordTarget === authManager.user.id) setTimeout(() => location.reload(), 100);
+                            if (changePasswordTargetId === authManager.user.id) setTimeout(() => location.reload(), 100);
                         });
                     }}>change password</Button>
                 </DialogContent>
