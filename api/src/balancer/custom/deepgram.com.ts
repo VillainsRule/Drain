@@ -11,7 +11,6 @@ export default async function deepgramBalancer(token: string): Promise<string> {
     if (body.err_code === 'BAD_REQUEST') return 'invalid_key';
     if (body.err_code === 'FORBIDDEN' || body.access_token) return 'Has Credits';
 
-    console.log('Unexpected response:', body);
-
-    return 'Unknown';
+    console.log('[deepgram] unexpected response:', body);
+    return '?';
 }

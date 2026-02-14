@@ -45,7 +45,7 @@ const getBalancer = (domain: string) => {
         case '2captcha.com': return twoCaptchaBalancer;
         default: {
             if (!warnedDomains.has(domain)) {
-                console.warn(`No balancer configured for domain: ${domain}`);
+                console.warn(`no balancer configured for domain: ${domain}`);
                 warnedDomains.add(domain);
             }
 

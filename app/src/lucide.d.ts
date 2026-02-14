@@ -1,4 +1,10 @@
 declare module 'lucide-react/icons/*' {
-    const Icon: React.FC<any>;
-    export default Icon;
+    import type { FC, SVGProps } from 'react';
+
+    export interface LucideProps extends Partial<Omit<SVGProps<SVGSVGElement>, 'ref'>> {
+        size?: string | number;
+        absoluteStrokeWidth?: boolean;
+    }
+
+    export default LucideIcon;
 }

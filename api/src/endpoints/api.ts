@@ -1,69 +1,83 @@
 import { Elysia, status, t } from 'elysia';
 
-import userDB from '../db/UserDB';
-import siteDB from '../db/SiteDB';
+import apiKeyDB from '../db/impl/APIKeyDB';
+import configDB from '../db/impl/ConfigDB';
+import siteDB from '../db/impl/SiteDB';
+import userDB from '../db/impl/UserDB';
+
 import getBalancer from '../balancer';
 
-export default (app: Elysia) => {
-    const apiElysia = new Elysia()
-        .guard({
-            schema: 'standalone',
-            headers: t.Object({ authorization: t.Optional(t.String()), 'user-agent': t.String() }),
-            query: t.Optional(t.Object({ key: t.Optional(t.String()) })),
-        })
+const api = new Elysia({ name: 'api' })
+    .guard({
+        schema: 'standalone',
+        headers: t.Object({ authorization: t.Optional(t.String()), 'user-agent': t.Optional(t.String()) }),
+        query: t.Optional(t.Object({ key: t.Optional(t.String()) })),
+    })
 
-        .resolve(({ headers, query }) => {
-            const apiKey = headers.authorization || query?.key;
-            if (!apiKey) return status(401, { error: 'API key is required' });
+    .resolve(({ headers, query }) => {
+        if (headers['user-agent'] && headers['user-agent'].length > 200) return status(413, { error: 'user-agent too long' });
 
-            const apiUser = userDB.checkAndUpdate(apiKey, headers['user-agent']);
-            if (!apiUser) return status(403, { error: 'invalid API key' });
+        if (!configDB.db.allowAPIKeys) return status(403, { error: 'API keys are disabled globally on the instance' });
 
-            return { apiKey, apiUser };
-        })
+        const inputKey = headers.authorization || query?.key;
+        if (!inputKey) return status(401, { error: 'API key is required' });
 
-        .get('/$/v1/getKeys', async ({ query: { site, count }, apiUser }) => {
-            const doesSiteExist = siteDB.siteExists(site);
-            if (!doesSiteExist) return status(404, { error: 'site does not exist' });
+        const apiKey = apiKeyDB.getLink('key', inputKey);
+        if (!apiKey) return status(401, { error: 'invalid API key' });
 
-            const userAccess = siteDB.userAccessLevel(site, apiUser.id);
-            if (userAccess === 'none' && !apiUser.admin) return status(404, { error: 'site does not exist' });
+        const apiUser = userDB.get(apiKey.userId);
+        if (!apiUser) return status(401, { error: 'invalid API key' });
 
-            const keys = siteDB.getSiteKeys(site);
-            const rndKeys = keys.sort(() => 0.5 - Math.random());
+        apiKeyDB.update(apiKey.id, { lastUsed: Date.now(), lastUserAgent: headers['user-agent'] || 'no UA specified' });
 
-            const countNum = Math.min(parseInt(count as string) || 1, rndKeys.length);
+        return { apiKey: inputKey, apiUser };
+    })
 
-            return { site, keys: rndKeys.slice(0, countNum) };
-        }, { query: t.Object({ site: t.String(), count: t.Optional(t.String()) }) })
+    .get('/$/v1/*', ({ path }) => {
+        return status(308, { Location: path.replace('$', 'api') })
+    })
 
-        .get('/$/v1/getPrecheckedKeys', async ({ query: { site, count }, apiUser }) => {
-            const doesSiteExist = siteDB.siteExists(site);
-            if (!doesSiteExist) return status(404, { error: 'site does not exist' });
+    .get('/api/v1/getKeys', async ({ query: { site, count }, apiUser }) => {
+        const siteInfo = siteDB.get(site);
+        if (!siteInfo) return status(401, { error: 'no permission' });
 
-            const userAccess = siteDB.userAccessLevel(site, apiUser.id);
-            if (userAccess === 'none' && !apiUser.admin) return status(404, { error: 'site does not exist' });
+        if (!apiUser.admin && !siteInfo.readers.includes(apiUser.id) && !siteInfo.editors.includes(apiUser.id))
+            return status(401, { error: 'no permission' });
 
-            const keys = siteDB.getSiteKeys(site);
-            const rndKeys = keys.sort(() => 0.5 - Math.random());
+        const keys = Object.keys(siteInfo.keys);
+        const rndKeys = keys.sort(() => 0.5 - Math.random());
 
-            const countNum = Math.min(parseInt(count as string) || 1, rndKeys.length);
-            if (countNum > 10) return status(400, { error: 'count cannot be greater than 10' });
+        const countNum = Math.min(parseInt(count as string) || 1, rndKeys.length);
 
-            const balancer = getBalancer(site);
-            if (!balancer) return { site, keys: rndKeys.slice(0, countNum) };
+        return { site, keys: rndKeys.slice(0, countNum) };
+    }, { query: t.Object({ site: t.String(), count: t.Optional(t.String()) }) })
 
-            const checkedAndValid: string[] = [];
+    .get('/api/v1/getPrecheckedKeys', async ({ query: { site, count }, apiUser }) => {
+        const siteInfo = siteDB.get(site);
+        if (!siteInfo) return status(401, { error: 'no permission' });
 
-            for (const key of rndKeys) {
-                if (checkedAndValid.length >= countNum) break;
+        if (!apiUser.admin && !siteInfo.readers.includes(apiUser.id) && !siteInfo.editors.includes(apiUser.id))
+            return status(401, { error: 'no permission' });
 
-                const balance = await balancer(key);
-                if (balance !== 'invalid_key' && balance !== 'leaked_key') checkedAndValid.push(key);
-            }
+        const keys = Object.keys(siteInfo.keys);
+        const rndKeys = keys.sort(() => 0.5 - Math.random());
 
-            return { site, keys: checkedAndValid };
-        }, { query: t.Object({ site: t.String(), count: t.Optional(t.String()) }) });
+        const countNum = Math.min(parseInt(count as string) || 1, rndKeys.length);
+        if (countNum > 10) return status(400, { error: 'count cannot be greater than 10' });
 
-    app.use(apiElysia);
-}
+        const balancer = getBalancer(site);
+        if (!balancer) return { site, keys: rndKeys.slice(0, countNum) };
+
+        const checkedAndValid: string[] = [];
+
+        for (const key of rndKeys) {
+            if (checkedAndValid.length >= countNum) break;
+
+            const balance = await balancer(key);
+            if (balance !== 'invalid_key' && balance !== 'leaked_key') checkedAndValid.push(key);
+        }
+
+        return { site, keys: checkedAndValid };
+    }, { query: t.Object({ site: t.String(), count: t.Optional(t.String()) }) });
+
+export default api;

@@ -1,49 +1,79 @@
 import { Elysia, status, t } from 'elysia';
 
-import siteDB from '../db/SiteDB';
-import userDB from '../db/UserDB';
+import siteDB from '../db/impl/SiteDB';
+import userDB from '../db/impl/UserDB';
 
 import getBalancer from '../balancer';
 
-export default (app: Elysia) => {
-    app.post('/$/sites/dump', async ({ cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
+const usersRunningBalancer: number[] = [];
+
+const sites = new Elysia({ name: 'sites' })
+    .post('/sites/list', async ({ cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const sites = siteDB.getUserSites(user.id);
-        const publicSites = sites.map((site: any) => {
-            site.supportsBalancer = !!getBalancer(site.domain);
+        return { sites: user.admin ? siteDB.getIDs() : user.sites };
+    }, { cookie: t.Cookie({ session: t.String() }) })
 
-            if (site.editors.includes(user.id))
-                site.resolvedReaders = Object.fromEntries(site.readers.map((id: number) => [id, userDB.getPublicUser(id)?.username]));
+    .post('/sites/info', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
+        if (!user) return status(401, { error: 'not logged in' });
 
-            return site;
-        });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
 
-        return { sites: publicSites };
-    }, { cookie: t.Cookie({ session: t.String() }) });
+        const supportsBalancer = !!getBalancer(site.id);
 
-    app.post('/$/sites/create', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
+        if (site.readers.includes(user.id)) return { site: { id: site.id, keys: site.keys, supportsBalancer } };
+        else if (site.editors.includes(user.id) || user.admin) {
+            return {
+                site: {
+                    id: site.id,
+                    keys: site.keys,
+                    readers: site.readers,
+                    editors: site.editors,
+                    resolvedReaders: Object.fromEntries(
+                        site.readers.map((id: number) => {
+                            const user = userDB.get(id);
+                            return user ? [id, user.username] : null;
+                        }).filter((entry): entry is [number, string] => entry !== null)
+                    )
+                }
+            }
+        } else return status(401, { error: 'no permission' });
+    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+
+    .post('/sites/create', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        if (siteDB.siteExists(body.url)) return status(403, { error: 'site already exists' });
+        if (body.url.length > 36) return status(413, { error: 'URL too long' });
+        if (siteDB.has(body.url)) return status(403, { error: 'site already exists' });
 
-        siteDB.addSite(body.url/*, user.id */);
+        siteDB.add({
+            id: body.url,
+            readers: [],
+            editors: [user.id],
+            keys: {}
+        });
+
+        user.sites.push(body.url);
+        userDB.update(user.id, { sites: user.sites });
 
         return {};
-    }, { body: t.Object({ url: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ url: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    const usersRunningBalancer: number[] = [];
-
-    app.post('/$/sites/addKey', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
+    .post('/sites/addKey', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        if (!siteDB.siteExists(body.domain)) return status(401, { error: 'no permission' });
-        if (siteDB.userAccessLevel(body.domain, user.id) === 'none' && !user.admin) return status(401, { error: 'no permission' });
+        if (body.key.length > 256) return status(413, { error: 'key too long' });
 
-        if (siteDB.keyExistsOn(body.domain, body.key)) return status(403, { error: 'key already exists' });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+        if (!user.admin && !site.editors.includes(user.id) && !site.readers.includes(user.id)) return status(401, { error: 'no permission' });
+
+        if (site.keys[body.key]) return status(403, { error: 'key already exists' });
 
         const balancer = getBalancer(body.domain);
         if (balancer) {
@@ -54,29 +84,28 @@ export default (app: Elysia) => {
 
             usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
 
-            if (balance === 'invalid_key') return { error: 'balancer has determined this key is invalid.' };
-            if (balance === 'leaked_key') return { error: 'balancer has determined this key was flagged.' };
-            siteDB.setKeyBalance(body.domain, body.key, isNaN(Number(balance)) ? balance : `$${balance}`);
-        } else siteDB.addKeyToSite(body.domain, body.key);
+            if (balance === 'invalid_key') return status(424, { error: 'balancer has determined this key is invalid.' });
+            if (balance === 'leaked_key') return status(424, { error: 'balancer has determined this key was flagged.' });
 
-        return await siteDB.addKeyToSite(body.domain, body.key);
-    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+            site.keys[body.key] = isNaN(Number(balance)) ? balance : `$${balance}`;
+        } else site.keys[body.key] = null;
 
-    app.post('/$/sites/balancer', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
+        siteDB.update(body.domain, { keys: site.keys });
+
+        return {};
+    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+
+    .post('/sites/balancer', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const domainExists = siteDB.siteExists(body.domain);
-        if (!domainExists) return status(401, { error: 'no permission' });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+        if (!site.editors.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
+        if (!site.keys[body.key]) return status(401, { error: 'no permission' });
 
         const balancer = getBalancer(body.domain);
         if (!balancer) return status(401, { error: 'no permission' });
-
-        const accessLevel = siteDB.userAccessLevel(body.domain, user.id);
-        if (accessLevel !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
-
-        const keyExists = siteDB.keyExistsOn(body.domain, body.key);
-        if (!keyExists) return status(404, { error: 'key not found' });
 
         if (usersRunningBalancer.includes(user.id)) return status(429, { error: 'you are already running a balancer request. please wait.' });
         usersRunningBalancer.push(user.id);
@@ -88,108 +117,171 @@ export default (app: Elysia) => {
         if (balance === 'invalid_key') return status(400, { error: 'balancer has determined the key is invalid' });
         if (balance === 'leaked_key') return status(400, { error: 'balancer has determined the key was flagged' });
 
-        siteDB.setKeyBalance(body.domain, body.key, isNaN(Number(balance)) ? balance : `$${balance}`);
+        site.keys[body.key] = isNaN(Number(balance)) ? balance : `$${balance}`
+        siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    app.post('/$/sites/removeKey', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
+    .post('/sites/removeKey', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.getSite(body.domain);
-        if (!domainInfo) return status(404, { error: 'site does not exist' });
-        if (!domainInfo.keys.some(key => key.token === body.key)) return status(404, { error: 'key not found' });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+        if (!site.keys[body.key]) return status(401, { error: 'no permission' });
 
-        const keyExists = siteDB.keyExistsOn(body.domain, body.key);
-        if (!keyExists) return status(404, { error: 'key not found' });
-
-        siteDB.removeKeyFromSite(body.domain, body.key);
+        delete site.keys[body.key];
+        siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    app.post('/$/sites/sortKeys', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
+    .post('/sites/sortKeys', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.getSite(body.domain);
-        if (!domainInfo) return status(401, { error: 'no permission' });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
 
-        const result = siteDB.sortKeys(body.domain);
-        return result;
-    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+        const entries = Object.entries(site.keys);
 
-    app.post('/$/sites/access/addUser', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
-        if (!user) return status(401, { error: 'not logged in' });
+        const dedupedEntries = Array.from(
+            entries.reduce((map, [token, balance]) => map.set(token, balance), new Map()).entries()
+        );
 
-        const domainInfo = siteDB.getSite(body.domain);
-        if (!domainInfo) return status(404, { error: 'site does not exist' });
-        if (siteDB.userAccessLevel(body.domain, user.id) !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
+        if (entries.length === dedupedEntries.length && dedupedEntries.length === 0)
+            return status(404, { error: 'no keys with balance to sort' });
 
-        const doesExist = userDB.userExists(body.userId);
-        if (!doesExist) return status(404, { error: 'user not found' });
+        const firstBalance = dedupedEntries[0]?.[1];
+        if (!firstBalance) return status(404, { error: 'no keys with balance to sort' });
 
-        if (domainInfo.readers.includes(body.userId)) return status(403, { error: 'user already has access to site' });
+        let sortedEntries: [string, string][];
 
-        domainInfo.readers.push(body.userId);
-        siteDB.updateDB();
+        if (firstBalance.startsWith('$')) {
+            const parseBalance = (balance: string) => {
+                const num = parseFloat(balance.replace(/^\$/, ''));
+                return isNaN(num) ? 0 : num;
+            };
+
+            sortedEntries = dedupedEntries.sort((a, b) => parseBalance(b[1]) - parseBalance(a[1]));
+        } else if (firstBalance.startsWith('Paid ')) {
+            sortedEntries = dedupedEntries.sort((a, b) => {
+                const aPaid = a[1].startsWith('Paid ');
+                const bPaid = b[1].startsWith('Paid ');
+                return bPaid ? 1 : aPaid ? -1 : 0;
+            });
+        } else if (firstBalance.includes('Tier')) {
+            const tierOrder = (balance: string) => {
+                if (balance === 'Free Tier' || balance === 'Free Key') return 0;
+                const match = balance.match(/^T(\d+)/) || balance.match(/^Tier (\d+)/);
+                return match ? parseInt(match[1], 10) : -1;
+            };
+
+            sortedEntries = dedupedEntries.sort((a, b) => tierOrder(b[1]) - tierOrder(a[1]));
+        } else return status(404, { error: 'no keys with balance to sort' });
+
+        site.keys = Object.fromEntries(sortedEntries);
+        siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    app.post('/$/sites/access/setRole', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
-        if (!user) return status(401, { error: 'not logged in' });
+    .post('/sites/access/addUser', async ({ body, cookie: { session } }) => {
+        const reqUser = userDB.getLink('sessions', session.value);
+        if (!reqUser) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.getSite(body.domain);
-        if (!domainInfo) return status(404, { error: 'site does not exist' });
-        if (siteDB.userAccessLevel(body.domain, user.id) !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
+        const targetUser = userDB.get(body.userId);
+        if (!targetUser) return status(401, { error: 'no permission' });
 
-        const userExists = userDB.userExists(body.userId);
-        if (!userExists) return status(404, { error: 'user not found' });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+        if (!reqUser.admin && !site.editors.includes(reqUser.id)) return status(401, { error: 'no permission' });
+
+        if (
+            site.readers.includes(body.userId) ||
+            site.editors.includes(body.userId)
+        ) return {};
+
+        site.readers.push(body.userId);
+        siteDB.update(body.domain, { readers: site.readers });
+
+        targetUser.sites.push(body.domain);
+        userDB.update(targetUser.id, { sites: targetUser.sites });
+
+        return {};
+    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
+
+    .post('/sites/access/setRole', async ({ body, cookie: { session } }) => {
+        const reqUser = userDB.getLink('sessions', session.value);
+        if (!reqUser) return status(401, { error: 'not logged in' });
+
+        const targetUser = userDB.get(body.userId);
+        if (!targetUser) return status(401, { error: 'no permission' });
+
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+        if (!reqUser.admin && !site.editors.includes(reqUser.id)) return status(401, { error: 'no permission' });
 
         if (body.role === 'reader') {
-            if (!domainInfo.readers.includes(body.userId)) domainInfo.readers.push(body.userId);
-            domainInfo.editors = domainInfo.editors.filter(id => id !== body.userId);
+            if (!site.readers.includes(body.userId)) site.readers.push(body.userId);
+            if (site.editors.includes(body.userId)) site.editors = site.editors.filter(u => u !== body.userId);
         } else {
-            if (!domainInfo.editors.includes(body.userId)) domainInfo.editors.push(body.userId);
-            domainInfo.readers = domainInfo.readers.filter(id => id !== body.userId);
+            if (!site.editors.includes(body.userId)) site.editors.push(body.userId);
+            if (site.readers.includes(body.userId)) site.readers = site.readers.filter(u => u !== body.userId);
         }
 
-        siteDB.updateDB();
+        siteDB.update(body.domain, { readers: site.readers, editors: site.editors });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), userId: t.Number(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), userId: t.Number(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) })
 
-    app.post('/$/sites/access/removeUser', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
-        if (!user) return status(401, { error: 'not logged in' });
+    .post('/sites/access/removeUser', async ({ body, cookie: { session } }) => {
+        const reqUser = userDB.getLink('sessions', session.value);
+        if (!reqUser) return status(401, { error: 'not logged in' });
 
-        const domainInfo = siteDB.getSite(body.domain);
-        if (!domainInfo) return status(404, { error: 'site does not exist' });
-        if (siteDB.userAccessLevel(body.domain, user.id) !== 'editor' && !user.admin) return status(401, { error: 'no permission' });
+        const targetUser = userDB.get(body.userId);
+        if (!targetUser) return status(401, { error: 'no permission' });
 
-        const userExists = userDB.userExists(body.userId);
-        if (!userExists) return status(404, { error: 'user not found' });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+        if (!reqUser.admin && !site.editors.includes(reqUser.id)) return status(401, { error: 'no permission' });
+        if (!reqUser.admin && !site.editors.includes(targetUser.id)) return status(401, { error: 'no permission' });
 
-        domainInfo.readers = domainInfo.readers.filter(id => id !== body.userId);
-        domainInfo.editors = domainInfo.editors.filter(id => id !== body.userId);
+        if (site.readers.includes(body.userId)) site.readers = site.readers.filter(u => u !== body.userId);
+        if (site.editors.includes(body.userId)) site.editors = site.editors.filter(u => u !== body.userId);
 
-        siteDB.updateDB();
+        siteDB.update(body.domain, { readers: site.readers, editors: site.editors });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
 
-    app.post('/$/sites/delete', async ({ body, cookie: { session } }) => {
-        const user = userDB.whoIsSession(session.value);
+    .post('/sites/delete', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        if (!siteDB.siteExists(body.domain)) return status(404, { error: 'site does not exist' });
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
 
-        siteDB.deleteSite(body.domain);
+        site.readers.forEach((r) => {
+            const u = userDB.get(r);
+            if (u) {
+                u.sites = u.sites.filter(s => s !== body.domain);
+                userDB.update(u.id, { sites: u.sites });
+            }
+        });
+
+        site.editors.forEach((r) => {
+            const u = userDB.get(r);
+            if (u) {
+                u.sites = u.sites.filter(s => s !== body.domain);
+                userDB.update(u.id, { sites: u.sites });
+            }
+        });
+
+        siteDB.remove(body.domain);
 
         return {};
     }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) });
-}
+
+export default sites;

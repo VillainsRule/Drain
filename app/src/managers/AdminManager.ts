@@ -1,17 +1,17 @@
 import { makeAutoObservable } from 'mobx';
 
-import axios from '@/lib/axiosLike';
+import api, { errorFrom } from '@/lib/eden';
 
-import type { InstanceInformation, PublicUser } from '@/types';
+import type { PublicConfig, PublicUser } from '@/types';
 
 class AdminManager {
     users: PublicUser[] = [];
 
-    instanceInformation: InstanceInformation = {
+    instanceInformation: PublicConfig = {
         commit: 'unknown',
         localChanges: true,
         isUsingSystemd: false,
-        config: { useProxiesForBalancer: false }
+        config: { useProxiesForBalancer: false, allowAPIKeys: true }
     };
 
     constructor() {
@@ -19,13 +19,15 @@ class AdminManager {
     }
 
     async fetchAllUsers() {
-        const req = await axios.post('/$/admin/secure/users');
-        this.users = req.data.users;
+        const req = await api.admin.users.post();
+        if (req.data) this.users = req.data.users;
+        else alert(errorFrom(req));
     }
 
     async fetchInstanceInformation() {
-        const req = await axios.post('/$/admin/secure/instance');
-        this.instanceInformation = req.data;
+        const req = await api.admin.instance.get();
+        if (req.data) this.instanceInformation = req.data;
+        else alert(errorFrom(req));
     }
 
     getUser(id: number) {

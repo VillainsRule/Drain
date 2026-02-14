@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/shadcn/input'
 import { Label } from '@/components/shadcn/label'
 
-import axios from '@/lib/axiosLike'
+import api, { errorFrom } from '@/lib/eden'
 
 import authManager from '@/managers/AuthManager'
 
@@ -18,6 +18,9 @@ import Logo from '@/assets/Logo'
 
 const Auth = observer(function Auth() {
     const navigate = useNavigate();
+
+    const [allowCredentials] = useState<any[]>(JSON.parse(localStorage.getItem('passkeys') || '[]'));
+    const [showingAll, setShowingAll] = useState<boolean>(allowCredentials.length < 1);
 
     const [standardError, setStandardError] = useState<string>('');
     const usernameRef = useRef<HTMLInputElement>(null);
@@ -35,13 +38,44 @@ const Auth = observer(function Auth() {
 
     useEffect(() => {
         if (authManager.user.id) navigate('/');
+
+        if (localStorage.getItem('dark')) {
+            document.body.classList.add('dark');
+        }
     }, []);
 
+    const doWebAuthn = async () => {
+        const res = await api.auth.webauthn.login.options.post({});
+        if (!res.data) return alert(errorFrom(res));
+
+        if (!showingAll) {
+            res.data.allowCredentials = localStorage.getItem('internalTransport') ? allowCredentials.map(e => ({ ...e, transports: ['internal'] })) : allowCredentials;
+            res.data.userVerification = 'required';
+        }
+
+        let assertionResp;
+        try {
+            assertionResp = await startAuthentication({ optionsJSON: res.data });
+        } catch (err: any) {
+            return setStandardError(err.toString().includes('NotAllowedError') ?
+                'do it again and don\'t close the popup early :P' :
+                'failed to complete passkey authentication. try again or sign in with another method.'
+            );
+        }
+
+        api.auth.webauthn.login.verify.post(assertionResp).then((res) => {
+            if (res.data) {
+                location.reload();
+                localStorage.setItem('resavePasskeys', '1');
+            } else setStandardError(errorFrom(res));
+        });
+    }
+
     return (
-        <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+        <div className='min-h-screen flex items-center justify-center'>
             <Card className='w-11/12 md:w-full max-w-md'>
                 <CardHeader className='text-center flex flex-row md:flex-col items-center gap-3'>
-                    <Logo className='w-30 h-30 rounded-xl shadow-md border border-neutral-200 p-4 bg-white md:hidden mb-3' />
+                    <Logo className='w-30 h-30 rounded-xl shadow-md border border-neutral-200 p-4 bg-background md:hidden mb-3' />
 
                     <div className='flex flex-col'>
                         <CardTitle className='text-3xl font-bold'>Drain</CardTitle>
@@ -49,7 +83,7 @@ const Auth = observer(function Auth() {
                     </div>
                 </CardHeader>
 
-                <CardContent className='space-y-4'>
+                {showingAll ? <CardContent className='space-y-4'>
                     <div className='space-y-2'>
                         <Label htmlFor='username'>Username</Label>
                         <Input id='username' type='text' required ref={usernameRef} onKeyUp={(e) => e.key === 'Enter' && passwordRef.current!.focus()} />
@@ -62,43 +96,35 @@ const Auth = observer(function Auth() {
 
                     {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
-                    <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                        axios.post('/$/auth/secure/credentials', {
+                    <Button variant='outline' className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
+                        api.auth.account.post({
                             username: usernameRef.current!.value,
                             password: passwordRef.current!.value
-                        }).then((response) => {
-                            if (response.data.user) {
-                                authManager.setAuth(response.data.user);
+                        }).then((res) => {
+                            if (res.data) {
+                                authManager.setAuth(res.data.user);
                                 navigate('/');
-                            } else setStandardError(response.data.error);
+                            } else setStandardError(errorFrom(res));
                         })
                     }}>Log In</Button>
 
-                    <div className="flex items-center">
-                        <div className="grow h-px bg-gray-200" />
-                        <span className="mx-3 text-gray-400 text-sm">OR</span>
-                        <div className="grow h-px bg-gray-200" />
+                    <div className='flex items-center'>
+                        <div className='grow h-px bg-ring' />
+                        <span className='mx-3 text-ring text-sm'>OR</span>
+                        <div className='grow h-px bg-ring' />
                     </div>
 
-                    <Button className='w-full cursor-pointer' onClick={() => setInviteDialogOpen(true)}>i have an invite code</Button>
-                    {authManager.webAuthnEnabled && <Button className='w-full cursor-pointer' onClick={async () => {
-                        const req = await axios.post('/$/auth/secure/webauthn/login/options');
-                        if (req.data.error) return setStandardError(req.data.error);
+                    <Button variant='outline' className='w-full cursor-pointer' onClick={() => setInviteDialogOpen(true)}>i have an invite code</Button>
+                    {authManager.webAuthnEnabled && <Button variant='outline' className='w-full cursor-pointer' onClick={doWebAuthn}>i have a passkey</Button>}
+                </CardContent> : <CardContent className='space-y-4'>
+                    <div className='border-2 border-dashed bg-background p-6 text-center flex justify-center items-center w-full h-36 rounded-sm cursor-pointer hover:scale-101 transition-all duration-100' onClick={doWebAuthn}>
+                        <span className='text-muted-foreground'>reauthenticate with your passkey</span>
+                    </div>
 
-                        let assertionResp;
-                        try {
-                            assertionResp = await startAuthentication({ optionsJSON: req.data });
-                        } catch (err) {
-                            console.error(err);
-                            return setStandardError('failed to get passkey credential. make sure you have a passkey set up and try again.');
-                        }
+                    {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
-                        axios.post('/$/auth/secure/webauthn/login/verify', assertionResp).then((response) => {
-                            if (response.data.user) location.reload();
-                            else setStandardError(response.data.error);
-                        });
-                    }}>i have a passkey</Button>}
-                </CardContent>
+                    <Button variant='outline' className='w-full cursor-pointer' ref={buttonRef} onClick={() => setShowingAll(true)}>sign in with alternative method</Button>
+                </CardContent>}
             </Card>
 
             <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
@@ -117,15 +143,15 @@ const Auth = observer(function Auth() {
                         {inviteError && <div className='text-red-500 text-sm'>{inviteError}</div>}
 
                         <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            axios.post('/$/auth/secure/invite/account', {
+                            api.auth.invites.attempt.post({
                                 code: inviteCodeRef.current!.value
-                            }).then((response) => {
-                                if (response.data.username) {
-                                    setInviteUsername(response.data.username);
+                            }).then((res) => {
+                                if (res.data) {
+                                    setInviteUsername(res.data.username);
                                     setInviteCode(inviteCodeRef.current!.value);
                                     setInviteDialogOpen(false);
                                     setInviteDialog2Open(true);
-                                } else setInviteError(response.data.error);
+                                } else setInviteError(errorFrom(res));
                             })
                         }}>Submit</Button>
                     </div>
@@ -135,25 +161,25 @@ const Auth = observer(function Auth() {
             <Dialog open={inviteDialog2Open} onOpenChange={setInviteDialog2Open}>
                 <DialogContent className='w-11/12 md:w-full max-w-md'>
                     <DialogHeader className='text-center'>
-                        <DialogTitle className='text-2xl font-bold'>Welcome, {inviteUsername}!</DialogTitle>
-                        <DialogDescription>Get started by entering a password below:</DialogDescription>
+                        <DialogTitle className='text-2xl font-bold'>welcome, {inviteUsername}!</DialogTitle>
+                        <DialogDescription>get started by entering a password below:</DialogDescription>
                     </DialogHeader>
 
                     <div className='space-y-4'>
                         <div className='space-y-2'>
                             <Label htmlFor='newPassword'>New Password</Label>
-                            <Input id='newPassword' type='password' required ref={invitePasswordRef} />
+                            <Input id='newPassword' type='password' maxLength={24} required ref={invitePasswordRef} />
                         </div>
 
                         {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
                         <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            axios.post('/$/auth/secure/invite/claim', {
+                            api.auth.invites.claim.post({
                                 code: inviteCode,
                                 password: invitePasswordRef.current!.value
-                            }).then((response) => {
-                                if (response.data.user) location.reload();
-                                else setStandardError(response.data.error);
+                            }).then((res) => {
+                                if (res.data && res.data.user) location.reload();
+                                else setStandardError(errorFrom(res));
                             })
                         }}>Set Password & Log In</Button>
                     </div>

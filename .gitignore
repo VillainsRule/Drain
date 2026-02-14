@@ -4,6 +4,7 @@ bun.lock
 
 # protected
 api/db
+gi
 keys.txt
 .env
 .config.ts

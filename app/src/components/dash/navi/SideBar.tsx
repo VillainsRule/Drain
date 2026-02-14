@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
@@ -9,12 +9,10 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../shadcn/dialog';
 import { Input } from '../../shadcn/input';
 
-import axios from '@/lib/axiosLike';
+import api, { errorFrom } from '@/lib/eden';
 
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
-
-import Logo from '@/assets/Logo'
 
 const SideBar = observer(function SideBar() {
     const { pathname } = useLocation();
@@ -22,80 +20,90 @@ const SideBar = observer(function SideBar() {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [siteAddError, setSiteAddError] = useState('');
+    const [showGradient, setShowGradient] = useState(false);
 
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const handleScroll = () => {
+        if (scrollRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+            setShowGradient(scrollTop + clientHeight < scrollHeight - 5);
+        }
+    };
+
+    useEffect(() => {
+        handleScroll();
+    }, [siteManager.siteList]);
 
     return (
-        <>
-            <div className='border-neutral-200 w-72 h-full flex flex-col px-6 py-8 fixed left-0 top-0 bottom-0 z-20'>
-                <div className='flex flex-col justify-between h-full w-full items-center'>
-                    <div className='flex flex-col items-center gap-4 mb-4 w-full h-full'>
-                        <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => navigate('/')}>
-                            <Logo className='w-12 h-12 rounded-xl shadow-md border border-neutral-300 p-2' />
-                            <h1 className='text-4xl font-extrabold tracking-tight text-neutral-800 drop-shadow-sm'>drain</h1>
-                        </div>
-
-                        {siteManager.sites.length > 0 && <div className='w-full border-b border-neutral-300'></div>}
-
-                        {authManager.isAdmin() && (
-                            <div
-                                className='flex items-center justify-center gap-2 bg-blue-600 w-full py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-125 cursor-pointer font-semibold text-lg'
-                                onClick={() => setDialogOpen(true)}
-                            >
-                                <Plus className='w-6 h-6 text-white' />
-                                <span className='text-white'>Add Site</span>
-                            </div>
-                        )}
-
-                        <div className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2'>
-                            {siteManager.sites.map((site, i) => (
-                                <ContextMenu key={i}>
-                                    <ContextMenuTrigger asChild>
-                                        <div
-                                            className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer
-                                            ${pathname.startsWith('/domain/') && siteManager.domain === site.domain ? 'bg-blue-100 border border-blue-300 shadow' : 'hover:bg-neutral-100'}`}
-                                            onClick={e => {
-                                                if (!(e.target as HTMLElement).classList.contains('no-click')) {
-                                                    siteManager.domain = site.domain;
-                                                    navigate('/domain/' + site.domain);
-                                                }
-                                            }}
-                                        >
-                                            <span className={`text-lg font-medium ${pathname.startsWith('/domain/') && siteManager.domain === site.domain ? 'text-blue-700' : 'text-neutral-800'}`}>{site.domain}</span>
-                                        </div>
-                                    </ContextMenuTrigger>
-                                    <ContextMenuContent>
-                                        <ContextMenuItem
-                                            className='no-click'
-                                            onClick={() => navigator.clipboard.writeText(location.origin + '#' + site.domain)}
-                                        >
-                                            Copy URL
-                                        </ContextMenuItem>
-                                        {authManager.isAdmin() && (
-                                            <ContextMenuItem
-                                                className='text-red-500 no-click'
-                                                onClick={() => {
-                                                    axios.post('/$/sites/delete', { domain: site.domain }).then(resp => {
-                                                        if (resp.data.error) {
-                                                            alert(resp.data.error);
-                                                        } else {
-                                                            siteManager.getSites();
-                                                            siteManager.domain === '';
-                                                            navigate('/');
-                                                        }
-                                                    });
-                                                }}
-                                            >
-                                                Delete Site
-                                            </ContextMenuItem>
-                                        )}
-                                    </ContextMenuContent>
-                                </ContextMenu>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+        <div className='border-neutral-200 w-72 h-full flex flex-col items-center px-6 py-6 fixed left-0 top-0 bottom-0 z-20'>
+            <div className='flex justify-center cursor-pointer items-center mb-4 select-none' onClick={() => navigate('/')}>
+                <h1 className='text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm'>drain!</h1>
             </div>
+
+            {siteManager.siteList.length < 1 && <div className='flex flex-col items-center mt-3'>
+                <span className='text-accent-foreground'>you have no sites</span>
+                <span className='text-accent-foreground'>contact an admin</span>
+                <span className='text-accent-foreground'>and pray for some</span>
+            </div>}
+
+            <div className='relative w-full flex-1 min-h-0 mb-4'>
+                <div
+                    ref={scrollRef}
+                    className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2 h-full'
+                    onScroll={handleScroll}
+                >
+                    {siteManager.siteList.map((site, i) => (
+                        <ContextMenu key={i}>
+                            <ContextMenuTrigger asChild>
+                                <div
+                                    className='w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer hover:translate-x-1'
+                                    onClick={(e) => {
+                                        if (!(e.target as HTMLElement).classList.contains('no-click')) {
+                                            siteManager.select(site);
+                                            navigate(`/domain/${site}/keys`);
+                                        }
+                                    }}
+                                >
+                                    <span className={`text-lg font-medium ${pathname.startsWith('/domain/') && siteManager.site?.id === site ? 'text-sky-600' : 'text-primary'}`}>{site}</span>
+                                </div>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent>
+                                <ContextMenuItem
+                                    className='no-click'
+                                    onClick={() => navigator.clipboard.writeText(`${location.origin}/domain/${site}/keys`)}
+                                >Copy URL</ContextMenuItem>
+
+                                {authManager.isAdmin() && <ContextMenuItem className='text-red-500 no-click' onClick={() => {
+                                    api.sites.delete.post({ domain: site }).then((res) => {
+                                        if (res.data) {
+                                            siteManager.getList();
+                                            siteManager.select('');
+                                            navigate('/');
+                                        } else alert(errorFrom(res));
+                                    });
+                                }}
+                                >Delete Site</ContextMenuItem>}
+                            </ContextMenuContent>
+                        </ContextMenu>
+                    ))}
+                </div>
+
+                {showGradient && (
+                    <div className='absolute bottom-0 left-0 right-0 h-20 bg-linear-to-t from-white dark:from-gray-950 to-transparent pointer-events-none' />
+                )}
+            </div>
+
+            {authManager.isAdmin() && (
+                <Button
+                    className='flex items-center justify-center gap-2 w-full py-5 rounded-lg shadow-lg transition-colors duration-125 cursor-pointer font-semibold text-lg'
+                    onClick={() => setDialogOpen(true)}
+                >
+                    <Plus className='w-6 h-6 text-primary-foreground' />
+                    <span className='text-primary-foreground'>add site</span>
+                </Button>
+            )}
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent>
@@ -104,27 +112,24 @@ const SideBar = observer(function SideBar() {
                         <DialogDescription>add a site to our database. keys can be added later.</DialogDescription>
                     </DialogHeader>
 
-                    <Input placeholder='my-cool-app.com' id='domainAddInput' className='w-full mb-4' onKeyUp={(e) => (e.key === 'Enter') && buttonRef.current!.click()} />
+                    <Input placeholder='my-cool-app.com' maxLength={32} id='domainAddInput' className='w-full mb-4' onKeyUp={(e) => (e.key === 'Enter') && buttonRef.current!.click()} />
 
                     {siteAddError && (<div className='text-red-500 mb-2'>{siteAddError}</div>)}
 
                     <Button className='w-3/4' ref={buttonRef} onClick={() => {
-                        axios.post('/$/sites/create', {
+                        api.sites.create.post({
                             url: (document.getElementById('domainAddInput') as HTMLInputElement).value
-                        }).then((resp) => {
-                            if (resp.data.error) setSiteAddError(resp.data.error);
-                            else {
-                                siteManager.getSites();
+                        }).then((res) => {
+                            if (res.data) {
+                                siteManager.getList();
                                 setSiteAddError('');
                                 setDialogOpen(false);
-                            }
-                        }).catch((err) => {
-                            console.error(err);
+                            } else setSiteAddError(errorFrom(res));
                         });
                     }}>submit</Button>
                 </DialogContent>
             </Dialog>
-        </>
+        </div>
     )
 });
 

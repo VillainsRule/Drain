@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-const hasher = {
+const Hasher = {
     encode: (string: string): string => {
         const salt = crypto.randomBytes(16).toString('hex');
         const derivedKey = crypto.scryptSync(string, salt, 64);
@@ -13,4 +13,4 @@ const hasher = {
     }
 };
 
-export default hasher;
+export default Hasher;
