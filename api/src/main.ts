@@ -3,6 +3,7 @@ import './db/migrator';
 import { Elysia } from 'elysia';
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import admin from './endpoints/admin';
@@ -26,6 +27,9 @@ if (Bun.env.DD === '1') files.onRequest(({ set, request }) => {
 
     return;
 });
+
+const certDir = path.resolve(import.meta.dirname, '../cert');
+const certExists = fs.existsSync(certDir);
 
 const distDir = path.resolve(import.meta.dirname, '../../app/dist');
 
@@ -52,5 +56,13 @@ const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb
     .use(auth)
     .use(sites)
     .listen(4422, () => console.log(`drain it up! ${Bun.env.RP_ID !== 'localhost' ? `https://${Bun.env.RP_ID}` : 'http://localhost:4422'}`)); 2
+
+if (certExists) app.listen({
+    port: 4423,
+    tls: {
+        cert: fs.readFileSync(path.join(certDir, 'cert.pem')),
+        key: fs.readFileSync(path.join(certDir, 'cert-key.pem'))
+    }
+}, () => console.log(`your self-signed cert is on https://${os.hostname()}.local:4423`))
 
 export type App = typeof app;

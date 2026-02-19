@@ -19,11 +19,8 @@ import api, { errorFrom } from '@/lib/eden';
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
 
-const fakeKeys = [
-    crypto.randomUUID().replace(/-/g, ''),
-    crypto.randomUUID().replace(/-/g, ''),
-    crypto.randomUUID().replace(/-/g, '')
-]
+const randomHex = (len: number) => Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+const fakeKeys = [randomHex(16), randomHex(16), randomHex(16)];
 
 const SiteKeys = observer(function SiteKeys() {
     const [addKeyDialogOpen, setAddKeyDialogOpen] = useState(false);

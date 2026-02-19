@@ -2,11 +2,14 @@
 node_modules
 bun.lock
 
-# protected
+# api secrets
+api/cert
 api/db
+.env
+
+# tooling secrets
 gi
 keys.txt
-.env
 .config.ts
 
 # builds
