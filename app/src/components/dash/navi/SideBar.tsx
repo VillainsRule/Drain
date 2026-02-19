@@ -37,7 +37,7 @@ const SideBar = observer(function SideBar() {
     }, [siteManager.siteList]);
 
     return (
-        <div className='border-neutral-200 w-72 h-full flex flex-col items-center px-6 py-6 fixed left-0 top-0 bottom-0 z-20'>
+        <div className='border-neutral-200 min-w-72 max-w-72 h-full hidden md:flex flex-col items-center p-6 pr-4 z-20'>
             <div className='flex justify-center cursor-pointer items-center mb-4 select-none' onClick={() => navigate('/')}>
                 <h1 className='text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm'>drain!</h1>
             </div>

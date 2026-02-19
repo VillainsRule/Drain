@@ -1,5 +1,3 @@
-// backend
-
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
 
 export type DBId = string | number;
@@ -9,7 +7,6 @@ export interface DBPasskey {
     name: string;
     lastUsed: number;
 
-    // webauthn requires
     webAuthnUserID: string; // from step 1
     id: string; // from step 2
     publicKey: string; // from step 2

@@ -8,14 +8,14 @@ import getBalancer from '../balancer';
 const usersRunningBalancer: number[] = [];
 
 const sites = new Elysia({ name: 'sites' })
-    .post('/sites/list', async ({ cookie: { session } }) => {
+    .post('/api/sites/list', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
         return { sites: user.admin ? siteDB.getIDs() : user.sites };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/info', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/info', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -43,7 +43,7 @@ const sites = new Elysia({ name: 'sites' })
         } else return status(401, { error: 'no permission' });
     }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/create', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/create', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -63,7 +63,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ url: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/addKey', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/addKey', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -95,7 +95,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/balancer', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/balancer', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -123,7 +123,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/removeKey', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/removeKey', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -137,7 +137,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/sortKeys', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/sortKeys', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -187,7 +187,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/access/addUser', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/access/addUser', async ({ body, cookie: { session } }) => {
         const reqUser = userDB.getLink('sessions', session.value);
         if (!reqUser) return status(401, { error: 'not logged in' });
 
@@ -212,7 +212,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/access/setRole', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/access/setRole', async ({ body, cookie: { session } }) => {
         const reqUser = userDB.getLink('sessions', session.value);
         if (!reqUser) return status(401, { error: 'not logged in' });
 
@@ -236,7 +236,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String(), userId: t.Number(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/access/removeUser', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/access/removeUser', async ({ body, cookie: { session } }) => {
         const reqUser = userDB.getLink('sessions', session.value);
         if (!reqUser) return status(401, { error: 'not logged in' });
 
@@ -256,7 +256,7 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/sites/delete', async ({ body, cookie: { session } }) => {
+    .post('/api/sites/delete', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 

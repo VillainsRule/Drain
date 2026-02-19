@@ -38,13 +38,7 @@ const SiteKeys = observer(function SiteKeys() {
 
     const site = siteManager.site;
 
-    if (!site) {
-        return (
-            <div className='flex justify-center items-center w-full'>
-                <span className='text-muted-foreground text-lg'>fetching site...</span>
-            </div>
-        );
-    }
+    if (!site) return <div className='flex justify-center items-center w-full mt-10 text-muted-foreground text-lg'>fetching site...</div>
 
     return (
         <>
@@ -125,7 +119,7 @@ const SiteKeys = observer(function SiteKeys() {
                 </div>
             </div>
 
-            <div className='grow flex flex-col items-center justify-start gap-1 w-full mt-4 pb-4'>
+            <div className='flex flex-col items-center justify-start gap-1 mt-4 pb-4'>
                 {Object.keys(site.keys).map((key, i) => {
                     const balance = site.keys[key]
 
@@ -134,7 +128,7 @@ const SiteKeys = observer(function SiteKeys() {
                             color: validKeys.includes(key) ? 'green' : invalidKeys.includes(key) ? 'red' : ''
                         }}>
                             <Input value={'...' + key.slice(-4)} readOnly className='font-mono w-fit text-center sm:hidden flex px-1' />
-                            <Input value={key} readOnly className='font-mono w-md text-center hidden sm:flex' />
+                            <Input value={key} readOnly className='font-mono text-center hidden sm:flex' />
 
                             {balance && balance !== '?' && <Input value={balance} readOnly className='font-mono min-w-20 sm:min-w-0 sm:w-36 text-center px-1' />}
 

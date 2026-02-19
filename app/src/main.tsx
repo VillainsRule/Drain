@@ -22,8 +22,6 @@ import SiteRouter from './components/dash/site/Router'
 import APIKeys from './components/dash/user/APIKeys'
 import Passkeys from './components/dash/user/Passkeys'
 
-import Logo from './assets/Logo'
-
 import './index.css'
 
 function Container({ element: Element }: { element: React.ComponentType<any> }) {
@@ -41,10 +39,10 @@ function Container({ element: Element }: { element: React.ComponentType<any> }) 
     }, [location.pathname]);
 
     return (
-        <div className='flex gap-5 p-5 h-screen w-screen'>
-            <div className='hidden md:flex'><SideBar /></div>
+        <div className='flex h-screen w-screen'>
+            <SideBar />
 
-            <div className='absolute flex flex-col md:top-16 md:left-72 w-[calc(100%-2.5rem)] md:w-[calc(100%-20rem)] h-[calc(100%-6.5rem)] md:h-[calc(100%-4rem)]'>
+            <div className='flex flex-col w-full md:pr-8'>
                 {isNavboxOpen && <NavBox />}
                 <TopBar setIsNavboxOpen={setIsNavboxOpen} />
 
@@ -70,14 +68,14 @@ const App = observer(function App() {
             <Route path='/admin/labs' element={<Container element={Labs} />} />
             <Route path='/admin/users' element={<Container element={Users} />} />
 
-            <Route path='*' element={<div className='flex justify-center items-center gap-10 h-screen w-screen'>
-                <Logo className='w-36 h-36' />
-                <h1 className='text-4xl font-bold mb-1.5'>drain | 404 not found</h1>
+            <Route path='*' element={<div className='flex flex-col justify-center items-center gap-2 h-screen w-screen'>
+                <h1 className='text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm'>drain</h1>
+                <h2>404 not found</h2>
             </div>} />
         </Routes>
-    </BrowserRouter> : <div className='flex justify-center items-center gap-10 h-screen w-screen'>
-        <Logo className='w-36 h-36' />
-        <h1 className='text-4xl font-bold mb-1.5'>loading drain...</h1>
+    </BrowserRouter> : <div className='flex flex-col justify-center items-center gap-2 h-screen w-screen'>
+        <h1 className='text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm'>drain</h1>
+        <h2>is loading...</h2>
     </div>
 });
 

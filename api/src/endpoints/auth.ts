@@ -28,7 +28,7 @@ const isDev = Bun.env.DD === '1';
 const isWebAuthnConfigured = typeof Bun.env.RP_ID === 'string';
 
 const auth = new Elysia({ name: 'auth' })
-    .get('/auth/account', async ({ cookie: { session } }) => {
+    .get('/api/auth/account', async ({ cookie: { session } }) => {
         if (typeof session.value !== 'string') return { isWebAuthnConfigured, isDev: false };
 
         const user = userDB.getLink('sessions', session.value);
@@ -37,7 +37,7 @@ const auth = new Elysia({ name: 'auth' })
         return { user: { id: user.id, username: user.username, admin: user.admin }, isWebAuthnConfigured, isDev };
     })
 
-    .post('/auth/account', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/account', async ({ body, cookie: { session } }) => {
         try {
             const user = userDB.getLink('username', body.username);
             if (!user) return status(401, { error: 'user or password not found' });
@@ -61,7 +61,7 @@ const auth = new Elysia({ name: 'auth' })
         }
     }, { body: t.Object({ username: t.String(), password: t.String() }) })
 
-    .post('/auth/invites/attempt', async ({ body }) => {
+    .post('/api/auth/invites/attempt', async ({ body }) => {
         try {
             const user = userDB.getLink('code', body.code);
             if (!user) return status(401, { error: 'that invite code does not exist or has been claimed' });
@@ -73,7 +73,7 @@ const auth = new Elysia({ name: 'auth' })
         }
     }, { body: t.Object({ code: t.String() }) })
 
-    .post('/auth/invites/claim', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/invites/claim', async ({ body, cookie: { session } }) => {
         try {
             const user = userDB.getLink('code', body.code);
             if (!user) return status(401, { error: 'that invite code does not exist or has been claimed' });
@@ -102,7 +102,7 @@ const auth = new Elysia({ name: 'auth' })
         }
     }, { body: t.Object({ code: t.String(), password: t.String() }) })
 
-    .post('/auth/logout', async ({ cookie: { session } }) => {
+    .post('/api/auth/logout', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return {};
 
@@ -119,7 +119,7 @@ const auth = new Elysia({ name: 'auth' })
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .get('/auth/passkeys', async ({ cookie: { session } }) => {
+    .get('/api/auth/passkeys', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -135,7 +135,7 @@ const auth = new Elysia({ name: 'auth' })
         return { passkeys };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/auth/passkeys/delete', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/passkeys/delete', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -145,7 +145,7 @@ const auth = new Elysia({ name: 'auth' })
         return {};
     }, { body: t.Object({ id: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/auth/webauthn/register/options', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/webauthn/register/options', async ({ body, cookie: { session } }) => {
         if (!isWebAuthnConfigured) return status(404);
 
         const user = userDB.getLink('sessions', session.value);
@@ -185,7 +185,7 @@ const auth = new Elysia({ name: 'auth' })
         return opts;
     }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/auth/webauthn/register/verify', async ({ body, headers: { origin }, cookie: { session } }) => {
+    .post('/api/auth/webauthn/register/verify', async ({ body, headers: { origin }, cookie: { session } }) => {
         if (!isWebAuthnConfigured) return status(404);
         if (!origin) return status(404);
 
@@ -273,7 +273,7 @@ const auth = new Elysia({ name: 'auth' })
         cookie: t.Cookie({ session: t.String() })
     })
 
-    .post('/auth/webauthn/login/options', async ({ cookie: { webauthn } }) => {
+    .post('/api/auth/webauthn/login/options', async ({ cookie: { webauthn } }) => {
         if (!isWebAuthnConfigured) return status(404);
 
         const options = await generateAuthenticationOptions({
@@ -290,7 +290,7 @@ const auth = new Elysia({ name: 'auth' })
         return options;
     })
 
-    .post('/auth/webauthn/login/verify', async ({ body, headers: { origin }, cookie: { webauthn, session } }) => {
+    .post('/api/auth/webauthn/login/verify', async ({ body, headers: { origin }, cookie: { webauthn, session } }) => {
         if (!isWebAuthnConfigured) return status(404);
         if (!origin) return status(404);
 
@@ -367,7 +367,7 @@ const auth = new Elysia({ name: 'auth' })
         cookie: t.Cookie({ webauthn: t.String() })
     })
 
-    .get('/auth/api/keys', async ({ cookie: { session } }) => {
+    .get('/api/auth/api/keys', async ({ cookie: { session } }) => {
         if (!isWebAuthnConfigured) return status(404);
 
         const user = userDB.getLink('sessions', session.value);
@@ -383,7 +383,7 @@ const auth = new Elysia({ name: 'auth' })
         return { apiKeys, enabled: configDB.db.allowAPIKeys };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/auth/api/keys/create', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/api/keys/create', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -410,7 +410,7 @@ const auth = new Elysia({ name: 'auth' })
         return { key };
     }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/auth/api/keys/delete', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/api/keys/delete', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
@@ -425,7 +425,7 @@ const auth = new Elysia({ name: 'auth' })
         return {};
     }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/auth/api/keys/regen', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/api/keys/regen', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 

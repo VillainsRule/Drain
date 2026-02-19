@@ -29,11 +29,8 @@ const Passkeys = observer(function Passkeys() {
     return (
         <div className='flex flex-col items-center w-full h-full md:w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
-                <h2 className='text-2xl font-bold'>drain passkey manager</h2>
-
-                <div className='flex gap-3'>
-                    <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setPasskeyNameModalOpen(true)}>add passkey</Button>
-                </div>
+                <h2 className='text-2xl font-bold'>passkey manager</h2>
+                <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setPasskeyNameModalOpen(true)}>add passkey</Button>
             </div>
 
             {authManager.passkeys.length < 1 && <span className='text-muted-foreground text-sm text-center'>you have no passkeys. <span className='underline cursor-pointer' onClick={() => setPasskeyNameModalOpen(true)}>create one!</span></span>}

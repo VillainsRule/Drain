@@ -31,11 +31,8 @@ const APIKeys = observer(function APIKeys() {
     return (
         <div className='flex flex-col items-center w-full h-full md:w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
-                <h2 className='text-2xl font-bold'>drain API key manager</h2>
-
-                <div className='flex gap-3'>
-                    <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setKeyNameModalOpen(true)}>create API key</Button>
-                </div>
+                <h2 className='text-2xl font-bold'>API key manager</h2>
+                <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setKeyNameModalOpen(true)}>create API key</Button>
             </div>
 
             {!authManager.apiKeysEnabled && <div className='flex flex-col items-center'>

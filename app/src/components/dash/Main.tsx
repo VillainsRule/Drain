@@ -9,7 +9,6 @@ import Wrench from 'lucide-react/icons/wrench';
 
 import authManager from '@/managers/AuthManager';
 
-import Logo from '@/assets/Logo';
 import SSAI from '@/assets/superSecretAdminImage.png';
 
 const today = new Date(Date.now());
@@ -20,13 +19,9 @@ const Main = observer(function Main() {
 
     return (
         <div className='flex items-center flex-col gap-3 md:gap-6 h-full w-full mt-2 md:mt-16'>
-            <div className='flex md:justify-center items-center flex-col md:flex-row gap-3 md:gap-9 w-full'>
-                <Logo className='w-32 h-32 rounded-xl shadow-md border border-neutral-200 dark:border-none p-4' />
-
-                <div className='flex items-center flex-col text-center'>
-                    <h1 className='text-4xl font-bold mb-1.5'>hi, @{authManager.user.username}</h1>
-                    <h3 className='text-2xl font-medium'>welcome to drain!</h3>
-                </div>
+            <div className='flex text-center items-center flex-col w-full mt-10'>
+                <h1 className='text-4xl font-bold mt-10 mb-1.5'>hi, @{authManager.user.username}</h1>
+                <h3 className='text-2xl font-medium'>welcome to drain!</h3>
             </div>
 
             {shouldShowCow && <img className='hidden md:flex w-200 h-30 mt-10' src={SSAI} />}

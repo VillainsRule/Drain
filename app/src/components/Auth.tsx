@@ -14,8 +14,6 @@ import api, { errorFrom } from '@/lib/eden'
 
 import authManager from '@/managers/AuthManager'
 
-import Logo from '@/assets/Logo'
-
 const Auth = observer(function Auth() {
     const navigate = useNavigate();
 
@@ -74,13 +72,9 @@ const Auth = observer(function Auth() {
     return (
         <div className='min-h-screen flex items-center justify-center'>
             <Card className='w-11/12 md:w-full max-w-md'>
-                <CardHeader className='text-center flex flex-row md:flex-col items-center gap-3'>
-                    <Logo className='w-30 h-30 rounded-xl shadow-md border border-neutral-200 p-4 bg-background md:hidden mb-3' />
-
-                    <div className='flex flex-col'>
-                        <CardTitle className='text-3xl font-bold'>Drain</CardTitle>
-                        <CardDescription>your credentials have been provided by the site admin.</CardDescription>
-                    </div>
+                <CardHeader className='text-center flex flex-col items-center'>
+                    <CardTitle className='text-3xl font-bold'>Drain</CardTitle>
+                    <CardDescription>your credentials have been provided by the site admin.</CardDescription>
                 </CardHeader>
 
                 {showingAll ? <CardContent className='space-y-4'>

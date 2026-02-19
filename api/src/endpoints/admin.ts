@@ -16,7 +16,7 @@ const localChanges = term.execSync('git status --porcelain', { encoding: 'utf8',
 const isUsingSystemd = !!process.env['INVOCATION_ID']
 
 const admin = new Elysia({ name: 'admin' })
-    .post('/admin/users', async ({ cookie: { session } }) => {
+    .post('/api/admin/users', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -24,7 +24,7 @@ const admin = new Elysia({ name: 'admin' })
         return { users };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/users/create', async ({ body, cookie: { session } }) => {
+    .post('/api/admin/users/create', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -50,7 +50,7 @@ const admin = new Elysia({ name: 'admin' })
         return { inviteCode };
     }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/users/sites', async ({ body, cookie: { session } }) => {
+    .post('/api/admin/users/sites', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -67,7 +67,7 @@ const admin = new Elysia({ name: 'admin' })
         return { sites };
     }, { body: t.Object({ userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/users/delete', async ({ body, cookie: { session } }) => {
+    .post('/api/admin/users/delete', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -84,7 +84,7 @@ const admin = new Elysia({ name: 'admin' })
         return {};
     }, { body: t.Object({ userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/users/setRole', async ({ body, cookie: { session } }) => {
+    .post('/api/admin/users/setRole', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -98,7 +98,7 @@ const admin = new Elysia({ name: 'admin' })
         return {};
     }, { body: t.Object({ userId: t.Number(), isAdmin: t.Boolean() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/users/setPassword', async ({ body, cookie: { session } }) => {
+    .post('/api/admin/users/setPassword', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
@@ -115,14 +115,14 @@ const admin = new Elysia({ name: 'admin' })
         return {};
     }, { body: t.Object({ userId: t.Number(), newPassword: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
-    .get('/admin/instance', async ({ cookie: { session } }) => {
+    .get('/api/admin/instance', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
         return { commit, localChanges, isUsingSystemd, config: configDB.db };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/gitPull', async ({ cookie: { session } }) => {
+    .post('/api/admin/gitPull', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
@@ -130,7 +130,7 @@ const admin = new Elysia({ name: 'admin' })
         return { out };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/systemdRestart', async ({ cookie: { session } }) => {
+    .post('/api/admin/systemdRestart', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
@@ -141,7 +141,7 @@ const admin = new Elysia({ name: 'admin' })
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/admin/instance', async ({ body, cookie: { session } }) => {
+    .post('/api/admin/instance', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 

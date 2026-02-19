@@ -35,8 +35,8 @@ const SiteRouter = observer(function SiteRouter() {
     }
 
     return (
-        <div className='flex justify-center w-full h-full overflow-y-auto overflow-x-hidden drain-scrollbar'>
-            <Tabs className='mt-5 md:w-4/5 w-11/12' defaultValue={section || 'keys'} value={section || 'keys'}>
+        <div className='flex justify-center w-full max-h-[calc(100vh-60px)] overflow-y-auto overflow-x-hidden drain-scrollbar'>
+            <Tabs className='mt-5 md:w-8/9 w-11/12' defaultValue={section || 'keys'} value={section || 'keys'}>
                 {site.editors && <TabsList className='w-full'>
                     <TabsTrigger value='keys' onClick={() => navigate(`/domain/${site.id}/keys`)}>keys</TabsTrigger>
                     <TabsTrigger value='access' onClick={() => navigate(`/domain/${site.id}/access`)}>access</TabsTrigger>

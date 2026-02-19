@@ -50,7 +50,7 @@ const Users = observer(function Users() {
     return (
         <div className='flex flex-col items-center h-full w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
-                <h2 className='text-2xl font-bold'>drain login manager</h2>
+                <h2 className='text-2xl font-bold'>user manager</h2>
                 <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setAddUserDialogOpen(true)}>create user</Button>
             </div>
 
@@ -68,8 +68,8 @@ const Users = observer(function Users() {
                                             setChangePasswordTargetName(user.username);
                                             setChangePasswordDialogOpen(true);
                                         }}>
-                                            <KeyRound className='h-4 w-4 md:hidden' />
-                                            <span className='hidden md:flex'>change password</span>
+                                            <KeyRound className='h-4 w-4 lg:hidden' />
+                                            <span className='hidden lg:flex'>change password</span>
                                         </Button>
                                     </TooltipTrigger>
 
@@ -87,8 +87,8 @@ const Users = observer(function Users() {
                                             setUserSitesDialogTargetName(user.username);
                                             grabUserSitesDialogList(user.id);
                                         }}>
-                                            <ScanSearch className='h-4 w-4 md:hidden' />
-                                            <span className='hidden md:flex'>site access</span>
+                                            <ScanSearch className='h-4 w-4 lg:hidden' />
+                                            <span className='hidden lg:flex'>site access</span>
                                         </Button>
                                     </TooltipTrigger>
 
@@ -98,7 +98,7 @@ const Users = observer(function Users() {
 
                             <Tooltip>
                                 <TooltipProvider>
-                                    <TooltipTrigger className='hidden md:flex'>
+                                    <TooltipTrigger className='hidden lg:flex'>
                                         <Button disabled={user.id === 1} onClick={() => {
                                             api.admin.users.setRole.post({ userId: user.id, isAdmin: !user.admin }).then(() => adminManager.fetchAllUsers());
                                         }}>{user.admin ? 'demote to user' : 'promote to admin'}</Button>
@@ -115,8 +115,8 @@ const Users = observer(function Users() {
                                             if (confirm(`are you sure you want to delete @${user.username}? this action cannot be undone.`))
                                                 api.admin.users.delete.post({ userId: user.id }).then(() => adminManager.fetchAllUsers());
                                         }}>
-                                            <Trash className='h-4 w-4 md:hidden' />
-                                            <span className='hidden md:flex'>delete user</span>
+                                            <Trash className='h-4 w-4 lg:hidden' />
+                                            <span className='hidden lg:flex'>delete user</span>
                                         </Button>
                                     </TooltipTrigger>
 
