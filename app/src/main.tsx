@@ -22,6 +22,8 @@ import SiteRouter from './components/dash/site/Router'
 import APIKeys from './components/dash/user/APIKeys'
 import Passkeys from './components/dash/user/Passkeys'
 
+import { ShaddProvider } from './lib/shadd'
+
 import './index.css'
 
 function Container({ element: Element }: { element: React.ComponentType<any> }) {
@@ -79,4 +81,4 @@ const App = observer(function App() {
     </div>
 });
 
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(<><App /><ShaddProvider /></>);

@@ -9,6 +9,7 @@ import { Label } from '@/components/shadcn/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
 import api, { errorFrom } from '@/lib/eden';
+import { shadd } from '@/lib/shadd';
 
 import adminManager from '@/managers/AdminManager';
 import authManager from '@/managers/AuthManager';
@@ -90,7 +91,7 @@ const AdminConfig = observer(function AdminConfig() {
                 {adminManager.instanceInformation.isUsingSystemd && <Tooltip>
                     <TooltipTrigger onClick={() => {
                         api.admin.systemdRestart.post().then(() => {
-                            alert('systemd restart triggered!');
+                            shadd.alert('systemd restart triggered!', 'the page will reload in ~2 seconds. gg.');
                             setTimeout(() => location.reload(), 2000);
                         });
                     }}>

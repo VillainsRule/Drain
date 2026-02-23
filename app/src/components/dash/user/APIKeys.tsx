@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { Button } from '../../shadcn/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
-import { Input } from '@/components/shadcn/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
 import authManager from '@/managers/AuthManager';
@@ -12,27 +11,38 @@ import RefreshCw from 'lucide-react/icons/refresh-cw';
 import Trash from 'lucide-react/icons/trash';
 
 import api, { errorFrom } from '@/lib/eden';
+import { shadd } from '@/lib/shadd';
 
 const APIKeys = observer(function APIKeys() {
-    const [keyNameModalOpen, setKeyNameModalOpen] = useState(false);
-    const keyNameRef = useRef<HTMLInputElement>(null);
-    const keyNameSetRef = useRef<HTMLButtonElement>(null);
-    const [keyNameError, setKeyNameError] = useState('');
-
-    const [keyValue, setKeyValue] = useState('');
-    const [keyWasARegen, setKeyWasARegen] = useState(false);
-
     const [usageModalOpen, setUsageModalOpen] = useState(false);
 
     useEffect(() => {
         authManager.fetchAPIKeys();
     }, []);
 
+    const createKey = () => shadd.prompt(
+        'create a new API key',
+        'name your API key something you\'ll remember later, such as the app you\'re using it in',
+        { placeholder: 'Cloudflare Worker #5', maxLength: 24, minLength: 1 },
+        async (value) => {
+            const req = await api.auth.api.keys.create.post({ name: value });
+            if (req.data) {
+                shadd.copy(
+                    'API key created!',
+                    `the API key has been created! give this key to any programs you want to authenticate with this drain instance:\n\n${req.data.key}`,
+                    req.data.key
+                );
+
+                authManager.fetchAPIKeys();
+            } else shadd.setError(errorFrom(req));
+        }
+    );
+
     return (
         <div className='flex flex-col items-center w-full h-full md:w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
                 <h2 className='text-2xl font-bold'>API key manager</h2>
-                <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setKeyNameModalOpen(true)}>create API key</Button>
+                <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={createKey}>create API key</Button>
             </div>
 
             {!authManager.apiKeysEnabled && <div className='flex flex-col items-center'>
@@ -40,7 +50,7 @@ const APIKeys = observer(function APIKeys() {
                 <span className='text-red-500 underline'>you can create & manage them, but access attempts will be blocked</span>
             </div>}
 
-            {authManager.apiKeys.length < 1 && <span className='text-muted-foreground text-sm text-center'>you have no API keys. <span className='underline cursor-pointer' onClick={() => setKeyNameModalOpen(true)}>create one!</span></span>}
+            {authManager.apiKeys.length < 1 && <span className='text-muted-foreground text-sm text-center'>you have no API keys. <span className='underline cursor-pointer' onClick={createKey}>create one!</span></span>}
 
             <div className='flex flex-col justify-center gap-5 w-full'>
                 {authManager.apiKeys.map((apiKey) => (
@@ -64,10 +74,14 @@ const APIKeys = observer(function APIKeys() {
 
                                         const res = await api.auth.api.keys.regen.post({ name: apiKey.name });
                                         if (res.data) {
-                                            setKeyWasARegen(true);
-                                            setKeyValue(res.data.key);
+                                            shadd.copy(
+                                                'API key regenerated!',
+                                                `the API key has been regenerated! give this new key to any programs using the old key to keep them working:\n\n${res.data.key}`,
+                                                res.data.key
+                                            );
+
                                             authManager.fetchAPIKeys();
-                                        } else alert(errorFrom(res));
+                                        } else shadd.setError(errorFrom(res));
                                     }}>
                                         <RefreshCw className='h-4 w-4' />
                                     </Button>
@@ -96,40 +110,6 @@ const APIKeys = observer(function APIKeys() {
             </div>
 
             <span className='text-sm text-muted-foreground mt-4 cursor-pointer underline' onClick={() => setUsageModalOpen(true)}>API key mini documentation!</span>
-
-            <Dialog open={keyNameModalOpen} onOpenChange={setKeyNameModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>create a new API key</DialogTitle>
-                        <DialogDescription>name your API key something you'll remember later, such as the app you're using it in</DialogDescription>
-                    </DialogHeader>
-
-                    <Input placeholder='Cloudflare Worker #5' maxLength={24} className='w-full mb-4' ref={keyNameRef} onKeyUp={(e) => (e.key === 'Enter') && keyNameSetRef.current!.click()} />
-
-                    {keyNameError && (<div className='text-red-500 mb-2'>{keyNameError}</div>)}
-
-                    <Button className='w-3/4' ref={keyNameSetRef} onClick={async () => {
-                        const req = await api.auth.api.keys.create.post({ name: keyNameRef.current!.value });
-                        if (req.data) {
-                            setKeyValue(req.data.key);
-                            setKeyNameModalOpen(false);
-                            authManager.fetchAPIKeys();
-                        } else setKeyNameError(errorFrom(req));
-                    }}>submit</Button>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={!!keyValue} onOpenChange={(isOpen) => !isOpen && setKeyValue('')}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>API key {keyWasARegen ? 'regenerated' : 'created'}!</DialogTitle>
-                        <DialogDescription>please copy and store this API key somewhere safe. you will not be able to view it again! {keyWasARegen ? 'if this key was being used elsewhere, please update it in order to keep your apps running smoothly!' : ''}</DialogDescription>
-                    </DialogHeader>
-
-                    <Input className='w-full mb-4 select-all' value={keyValue} readOnly />
-                    <Button className='w-3/4' onClick={() => setKeyValue('')}>i have copied my API key</Button>
-                </DialogContent>
-            </Dialog>
 
             <Dialog open={usageModalOpen} onOpenChange={setUsageModalOpen}>
                 <DialogContent className='min-w-5/6! w-5/6! max-w-5/6! max-h-5/6! overflow-y-auto drain-scrollbar'>

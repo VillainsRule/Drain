@@ -6,11 +6,11 @@ import { startAuthentication } from '@simplewebauthn/browser'
 
 import { Button } from '@/components/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog'
 import { Input } from '@/components/shadcn/input'
 import { Label } from '@/components/shadcn/label'
 
 import api, { errorFrom } from '@/lib/eden'
+import { shadd } from '@/lib/shadd'
 
 import authManager from '@/managers/AuthManager'
 
@@ -24,15 +24,6 @@ const Auth = observer(function Auth() {
     const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
-
-    const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-    const [inviteError, setInviteError] = useState<string>('');
-    const inviteCodeRef = useRef<HTMLInputElement>(null);
-
-    const [inviteDialog2Open, setInviteDialog2Open] = useState(false);
-    const [inviteUsername, setInviteUsername] = useState<string>('');
-    const [inviteCode, setInviteCode] = useState<string>('');
-    const invitePasswordRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (authManager.user.id) navigate('/');
@@ -108,7 +99,31 @@ const Auth = observer(function Auth() {
                         <div className='grow h-px bg-ring' />
                     </div>
 
-                    <Button variant='outline' className='w-full cursor-pointer' onClick={() => setInviteDialogOpen(true)}>i have an invite code</Button>
+                    <Button variant='outline' className='w-full cursor-pointer' onClick={() => shadd.prompt(
+                        'have an invite code?',
+                        'enter the invite code to activate your account and get started with Drain!',
+                        { placeholder: 'invite code', maxLength: 36, minLength: 9 }, // old codes are 36L and new codes are 9L, so this should cover both
+                        async (value) => {
+                            const options = await api.auth.invites.attempt.post({ code: value });
+                            if (options.data) shadd.prompt(
+                                `welcome, ${options.data.username}!`,
+                                'get started by entering a password below:',
+                                { placeholder: 'password', maxLength: 24, minLength: 3 },
+                                async (value2) => {
+                                    const res = await api.auth.invites.claim.post({
+                                        code: value,
+                                        password: value2
+                                    });
+
+                                    if (res.data && res.data.user) {
+                                        authManager.setAuth(res.data.user);
+                                        location.reload();
+                                    } else shadd.setError(errorFrom(res));
+                                }
+                            )
+                            else shadd.setError(errorFrom(options));
+                        }
+                    )}>i have an invite code</Button>
                     {authManager.webAuthnEnabled && <Button variant='outline' className='w-full cursor-pointer' onClick={doWebAuthn}>i have a passkey</Button>}
                 </CardContent> : <CardContent className='space-y-4'>
                     <div className='border-2 border-dashed bg-background p-6 text-center flex justify-center items-center w-full h-36 rounded-sm cursor-pointer hover:scale-101 transition-all duration-100' onClick={doWebAuthn}>
@@ -120,65 +135,6 @@ const Auth = observer(function Auth() {
                     <Button variant='outline' className='w-full cursor-pointer' ref={buttonRef} onClick={() => setShowingAll(true)}>sign in with alternative method</Button>
                 </CardContent>}
             </Card>
-
-            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-                <DialogContent className='w-11/12 md:w-full max-w-md'>
-                    <DialogHeader className='text-center'>
-                        <DialogTitle className='text-2xl font-bold'>Enter Invite Code</DialogTitle>
-                        <DialogDescription>please enter your invite code to create an account.</DialogDescription>
-                    </DialogHeader>
-
-                    <div className='space-y-4'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='inviteCode'>Invite Code</Label>
-                            <Input id='inviteCode' type='text' required ref={inviteCodeRef} onKeyUp={(e) => e.key === 'Enter' && buttonRef.current!.click()} />
-                        </div>
-
-                        {inviteError && <div className='text-red-500 text-sm'>{inviteError}</div>}
-
-                        <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            api.auth.invites.attempt.post({
-                                code: inviteCodeRef.current!.value
-                            }).then((res) => {
-                                if (res.data) {
-                                    setInviteUsername(res.data.username);
-                                    setInviteCode(inviteCodeRef.current!.value);
-                                    setInviteDialogOpen(false);
-                                    setInviteDialog2Open(true);
-                                } else setInviteError(errorFrom(res));
-                            })
-                        }}>Submit</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={inviteDialog2Open} onOpenChange={setInviteDialog2Open}>
-                <DialogContent className='w-11/12 md:w-full max-w-md'>
-                    <DialogHeader className='text-center'>
-                        <DialogTitle className='text-2xl font-bold'>welcome, {inviteUsername}!</DialogTitle>
-                        <DialogDescription>get started by entering a password below:</DialogDescription>
-                    </DialogHeader>
-
-                    <div className='space-y-4'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='newPassword'>New Password</Label>
-                            <Input id='newPassword' type='password' maxLength={24} required ref={invitePasswordRef} />
-                        </div>
-
-                        {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
-
-                        <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            api.auth.invites.claim.post({
-                                code: inviteCode,
-                                password: invitePasswordRef.current!.value
-                            }).then((res) => {
-                                if (res.data && res.data.user) location.reload();
-                                else setStandardError(errorFrom(res));
-                            })
-                        }}>Set Password & Log In</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     )
 });

@@ -63,14 +63,12 @@ const SiteAccess = observer(function SiteAccess() {
                                     </div>
 
                                     <div className='flex gap-3'>
-                                        <Select value={role} onValueChange={(role) => {
-                                            if (role !== 'reader' && role !== 'editor') return alert('error: invalid role');
-
+                                        <Select value={role} onValueChange={(role) => (role === 'reader' || role === 'editor') &&
                                             api.sites.access.setRole.post({ domain: site.id, userId, role }).then((res) => {
                                                 if (res.data) siteManager.refreshCurrent();
                                                 else alert(errorFrom(res));
-                                            });
-                                        }} disabled={!resolvedUsername}>
+                                            })
+                                        } disabled={!resolvedUsername}>
                                             <SelectTrigger>
                                                 <SelectValue>role: {role}</SelectValue>
                                             </SelectTrigger>

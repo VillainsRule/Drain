@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import { Button } from '../../shadcn/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../shadcn/dialog';
-import { Input } from '../../shadcn/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shadcn/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/shadcn/tooltip';
 
 import api, { errorFrom } from '@/lib/eden';
+import { shadd } from '@/lib/shadd';
 
 import KeyRound from 'lucide-react/icons/key-round';
 import ScanSearch from 'lucide-react/icons/scan-search';
@@ -20,24 +20,10 @@ import authManager from '@/managers/AuthManager';
 const Users = observer(function Users() {
     const navigate = useNavigate();
 
-    const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
-    const [addUserError, setAddUserError] = useState('');
-    const addUserUsernameRef = useRef<HTMLInputElement>(null);
-    const addUserPasswordRef = useRef<HTMLInputElement>(null);
-    const addUserSubmitRef = useRef<HTMLButtonElement>(null);
-
     const [userSitesDialogOpen, setUserSitesDialogOpen] = useState(false);
     const [userSitesDialogTargetId, setUserSitesDialogTargetId] = useState(0);
     const [userSitesDialogTargetName, setUserSitesDialogTargetName] = useState('');
     const [userSitesDialogList, setUserSitesDialogList] = useState<Record<string, 'reader' | 'editor'>>({});
-
-    const [inviteCode, setInviteCode] = useState('');
-
-    const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
-    const [changePasswordTargetId, setChangePasswordTargetId] = useState(0);
-    const [changePasswordTargetName, setChangePasswordTargetName] = useState('');
-    const changePasswordRef = useRef<HTMLInputElement>(null);
-    const changePasswordSubmitRef = useRef<HTMLButtonElement>(null);
 
     const grabUserSitesDialogList = (userId: number) =>
         api.admin.users.sites.post({ userId }).then((res) =>
@@ -51,7 +37,24 @@ const Users = observer(function Users() {
         <div className='flex flex-col items-center h-full w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
                 <h2 className='text-2xl font-bold'>user manager</h2>
-                <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => setAddUserDialogOpen(true)}>create user</Button>
+                <Button className='w-56 py-2 rounded-md transition-colors duration-150' onClick={() => shadd.prompt(
+                    'create a new user',
+                    'enter a username for the new user. they will be able to set their password and site access after the account is created.',
+                    { placeholder: 'username', maxLength: 16, minLength: 1 },
+                    (value) => {
+                        api.admin.users.create.post({ username: value }).then((res) => {
+                            if (res.data) {
+                                adminManager.fetchAllUsers();
+
+                                shadd.copy(
+                                    'user created!',
+                                    `the user has been created! give them this invite code to set their password and log in:\n\n${res.data.inviteCode}`,
+                                    res.data.inviteCode
+                                );
+                            } else shadd.setError(errorFrom(res));
+                        });
+                    }
+                )}>create user</Button>
             </div>
 
             <div className='flex flex-col justify-center gap-5 w-full'>
@@ -63,11 +66,18 @@ const Users = observer(function Users() {
                             <Tooltip>
                                 <TooltipProvider>
                                     <TooltipTrigger>
-                                        <Button disabled={(!!(authManager.user.id !== 1 && user.admin && user.id !== authManager.user.id)) || user.stillPendingLogin} onClick={() => {
-                                            setChangePasswordTargetId(user.id);
-                                            setChangePasswordTargetName(user.username);
-                                            setChangePasswordDialogOpen(true);
-                                        }}>
+                                        <Button disabled={(!!(authManager.user.id !== 1 && user.admin && user.id !== authManager.user.id)) || user.stillPendingLogin} onClick={() => shadd.prompt(
+                                            'change the password',
+                                            `enter a new password for @${user.username}.`,
+                                            { placeholder: 'new password', maxLength: 64, minLength: 3 },
+                                            async (value) => {
+                                                const options = await api.admin.users.setPassword.post({ userId: user.id, newPassword: value });
+                                                if (options.data) {
+                                                    if (user.id === authManager.user.id) location.reload();
+                                                    else shadd.close();
+                                                } else shadd.setError(errorFrom(options));
+                                            }
+                                        )}>
                                             <KeyRound className='h-4 w-4 lg:hidden' />
                                             <span className='hidden lg:flex'>change password</span>
                                         </Button>
@@ -128,32 +138,6 @@ const Users = observer(function Users() {
                 ))}
             </div>
 
-            <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>add a user</DialogTitle>
-                        <DialogDescription>add a user to your drain instance. they will have access to no sites by default. add them in site access.</DialogDescription>
-                    </DialogHeader>
-
-                    <Input className='w-full' placeholder='username' ref={addUserUsernameRef} maxLength={16} onKeyUp={(k) => (k.key === 'Enter') && addUserPasswordRef.current?.focus()} />
-
-                    {addUserError && <span className='text-red-500'>{addUserError}</span>}
-
-                    <Button className='w-3/4' ref={addUserSubmitRef} onClick={() => {
-                        const username = addUserUsernameRef.current?.value!;
-
-                        api.admin.users.create.post({ username }).then((res) => {
-                            if (res.data) {
-                                adminManager.fetchAllUsers();
-
-                                setInviteCode(res.data.inviteCode);
-                                setAddUserDialogOpen(false);
-                            } else setAddUserError(errorFrom(res));
-                        });
-                    }}>add</Button>
-                </DialogContent>
-            </Dialog>
-
             <Dialog open={userSitesDialogOpen} onOpenChange={() => userSitesDialogOpen && setUserSitesDialogOpen(false)}>
                 <DialogContent className='max-h-3/4 overflow-y-auto overflow-x-hidden'>
                     <DialogHeader>
@@ -169,14 +153,12 @@ const Users = observer(function Users() {
                                 </div>
 
                                 <div className='flex gap-3'>
-                                    <Select value={role} onValueChange={(role) => {
-                                        if (role !== 'reader' && role !== 'editor') return alert('error: invalid role');
-
+                                    <Select value={role} onValueChange={(role) => (role === 'reader' || role === 'editor') &&
                                         api.sites.access.setRole.post({ domain, userId: userSitesDialogTargetId, role }).then((res) => {
                                             if (res.data) grabUserSitesDialogList(userSitesDialogTargetId);
                                             else alert(errorFrom(res));
-                                        });
-                                    }}>
+                                        })
+                                    }>
                                         <SelectTrigger>
                                             <SelectValue>role: {role}</SelectValue>
                                         </SelectTrigger>
@@ -199,43 +181,6 @@ const Users = observer(function Users() {
                     </div>
 
                     <Button className='w-3/4 mx-auto' onClick={() => setUserSitesDialogOpen(false)}>close</Button>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={changePasswordDialogOpen} onOpenChange={() => changePasswordDialogOpen && setChangePasswordDialogOpen(false)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>change password</DialogTitle>
-                        <DialogDescription>change the password for @{changePasswordTargetName}</DialogDescription>
-                    </DialogHeader>
-
-                    <Input className='w-full' placeholder='new password' ref={changePasswordRef} onKeyUp={(k) => (k.key === 'Enter') && changePasswordSubmitRef.current?.click()} />
-
-                    <Button className='w-3/4' ref={changePasswordSubmitRef} onClick={() => {
-                        const newPassword = changePasswordRef.current?.value!;
-
-                        api.admin.users.setPassword.post({ userId: changePasswordTargetId, newPassword }).then((res) => {
-                            if (res.data) {
-                                setChangePasswordDialogOpen(false);
-                                if (changePasswordTargetId === authManager.user.id) setTimeout(() => location.reload(), 100);
-                            } else alert(errorFrom(res));
-                        });
-                    }}>change password</Button>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={!!inviteCode} onOpenChange={(isOpen) => !isOpen && setInviteCode('')}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>user created!</DialogTitle>
-                        <DialogDescription>the user has been created! give them this invite code to set their password and log in:</DialogDescription>
-                    </DialogHeader>
-
-                    <div className='flex flex-col gap-3'>
-                        <Input className='w-full' value={inviteCode} readOnly />
-
-                        <Button className='w-3/4 mx-auto' onClick={() => setInviteCode('')}>close</Button>
-                    </div>
                 </DialogContent>
             </Dialog>
         </div>

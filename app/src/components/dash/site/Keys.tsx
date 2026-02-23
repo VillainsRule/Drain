@@ -18,14 +18,12 @@ import api, { errorFrom } from '@/lib/eden';
 
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
+import { shadd } from '@/lib/shadd';
 
 const randomHex = (len: number) => Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 const fakeKeys = [randomHex(16), randomHex(16), randomHex(16)];
 
 const SiteKeys = observer(function SiteKeys() {
-    const [addKeyDialogOpen, setAddKeyDialogOpen] = useState(false);
-    const [keyAddError, setKeyAddError] = useState('');
-
     const [bulkAddDialogOpen, setBulkAddDialogOpen] = useState(false);
     const [bulkAddError, setBulkAddError] = useState('');
     const [bulkAddProgress, setBulkAddProgress] = useState('');
@@ -44,20 +42,33 @@ const SiteKeys = observer(function SiteKeys() {
                 <div className='flex gap-3'>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => setAddKeyDialogOpen(true)}><Plus /></Button>
+                            <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => shadd.prompt(
+                                'add a new key',
+                                'enter the key you want to add to this site. it can be any string up to 256 characters.',
+                                { placeholder: fakeKeys[0], maxLength: 256, minLength: 1 },
+                                (value) => {
+                                    api.sites.addKey.post({
+                                        domain: site.id,
+                                        key: value
+                                    }).then((res) => {
+                                        if (res.data) {
+                                            siteManager.refreshCurrent();
+                                            shadd.close();
+                                        } else shadd.setError(errorFrom(res));
+                                    });
+                                }
+                            )}><Plus /></Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p>add key</p>
-                        </TooltipContent>
+
+                        <TooltipContent>add key</TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => setBulkAddDialogOpen(true)}><ListPlus /></Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p>bulk add keys</p>
-                        </TooltipContent>
+
+                        <TooltipContent>bulk add keys</TooltipContent>
                     </Tooltip>
 
                     {site.sortable && <Tooltip>
@@ -69,9 +80,8 @@ const SiteKeys = observer(function SiteKeys() {
                                 });
                             }}><ArrowDownWideNarrow /></Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p>sort by $$</p>
-                        </TooltipContent>
+
+                        <TooltipContent>sort by $$</TooltipContent>
                     </Tooltip>}
 
                     {authManager.isAdmin() && <Tooltip>
@@ -97,9 +107,8 @@ const SiteKeys = observer(function SiteKeys() {
                                 });
                             }}><RefreshCw /></Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p>recheck all</p>
-                        </TooltipContent>
+
+                        <TooltipContent>recheck all</TooltipContent>
                     </Tooltip>}
 
                     <Tooltip>
@@ -109,12 +118,11 @@ const SiteKeys = observer(function SiteKeys() {
                                 await navigator.clipboard.writeText(allKeys);
                             }}><Copy /></Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p>copy all keys</p>
-                        </TooltipContent>
+
+                        <TooltipContent>copy all keys</TooltipContent>
                     </Tooltip>
                 </div>
-            </div>
+            </div >
 
             <div className='flex flex-col items-center justify-start gap-1 mt-4 pb-4'>
                 {Object.keys(site.keys).map((key, i) => {
@@ -161,32 +169,6 @@ const SiteKeys = observer(function SiteKeys() {
                     )
                 })}
             </div>
-
-            <Dialog open={addKeyDialogOpen} onOpenChange={setAddKeyDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>add key</DialogTitle>
-                        <DialogDescription>add a key to {site.id}!</DialogDescription>
-                    </DialogHeader>
-
-                    <Input maxLength={256} placeholder={fakeKeys[0]} id='keyAddInput' className='w-full' onKeyUp={(e) => e.key === 'Enter' && (document.querySelector('#keyAddButton') as HTMLButtonElement).click()} />
-
-                    {keyAddError && (<div className='text-red-500'>{keyAddError}</div>)}
-
-                    <Button className='w-3/4' id='keyAddButton' onClick={() => {
-                        api.sites.addKey.post({
-                            domain: site.id,
-                            key: (document.getElementById('keyAddInput') as HTMLInputElement).value
-                        }).then((res) => {
-                            if (res.data) {
-                                siteManager.refreshCurrent();
-                                setKeyAddError('');
-                                setAddKeyDialogOpen(false);
-                            } else setKeyAddError(errorFrom(res));
-                        });
-                    }}>submit</Button>
-                </DialogContent>
-            </Dialog>
 
             <Dialog open={bulkAddDialogOpen} onOpenChange={(isOpen) => {
                 setBulkAddDialogOpen(isOpen);
