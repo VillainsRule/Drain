@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from '../../shadcn/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../shadcn/dialog';
-import { Input } from '../../shadcn/input';
-import { Textarea } from '../../shadcn/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../shadcn/tooltip';
+import { Button } from '../shadcn/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../shadcn/dialog';
+import { Input } from '../shadcn/input';
+import { Textarea } from '../shadcn/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/tooltip';
 
 import ArrowDownWideNarrow from 'lucide-react/icons/arrow-down-wide-narrow';
 import Copy from 'lucide-react/icons/copy';
@@ -15,10 +15,10 @@ import RefreshCw from 'lucide-react/icons/refresh-cw';
 import Trash from 'lucide-react/icons/trash';
 
 import api, { errorFrom } from '@/lib/eden';
+import { shadd } from '@/lib/shadd';
 
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
-import { shadd } from '@/lib/shadd';
 
 const randomHex = (len: number) => Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 const fakeKeys = [randomHex(16), randomHex(16), randomHex(16)];

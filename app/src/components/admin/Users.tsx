@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from '../../shadcn/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../shadcn/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shadcn/select';
+import { Button } from '../shadcn/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../shadcn/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../shadcn/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/shadcn/tooltip';
 
 import api, { errorFrom } from '@/lib/eden';

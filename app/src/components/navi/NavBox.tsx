@@ -3,13 +3,13 @@ import { observer } from 'mobx-react-lite';
 
 import Plus from 'lucide-react/icons/plus';
 
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../../shadcn/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../shadcn/context-menu';
 
 import api, { errorFrom } from '@/lib/eden';
+import { shadd } from '@/lib/shadd';
 
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
-import { shadd } from '@/lib/shadd';
 
 const NavBox = observer(function NavBox() {
     const { pathname } = useLocation();

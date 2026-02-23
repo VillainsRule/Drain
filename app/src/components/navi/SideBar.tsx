@@ -4,8 +4,8 @@ import { observer } from 'mobx-react-lite';
 
 import Plus from 'lucide-react/icons/plus';
 
-import { Button } from '../../shadcn/button';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../../shadcn/context-menu';
+import { Button } from '../shadcn/button';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../shadcn/context-menu';
 
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';

@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { AutoComplete } from '../../shadcn/autocomplete';
-import { Button } from '../../shadcn/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../shadcn/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../shadcn/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../shadcn/tooltip';
+import { AutoComplete } from '../shadcn/autocomplete';
+import { Button } from '../shadcn/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../shadcn/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../shadcn/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/tooltip';
 
 import Trash from 'lucide-react/icons/trash';
 

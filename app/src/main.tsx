@@ -7,20 +7,20 @@ import authManager from './managers/AuthManager'
 
 import Auth from './components/Auth'
 
-import Main from './components/dash/Main'
+import Main from './components/Main'
 
-import NavBox from './components/dash/navi/NavBox'
-import SideBar from './components/dash/navi/SideBar'
-import TopBar from './components/dash/navi/TopBar'
+import NavBox from './components/navi/NavBox'
+import SideBar from './components/navi/SideBar'
+import TopBar from './components/navi/TopBar'
 
-import AdminConfig from './components/dash/admin/Config'
-import Labs from './components/dash/admin/Labs'
-import Users from './components/dash/admin/Users'
+import AdminConfig from './components/admin/Config'
+import Labs from './components/admin/Labs'
+import Users from './components/admin/Users'
 
-import SiteRouter from './components/dash/site/Router'
+import SiteRouter from './components/site/Router'
 
-import APIKeys from './components/dash/user/APIKeys'
-import Passkeys from './components/dash/user/Passkeys'
+import APIKeys from './components/user/APIKeys'
+import Passkeys from './components/user/Passkeys'
 
 import { ShaddProvider } from './lib/shadd'
 

@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 
 import { startRegistration } from '@simplewebauthn/browser';
 
-import { Button } from '../../shadcn/button';
+import { Button } from '../shadcn/button';
 import { Checkbox } from '@/components/shadcn/checkbox';
 import { Label } from '@/components/shadcn/label';
 

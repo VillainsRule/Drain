@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../shadcn/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../shadcn/tabs';
 
 import siteManager from '@/managers/SiteManager';
 
