@@ -59,11 +59,10 @@ const APIKeys = observer(function APIKeys() {
 
                         <Tooltip>
                             <TooltipTrigger>
-                                <span className='text-sm text-muted-foreground'>created {apiKey.createdAt}<br />{apiKey.lastUsed}</span>
+                                <span className='text-sm text-muted-foreground'>created {apiKey.createdAt}<br />used {apiKey.lastUsed}</span>
                             </TooltipTrigger>
-                            {apiKey.lastUserAgent && <TooltipContent>
-                                <span>last user agent: {apiKey.lastUserAgent || 'never'}</span>
-                            </TooltipContent>}
+
+                            {apiKey.lastUserAgent && <TooltipContent>last user agent: {apiKey.lastUserAgent || 'never'}</TooltipContent>}
                         </Tooltip>
 
                         <div className='flex gap-3'>
@@ -86,9 +85,8 @@ const APIKeys = observer(function APIKeys() {
                                         <RefreshCw className='h-4 w-4' />
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                    <span>regenerate API key</span>
-                                </TooltipContent>
+
+                                <TooltipContent>regenerate API key</TooltipContent>
                             </Tooltip>
 
                             <Tooltip>
@@ -100,9 +98,8 @@ const APIKeys = observer(function APIKeys() {
                                         <Trash className='h-4 w-4' />
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                    <span>delete API key</span>
-                                </TooltipContent>
+
+                                <TooltipContent>delete API key</TooltipContent>
                             </Tooltip>
                         </div>
                     </div>

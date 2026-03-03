@@ -2,7 +2,7 @@ import { treaty } from '@elysiajs/eden';
 
 import type { App } from '../../../api/src/main';
 
-const { api } = treaty<App>(location.origin);
+const { api } = treaty<App>(location.origin, { parseDate: false });
 export default api;
 
 export const errorFrom = (response: { error: any }): string =>
