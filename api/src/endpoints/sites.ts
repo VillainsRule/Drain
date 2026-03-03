@@ -12,7 +12,22 @@ const sites = new Elysia({ name: 'sites' })
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        return { sites: user.admin ? siteDB.getIDs() : user.sites };
+        if (user.admin) {
+            const ids = siteDB.getIDs() as string[];
+            if (ids.length === user.sites.length) return { sites: user.sites };
+            else if (user.sites.length === 0) return { sites: ids };
+            else {
+                const missingSites = ids.filter(id => !user.sites.includes(id));
+                if (missingSites.length > 0) {
+                    user.sites.push(...missingSites);
+                    userDB.update(user.id, { sites: user.sites });
+                }
+
+                return { sites: user.sites };
+            }
+        }
+
+        return { sites: user.sites };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
     .post('/api/sites/info', async ({ body, cookie: { session } }) => {
@@ -282,6 +297,27 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.remove(body.domain);
 
         return {};
-    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+
+    .post('/api/sites/reorder', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+
+        if (user.admin || site.editors.includes(user.id) || site.readers.includes(user.id)) {
+            const sites = user.admin && user.sites.length < 1 ? siteDB.getIDs() as string[] : user.sites;
+
+            const idx = sites.indexOf(body.domain);
+            if (idx === -1) return status(400, { error: 'site not in user list' });
+
+            sites.splice(idx, 1);
+            sites.splice(body.newIndex, 0, body.domain);
+
+            userDB.update(user.id, { sites });
+            return {};
+        } else return status(401, { error: 'no permission' });
+    }, { body: t.Object({ domain: t.String(), newIndex: t.Number() }), cookie: t.Cookie({ session: t.String() }) });
 
 export default sites;
