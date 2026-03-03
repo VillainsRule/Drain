@@ -11,7 +11,7 @@ export default async function httpsProxy(proxy: string): Promise<string> {
             const attempt = await fetch('https://myip.wtf/text', { proxy, signal: AbortSignal.timeout(5000) });
 
             if (attempt.status === 407) return 'invalid_key';
-            if (attempt.ok) return 'Valid!';
+            if (attempt.ok) return 'Valid';
 
             await new Promise(res => setTimeout(res, 1000));
         }

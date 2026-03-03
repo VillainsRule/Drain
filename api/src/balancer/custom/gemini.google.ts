@@ -28,9 +28,9 @@ export default async function geminiBalancer(token: string): Promise<string> {
         if (data.error?.message?.includes('You exceeded your current quota')) return 'Free Key';
         if (data.error?.message?.includes('Quota exceeded for')) return 'Free Key';
 
-        console.log(data);
+        console.log('[gemini] unknown error', data);
 
-        return 'Unknown';
+        return '?';
     } catch (err) {
         if (err instanceof Error && err.message === 'timeout') return 'Paid Key';
         throw err;

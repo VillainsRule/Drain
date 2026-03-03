@@ -3,7 +3,17 @@ import { GITHUB_CONFIG } from '../.config';
 import fs from 'fs';
 import path from 'path';
 
-const apiKeys = path.join(import.meta.dirname, 'keys.txt');
+let keyPath = path.join(import.meta.dirname, 'keys.txt');
+
+if (process.argv[2]) {
+    GITHUB_CONFIG.searchQuery = process.argv[2];
+
+    const comboDir = path.join(import.meta.dirname, '..', 'combos');
+    if (!fs.existsSync(comboDir)) fs.mkdirSync(comboDir);
+
+    const comboFile = path.join(comboDir, `${process.argv[2].split('=')[1]}.txt`);
+    keyPath = comboFile;
+}
 
 const githubToken = GITHUB_CONFIG.githubUserToken;
 
@@ -78,8 +88,8 @@ const matchedKeys = new Set<string>();
 
 const saveKeys = () => {
     if (matchedKeys.size > 0) {
-        fs.writeFileSync(apiKeys, Array.from(matchedKeys).join('\n'), 'utf-8');
-        console.log(`keys written to ${apiKeys}`);
+        fs.writeFileSync(keyPath, Array.from(matchedKeys).join('\n'), 'utf-8');
+        console.log(`keys written to ${keyPath}`);
     } else console.log('no keys matched the regex.');
 }
 

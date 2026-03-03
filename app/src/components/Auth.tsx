@@ -5,51 +5,69 @@ import { observer } from 'mobx-react-lite'
 import { startAuthentication } from '@simplewebauthn/browser'
 
 import { Button } from '@/components/shadcn/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/shadcn/card'
 import { Input } from '@/components/shadcn/input'
 import { Label } from '@/components/shadcn/label'
 
-import axios from '@/lib/axiosLike'
+import api, { errorFrom } from '@/lib/eden'
+import { shadd } from '@/lib/shadd'
 
 import authManager from '@/managers/AuthManager'
 
-import Logo from '@/assets/Logo'
-
 const Auth = observer(function Auth() {
     const navigate = useNavigate();
+
+    const [allowCredentials] = useState<any[]>(JSON.parse(localStorage.getItem('passkeys') || '[]'));
+    const [showingAll, setShowingAll] = useState<boolean>(allowCredentials.length < 1);
 
     const [standardError, setStandardError] = useState<string>('');
     const usernameRef = useRef<HTMLInputElement>(null);
     const passwordRef = useRef<HTMLInputElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
-    const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-    const [inviteError, setInviteError] = useState<string>('');
-    const inviteCodeRef = useRef<HTMLInputElement>(null);
-
-    const [inviteDialog2Open, setInviteDialog2Open] = useState(false);
-    const [inviteUsername, setInviteUsername] = useState<string>('');
-    const [inviteCode, setInviteCode] = useState<string>('');
-    const invitePasswordRef = useRef<HTMLInputElement>(null);
-
     useEffect(() => {
         if (authManager.user.id) navigate('/');
+
+        if (localStorage.getItem('dark')) {
+            document.body.classList.add('dark');
+        }
     }, []);
 
-    return (
-        <div className='min-h-screen flex items-center justify-center bg-gray-50'>
-            <Card className='w-11/12 md:w-full max-w-md'>
-                <CardHeader className='text-center flex flex-row md:flex-col items-center gap-3'>
-                    <Logo className='w-30 h-30 rounded-xl shadow-md border border-neutral-200 p-4 bg-white md:hidden mb-3' />
+    const doWebAuthn = async () => {
+        const res = await api.auth.webauthn.login.options.post({});
+        if (!res.data) return alert(errorFrom(res));
 
-                    <div className='flex flex-col'>
-                        <CardTitle className='text-3xl font-bold'>Drain</CardTitle>
-                        <CardDescription>your credentials have been provided by the site admin.</CardDescription>
-                    </div>
+        if (!showingAll) {
+            res.data.allowCredentials = localStorage.getItem('internalTransport') ? allowCredentials.map(e => ({ ...e, transports: ['internal'] })) : allowCredentials;
+            res.data.userVerification = 'required';
+        }
+
+        let assertionResp;
+        try {
+            assertionResp = await startAuthentication({ optionsJSON: res.data });
+        } catch (err: any) {
+            return setStandardError(err.toString().includes('NotAllowedError') ?
+                'do it again and don\'t close the popup early :P' :
+                'failed to complete passkey authentication. try again or sign in with another method.'
+            );
+        }
+
+        api.auth.webauthn.login.verify.post(assertionResp).then((res) => {
+            if (res.data) {
+                location.reload();
+                localStorage.setItem('resavePasskeys', '1');
+            } else setStandardError(errorFrom(res));
+        });
+    }
+
+    return (
+        <div className='min-h-screen flex items-center justify-center'>
+            <Card className='w-11/12 md:w-full max-w-md'>
+                <CardHeader className='text-center flex flex-col items-center'>
+                    <CardTitle className='text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm'>Drain</CardTitle>
                 </CardHeader>
 
-                <CardContent className='space-y-4'>
+                {showingAll ? <CardContent className='space-y-4'>
                     <div className='space-y-2'>
                         <Label htmlFor='username'>Username</Label>
                         <Input id='username' type='text' required ref={usernameRef} onKeyUp={(e) => e.key === 'Enter' && passwordRef.current!.focus()} />
@@ -63,102 +81,56 @@ const Auth = observer(function Auth() {
                     {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
                     <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                        axios.post('/$/auth/secure/credentials', {
+                        api.auth.account.post({
                             username: usernameRef.current!.value,
                             password: passwordRef.current!.value
-                        }).then((response) => {
-                            if (response.data.user) {
-                                authManager.setAuth(response.data.user);
+                        }).then((res) => {
+                            if (res.data) {
+                                authManager.setAuth(res.data.user);
                                 navigate('/');
-                            } else setStandardError(response.data.error);
+                            } else setStandardError(errorFrom(res));
                         })
                     }}>Log In</Button>
 
-                    <div className="flex items-center">
-                        <div className="grow h-px bg-gray-200" />
-                        <span className="mx-3 text-gray-400 text-sm">OR</span>
-                        <div className="grow h-px bg-gray-200" />
+                    <div className='flex w-full justify-center gap-3 items-center'>
+                        <Button variant='outline' className='flex-1 min-w-0 cursor-pointer' onClick={() => shadd.prompt(
+                            'have an invite code?',
+                            'enter the invite code to activate your account and get started with Drain!',
+                            { placeholder: 'invite code', maxLength: 36, minLength: 9 }, // old codes are 36L and new codes are 9L, so this should cover both
+                            async (value) => {
+                                const options = await api.auth.invites.attempt.post({ code: value });
+                                if (options.data) shadd.prompt(
+                                    `welcome, ${options.data.username}!`,
+                                    'get started by entering a password below:',
+                                    { placeholder: 'password', maxLength: 24, minLength: 3 },
+                                    async (value2) => {
+                                        const res = await api.auth.invites.claim.post({
+                                            code: value,
+                                            password: value2
+                                        });
+
+                                        if (res.data && res.data.user) {
+                                            authManager.setAuth(res.data.user);
+                                            location.reload();
+                                        } else shadd.setError(errorFrom(res));
+                                    }
+                                )
+                                else shadd.setError(errorFrom(options));
+                            }
+                        )}>i have an invite code</Button>
+
+                        {authManager.webAuthnEnabled && <Button variant='outline' className='flex-1 min-w-0 cursor-pointer' onClick={doWebAuthn}>i have a passkey</Button>}
+                    </div>
+                </CardContent> : <CardContent className='space-y-4'>
+                    <div className='border-2 border-dashed bg-background p-6 text-center flex justify-center items-center w-full h-36 rounded-sm cursor-pointer hover:scale-101 transition-all duration-100' onClick={doWebAuthn}>
+                        <span className='text-muted-foreground'>reauthenticate with your passkey</span>
                     </div>
 
-                    <Button className='w-full cursor-pointer' onClick={() => setInviteDialogOpen(true)}>i have an invite code</Button>
-                    {authManager.webAuthnEnabled && <Button className='w-full cursor-pointer' onClick={async () => {
-                        const req = await axios.post('/$/auth/secure/webauthn/login/options');
-                        if (req.data.error) return setStandardError(req.data.error);
+                    {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
-                        let assertionResp;
-                        try {
-                            assertionResp = await startAuthentication({ optionsJSON: req.data });
-                        } catch (err) {
-                            console.error(err);
-                            return setStandardError('failed to get passkey credential. make sure you have a passkey set up and try again.');
-                        }
-
-                        axios.post('/$/auth/secure/webauthn/login/verify', assertionResp).then((response) => {
-                            if (response.data.user) location.reload();
-                            else setStandardError(response.data.error);
-                        });
-                    }}>i have a passkey</Button>}
-                </CardContent>
+                    <Button variant='outline' className='w-full cursor-pointer' ref={buttonRef} onClick={() => setShowingAll(true)}>sign in with alternative method</Button>
+                </CardContent>}
             </Card>
-
-            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-                <DialogContent className='w-11/12 md:w-full max-w-md'>
-                    <DialogHeader className='text-center'>
-                        <DialogTitle className='text-2xl font-bold'>Enter Invite Code</DialogTitle>
-                        <DialogDescription>please enter your invite code to create an account.</DialogDescription>
-                    </DialogHeader>
-
-                    <div className='space-y-4'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='inviteCode'>Invite Code</Label>
-                            <Input id='inviteCode' type='text' required ref={inviteCodeRef} onKeyUp={(e) => e.key === 'Enter' && buttonRef.current!.click()} />
-                        </div>
-
-                        {inviteError && <div className='text-red-500 text-sm'>{inviteError}</div>}
-
-                        <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            axios.post('/$/auth/secure/invite/account', {
-                                code: inviteCodeRef.current!.value
-                            }).then((response) => {
-                                if (response.data.username) {
-                                    setInviteUsername(response.data.username);
-                                    setInviteCode(inviteCodeRef.current!.value);
-                                    setInviteDialogOpen(false);
-                                    setInviteDialog2Open(true);
-                                } else setInviteError(response.data.error);
-                            })
-                        }}>Submit</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={inviteDialog2Open} onOpenChange={setInviteDialog2Open}>
-                <DialogContent className='w-11/12 md:w-full max-w-md'>
-                    <DialogHeader className='text-center'>
-                        <DialogTitle className='text-2xl font-bold'>Welcome, {inviteUsername}!</DialogTitle>
-                        <DialogDescription>Get started by entering a password below:</DialogDescription>
-                    </DialogHeader>
-
-                    <div className='space-y-4'>
-                        <div className='space-y-2'>
-                            <Label htmlFor='newPassword'>New Password</Label>
-                            <Input id='newPassword' type='password' required ref={invitePasswordRef} />
-                        </div>
-
-                        {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
-
-                        <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                            axios.post('/$/auth/secure/invite/claim', {
-                                code: inviteCode,
-                                password: invitePasswordRef.current!.value
-                            }).then((response) => {
-                                if (response.data.user) location.reload();
-                                else setStandardError(response.data.error);
-                            })
-                        }}>Set Password & Log In</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     )
 });

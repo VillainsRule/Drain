@@ -1,68 +1,68 @@
+import './db/migrator';
+
 import { Elysia } from 'elysia';
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
+import admin from './endpoints/admin';
 import auth from './endpoints/auth';
 import api from './endpoints/api';
 import sites from './endpoints/sites';
-import admin from './endpoints/admin';
 
-const app = new Elysia();
+const files = new Elysia({ name: 'files' });
 
-if (process.env.CORS === '1') {
-    const cors = new Elysia().onRequest(({ set, request }) => {
-        set.headers['access-control-allow-origin'] = request.headers.get('Origin') || '*'
-        set.headers.vary = '*'
+if (Bun.env.DD === '1') files.onRequest(({ set, request }) => {
+    set.headers['access-control-allow-origin'] = request.headers.get('Origin') || '*';
+    set.headers.vary = '*';
 
-        if (request.method === 'OPTIONS') {
-            set.headers['access-control-allow-methods'] = '*'
-            set.headers['access-control-allow-headers'] = '*'
-            return new Response(null, { status: 204 })
-        }
+    if (request.method === 'OPTIONS') {
+        set.headers['access-control-allow-methods'] = '*';
+        set.headers['access-control-allow-headers'] = '*';
+        return new Response(null, { status: 204 });
+    }
 
-        set.headers['access-control-allow-methods'] = request.method
+    set.headers['access-control-allow-methods'] = request.method;
 
-        return;
-    })
+    return;
+});
 
-    app.use(cors)
-}
-
-const hasPasskeysSetUp = Bun.env.RP_ID && Bun.env.RP_NAME;
-
-if (hasPasskeysSetUp) {
-    if (Bun.env.RP_ID && Bun.env.RP_ID.startsWith('localhost')) throw new Error('RP_ID cannot start with localhost...localhost isn\'t supported');
-}
+const certDir = path.resolve(import.meta.dirname, '../cert');
+const certExists = fs.existsSync(certDir);
 
 const distDir = path.resolve(import.meta.dirname, '../../app/dist');
 
-const safeJoin = (...segments: string[]) => {
-    const resolved = path.resolve(distDir, ...segments);
-    if (resolved.startsWith(distDir)) return resolved;
-    else return path.join(distDir, 'index.html');
-};
+const cachedIndex = Bun.file(path.join(distDir, 'index.html'));
 
-const getFile = (segments: string[]) => {
-    const filePath = safeJoin(...segments);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return Bun.file(safeJoin(...segments));
-    else return new Response('not found', { status: 404 });
-}
+const assetDir = path.join(distDir, 'a');
+const assets = fs.readdirSync(assetDir);
 
-app.get('/', () => getFile(['index.html']));
-
-app.get('/favicon.ico', ({ set }) => {
-    set.headers['Cache-Control'] = 'public, max-age=31536000, immutable, no-transform';
-    set.headers['Content-Type'] = 'image/x-icon';
-    return getFile(['favicon.ico']);
+for (const a of assets) files.get(`/a/${a}`, () => {
+    const f = Bun.file(path.join(assetDir, a));
+    return new Response(f, { headers: { 'content-type': f.type } });
 });
 
-app.get('/*', () => getFile(['index.html']));
-app.get('/$/*', ({ params }) => getFile(['$', ...params['*'].split('/')]));
+const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb */ } })
+    .get('/*', () => new Response(cachedIndex))
+    .get('/favicon.ico', ({ set }) => {
+        set.headers['Cache-Control'] = 'public, max-age=31536000, immutable, no-transform';
+        set.headers['Content-Type'] = 'image/x-icon';
+        return Bun.file(path.join(distDir, 'favicon.ico'));
+    })
+    .use(files)
+    .use(admin)
+    .use(api)
+    .use(auth)
+    .use(sites)
+    .listen(4422, () => console.log(`drain it up! ${Bun.env.RP_ID !== 'localhost' ? `https://${Bun.env.RP_ID}` : 'http://localhost:4422'}`)); 2
 
-admin(app);
-api(app);
-auth(app);
-sites(app);
+if (certExists) app.listen({
+    port: 4423,
+    tls: {
+        cert: fs.readFileSync(path.join(certDir, 'cert.pem')),
+        key: fs.readFileSync(path.join(certDir, 'cert-key.pem'))
+    }
+}, () => console.log(`your self-signed cert is on https://${os.hostname()}.local:4423`))
 
-app.listen(4422, () => console.log(`drain it up! ${hasPasskeysSetUp ? `https://${Bun.env.RP_ID}` : 'http://localhost:4422'}`));
+export type App = typeof app;

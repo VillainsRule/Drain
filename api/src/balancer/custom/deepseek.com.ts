@@ -1,6 +1,6 @@
 import fetchWithProxy from '../getProxy';
 
-const yuanToUSD = (yuan: number): number => yuan / 7.10; // 1 USD = 7.10 CNY (as of 10/22/25)
+const yuanToUSD = (yuan: number): number => yuan / 6.88; // 1 USD = 6.88 CNY (as of 3/3/25) - https://www.google.com/search?q=1+usd+to+cny
 
 export default async function deepseekBalancer(token: string): Promise<string> {
     const req = await fetchWithProxy('https://api.deepseek.com/user/balance', {
@@ -17,8 +17,8 @@ export default async function deepseekBalancer(token: string): Promise<string> {
     const data = await req.json() as any;
 
     if (data.error) {
-        console.log('Deepseek API error for token', token, data.error);
-        return 'Unknown Error';
+        console.log('[deepseek] API error', token, data.error);
+        return 'Error';
     }
 
     let totalBalance = 0;

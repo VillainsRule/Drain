@@ -1,14 +1,17 @@
-import configDB from '../db/ConfigDB';
-import siteDB from '../db/SiteDB';
+import configDB from '../db/impl/ConfigDB';
+import siteDB from '../db/impl/SiteDB';
 
 const getProxy = (): string | undefined => {
     if (typeof Bun === 'undefined') return undefined;
     if (!configDB.db.useProxiesForBalancer) return undefined;
+    
+    const site = siteDB.get('https.proxy');
+    if (!site) return undefined;
 
-    const proxySite = siteDB.getSiteKeys('https.proxy');
-    if (proxySite.length < 1) return undefined;
+    const keys = Object.keys(site.keys);
+    if (keys.length < 1) return undefined;
 
-    return proxySite[Math.floor(Math.random() * proxySite.length)];
+    return keys[Math.floor(Math.random() * keys.length)];
 }
 
 const fetchWithProxy = async (url: string, options: BunFetchRequestInit = {}) => {

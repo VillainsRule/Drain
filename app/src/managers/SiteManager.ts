@@ -1,52 +1,52 @@
-import { autorun, makeAutoObservable } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 
-import axios from '@/lib/axiosLike';
+import api, { errorFrom } from '@/lib/eden';
 
-import type { FrontendSite } from '@/types';
 import authManager from './AuthManager';
 
-class SiteManager {
-    sites: FrontendSite[] = [];
+import type { PublicSite } from '@/types';
 
-    domain = '';
+class SiteManager {
+    siteList: string[] = [];
+    site: PublicSite | null = null;
 
     constructor() {
         makeAutoObservable(this);
 
         let actuallyBlurred = false;
+
         window.onblur = () => actuallyBlurred = true;
         window.onfocus = () => {
             if (actuallyBlurred && authManager.loggedIn) {
-                this.getSites();
+                this.refreshCurrent(false);
                 actuallyBlurred = false;
             }
         };
-
-        autorun(() => {
-            this.siteRef = this.sites.find(site => site.domain === this.domain)!;
-        });
     }
 
-    siteRef: FrontendSite = {} as FrontendSite;
-
-    current = {
-        isReader: (userId: number) => this.siteRef.readers.includes(userId) || this.siteRef.editors.includes(userId),
-        isEditor: (userId: number) => this.siteRef.editors.includes(userId),
-        sortable: () => this.siteRef.keys.find(s => s.balance.startsWith('Paid') || s.balance.includes('Tier') || s.balance.startsWith('$')),
+    async getList() {
+        const res = await api.sites.list.post();
+        // @ts-expect-error it's 8:07am and i'm NOT about to fix a deep-rooted LinkedDB issue
+        if (res.data) this.siteList = res.data.sites || [];
+        else alert(errorFrom(res));
     }
 
-    async getSites() {
-        try {
-            const { data } = await axios.post('/$/sites/dump');
-            this.sites = data.sites || [];
-        } catch (error) {
-            console.error(error);
-            alert('Error fetching sites. Check the console for details.');
+    async select(domain: string, dontNullify = false) {
+        if (!dontNullify) this.site = null;
+
+        if (domain) {
+            const res = await api.sites.info.post({ domain });
+            if (res.data) this.site = {
+                ...res.data.site,
+                supportsBalancer: !!res.data.site.supportsBalancer,
+                sortable: Object.values(res.data.site.keys).some((s: any) => s && (s.startsWith('Paid') || s.includes('Tier') || s.startsWith('$')))
+            }
+            else alert(errorFrom(res));
         }
     }
 
-    siteExists(domain: string) {
-        return this.sites.some(site => site.domain === domain);
+    refreshCurrent(dontNullify = true) {
+        if (this.site) this.select(this.site.id, dontNullify);
     }
 }
 

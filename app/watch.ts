@@ -41,7 +41,7 @@ console.log(`\x1b[34mwatching for changes\n\x1b[0m`);
 
 const update = () => {
     try {
-        execSync(`cd ${currentDir} && bunx --bun vite build`, { stdio: 'inherit' });
+        execSync(`cd ${currentDir} && ABSOLUTE=1 bunx --bun vite build`, { stdio: 'inherit' });
         console.log('');
     } catch {
         console.error(`\x1b[31mError during build process.\n\x1b[0m`);

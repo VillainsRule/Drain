@@ -17,12 +17,13 @@ const togetherBalancer = createBasicBalancer('https://api.together.xyz/v1/models
 const aimlBalancer = createBasicBalancer('https://api.aimlapi.com/v1/chat/completions', { validCode: 400, method: 'POST' });
 const cohereBalancer = createBasicBalancer('https://api.cohere.com/v1/models');
 const groqBalancer = createBasicBalancer('https://api.groq.com/openai/v1/models', { invalidCode: [401, 400] });
+const fireworksBalancer = createBasicBalancer('https://api.fireworks.ai/v1/accounts');
 const perplexityBalancer = createBasicBalancer('https://api.perplexity.ai/async/chat/completions');
 
 const capmonsterBalancer = createCaptchaBalancer('https://api.capmonster.cloud/getBalance');
 const twoCaptchaBalancer = createCaptchaBalancer('https://api.2captcha.com/getBalance');
 
-const warnedDomains = new Set<string>([]);
+const warnedDomains = new Set<string>();
 
 const getBalancer = (domain: string) => {
     switch (domain) {
@@ -34,6 +35,7 @@ const getBalancer = (domain: string) => {
         case 'deepgram.com': return deepgramBalancer;
         case 'deepseek.com': return deepseekBalancer;
         case 'elevenlabs.io': return elevenlabsBalancer;
+        case 'fireworks.ai': return fireworksBalancer;
         case 'gemini.google': return geminiBalancer;
         case 'groq.com': return groqBalancer;
         case 'https.proxy': return httpsProxy;
@@ -45,7 +47,7 @@ const getBalancer = (domain: string) => {
         case '2captcha.com': return twoCaptchaBalancer;
         default: {
             if (!warnedDomains.has(domain)) {
-                console.warn(`No balancer configured for domain: ${domain}`);
+                console.warn(`no balancer configured for domain: ${domain}`);
                 warnedDomains.add(domain);
             }
 

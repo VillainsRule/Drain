@@ -1,10 +1,21 @@
 <div align='center'>
     <img src='https://files.catbox.moe/qobaor.png' alt='Drain Preview' width='90%' />
     <h1>Drain</h1>
-    <h3>an API key storage tool with a full permissions & access management system</h3>
+    <h3>a key storage tool designed for the paranoid</h3>
 </div>
 
 <br><br>
+
+<h2 align='center'>Features</h2>
+
+- Clean API Key management interface
+- Key balance detection/validation
+- Bulk imported keys
+- Vast per-site permission system
+- Instance-only API Keys
+- Passkey/WebAuthn Login
+- Global admin configuration
+- Simple user management
 
 <h2 align='center'>Setup</h2>
 
@@ -13,14 +24,14 @@
 3. Prepare for production: `bun prep`
 4. Start the production server: `bun start`
 
-> [!WARNING]
-> If not using Bun, some features may not work as intended.
+> [!NOTE]
+> Bun is required, thanks to the fast file streaming APIs and built-in proxy support.
 
-<br><h2 align='center'>Usage</h2>
+To enable passkeys, you can additionally run `bun initpk` and edit the file onscreen.
 
-Drain is an API key manager, and the biggest aspect is the vast permission system.
+<br><h2 align='center'>Useful Information</h2>
 
-The core administrator account is named "admin". admin has access to all sites and all users. admin cannot be demoted or deleted. Only admin can change the admin account password. admin has access to all sites, forever. admin's user ID is always 1. The user ID 1 itself has special permissions; do not try to assign other users "1".
+The core administrator account is named "admin" with the user ID "1". admin has access to all sites and all users. admin cannot be demoted or deleted. Only admin can change the admin account password. admin has access to all sites, forever. It is worth nothing that admin's access derives from its user ID (1) as opposed to the username, which can be changed with `bun cli/tools/renameAdmin`.
 
 admin's default password is "admin". Change it immediately after your first login in the users button at the top right. If you accidentally forget the "admin" password, run `bun cli/tools/resetAdmin` to reset it back to "admin".
 
@@ -42,16 +53,6 @@ Users can have 3 levels of access to Drain:
 - "admin" user - they are immune to the above management by "site admins", and have full access to everything. they are the ONLY admin that cannot be demoted by other admins or have its password changed by other admins.
 
 This implementation is amazing for those with trust issues.
-
-<br><h2 align='center'>WebAuthn (Passkeys)</h2>
-
-To setup passkey support:
-
-1. Copy `.env.example` to `.env` in the [api](./api/) folder
-2. Set the RP_ID variable to your domain (e.g. `drain.com`)
-3. Restart Drain
-
-If these two variables both do not exist, passkey support will be disabled.
 
 <br><br>
 <h5 align='center'>made with ❤️ by <b>VillainsRule</b></h5>
