@@ -17,6 +17,7 @@ const togetherBalancer = createBasicBalancer('https://api.together.xyz/v1/models
 const aimlBalancer = createBasicBalancer('https://api.aimlapi.com/v1/chat/completions', { validCode: 400, method: 'POST' });
 const cohereBalancer = createBasicBalancer('https://api.cohere.com/v1/models');
 const groqBalancer = createBasicBalancer('https://api.groq.com/openai/v1/models', { invalidCode: [401, 400] });
+const fireworksBalancer = createBasicBalancer('https://api.fireworks.ai/v1/accounts');
 const perplexityBalancer = createBasicBalancer('https://api.perplexity.ai/async/chat/completions');
 
 const capmonsterBalancer = createCaptchaBalancer('https://api.capmonster.cloud/getBalance');
@@ -34,6 +35,7 @@ const getBalancer = (domain: string) => {
         case 'deepgram.com': return deepgramBalancer;
         case 'deepseek.com': return deepseekBalancer;
         case 'elevenlabs.io': return elevenlabsBalancer;
+        case 'fireworks.ai': return fireworksBalancer;
         case 'gemini.google': return geminiBalancer;
         case 'groq.com': return groqBalancer;
         case 'https.proxy': return httpsProxy;

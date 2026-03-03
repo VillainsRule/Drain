@@ -58,6 +58,7 @@ const SideBar = observer(function SideBar() {
                                     }
                                 }}>{site}</span>
                             </ContextMenuTrigger>
+
                             <ContextMenuContent>
                                 <ContextMenuItem
                                     className='no-click'

@@ -17,7 +17,7 @@ const NavBox = observer(function NavBox() {
     const navigate = useNavigate();
 
     return (
-        <div className='border-neutral-200 w-full h-[calc(100%-5rem)] flex flex-col items-center px-6 pt-8 pb-3 gap-4 fixed left-0 top-0 bottom-0 z-20'>
+        <div className='w-full h-[calc(100%-5rem)] flex flex-col items-center px-6 pt-8 pb-3 gap-4 fixed left-0 top-0 bottom-0 z-20'>
             <div className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2'>
                 {siteManager.siteList.map((site, i) => <ContextMenu key={i}>
                     <ContextMenuTrigger asChild>

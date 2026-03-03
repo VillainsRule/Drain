@@ -40,54 +40,48 @@ const TopBar = observer(function TopBar({ dark, setDark }: { dark: boolean, setD
                     <TooltipTrigger asChild>
                         <Code className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/apiKeys')} />
                     </TooltipTrigger>
-                    <TooltipContent>
-                        <span>Drain API Keys</span>
-                    </TooltipContent>
+
+                    <TooltipContent>Drain API Keys</TooltipContent>
                 </Tooltip>}
 
                 {authManager.webAuthnEnabled && <Tooltip>
                     <TooltipTrigger asChild>
                         <Fingerprint className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/passkeys')} />
                     </TooltipTrigger>
-                    <TooltipContent>
-                        <span>Passkeys</span>
-                    </TooltipContent>
+
+                    <TooltipContent>Passkeys</TooltipContent>
                 </Tooltip>}
 
                 {authManager.user.id === 1 && <Tooltip>
                     <TooltipTrigger asChild>
                         <Wrench className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/config')} />
                     </TooltipTrigger>
-                    <TooltipContent>
-                        <span>Instance Config</span>
-                    </TooltipContent>
+
+                    <TooltipContent>Instance Config</TooltipContent>
                 </Tooltip>}
 
                 {authManager.isAdmin() && <Tooltip>
                     <TooltipTrigger asChild>
                         <UserCog className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/users')} />
                     </TooltipTrigger>
-                    <TooltipContent>
-                        <span>User Management</span>
-                    </TooltipContent>
+
+                    <TooltipContent>User Management</TooltipContent>
                 </Tooltip>}
 
                 {authManager.isDev && <Tooltip>
                     <TooltipTrigger asChild>
                         <Flask className='w-5.75 h-5.75 rotate-7 -mx-0.5 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/labs')} />
                     </TooltipTrigger>
-                    <TooltipContent>
-                        <span>Labs</span>
-                    </TooltipContent>
+
+                    <TooltipContent>Labs</TooltipContent>
                 </Tooltip>}
 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => authManager.logout()} />
                     </TooltipTrigger>
-                    <TooltipContent>
-                        <span>Log Out</span>
-                    </TooltipContent>
+
+                    <TooltipContent>Log Out</TooltipContent>
                 </Tooltip>
             </div>
         </div>
