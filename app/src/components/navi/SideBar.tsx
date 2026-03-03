@@ -51,17 +51,12 @@ const SideBar = observer(function SideBar() {
                     {siteManager.siteList.map((site, i) => (
                         <ContextMenu key={i}>
                             <ContextMenuTrigger asChild>
-                                <div
-                                    className='w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer hover:translate-x-1'
-                                    onClick={(e) => {
-                                        if (!(e.target as HTMLElement).classList.contains('no-click')) {
-                                            siteManager.select(site);
-                                            navigate(`/domain/${site}/keys`);
-                                        }
-                                    }}
-                                >
-                                    <span className={`text-lg font-medium ${pathname.startsWith('/domain/') && siteManager.site?.id === site ? 'text-sky-600' : 'text-primary'}`}>{site}</span>
-                                </div>
+                                <span className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer hover:translate-x-1 text-lg ${pathname.startsWith('/domain/') && siteManager.site?.id === site && 'font-semibold tracking-tight'}`} onClick={(e) => {
+                                    if (!(e.target as HTMLElement).classList.contains('no-click')) {
+                                        siteManager.select(site);
+                                        navigate(`/domain/${site}/keys`);
+                                    }
+                                }}>{site}</span>
                             </ContextMenuTrigger>
                             <ContextMenuContent>
                                 <ContextMenuItem
@@ -77,8 +72,7 @@ const SideBar = observer(function SideBar() {
                                             navigate('/');
                                         } else alert(errorFrom(res));
                                     });
-                                }}
-                                >Delete Site</ContextMenuItem>}
+                                }}>Delete Site</ContextMenuItem>}
                             </ContextMenuContent>
                         </ContextMenu>
                     ))}

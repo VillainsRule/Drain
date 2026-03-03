@@ -14,11 +14,11 @@ import SSAI from '@/assets/superSecretAdminImage.png';
 const today = new Date(Date.now());
 const shouldShowCow = Math.random() < 0.01 || (today.getMonth() === 3 && today.getDate() === 1);
 
-const Main = observer(function Main() {
+const Hub = observer(function Hub() {
     const navigate = useNavigate();
 
     return (
-        <div className='flex items-center flex-col gap-3 md:gap-6 h-full w-full mt-2 md:mt-16'>
+        <div className='flex items-center flex-col gap-3 md:gap-6 h-full w-full mt-8 md:mt-16'>
             <div className='flex text-center items-center flex-col w-full mt-10'>
                 <h1 className='text-4xl font-bold mt-10 mb-1.5'>hi, @{authManager.user.username}</h1>
                 <h3 className='text-2xl font-medium'>welcome to drain!</h3>
@@ -38,4 +38,4 @@ const Main = observer(function Main() {
     )
 });
 
-export default Main;
+export default Hub;

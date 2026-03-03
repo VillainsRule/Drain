@@ -1,9 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import Plus from 'lucide-react/icons/plus';
-
+import { Button } from '../shadcn/button';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../shadcn/context-menu';
+
+import Plus from 'lucide-react/icons/plus';
 
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
@@ -16,21 +17,19 @@ const NavBox = observer(function NavBox() {
     const navigate = useNavigate();
 
     return (
-        <div className='border-neutral-200 w-full h-[calc(100%-5.25rem)] flex flex-col items-center px-6 pt-8 pb-6 gap-4 fixed left-0 top-0 bottom-0 z-20'>
+        <div className='border-neutral-200 w-full h-[calc(100%-5rem)] flex flex-col items-center px-6 pt-8 pb-3 gap-4 fixed left-0 top-0 bottom-0 z-20'>
             <div className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2'>
                 {siteManager.siteList.map((site, i) => <ContextMenu key={i}>
                     <ContextMenuTrigger asChild>
-                        <div
-                            className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer ${pathname.startsWith('/domain/') && siteManager.site?.id === site ? 'bg-blue-100 border border-blue-300 shadow' : 'hover:bg-neutral-100'}`}
+                        <span
+                            className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer text-lg ${pathname.startsWith('/domain/') && siteManager.site?.id === site && 'font-semibold tracking-tight'}`}
                             onClick={(e) => {
                                 if (!(e.target as HTMLElement).classList.contains('no-click')) {
                                     siteManager.select(site);
                                     navigate(`/domain/${site}/keys`);
                                 }
                             }}
-                        >
-                            <span className={`text-lg font-medium ${pathname.startsWith('/domain/') && siteManager.site?.id === site ? 'text-blue-700' : 'text-primary'}`}>{site}</span>
-                        </div>
+                        >{site}</span>
                     </ContextMenuTrigger>
 
                     <ContextMenuContent>
@@ -55,7 +54,7 @@ const NavBox = observer(function NavBox() {
             </div>
 
             {authManager.isAdmin() && (
-                <div className='flex items-center justify-center gap-2 bg-blue-600 w-full py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors duration-125 cursor-pointer font-semibold text-lg' onClick={() => shadd.prompt(
+                <Button variant='outline' className='flex items-center justify-center gap-2 w-full py-2 shadow-sm font-semibold text-lg' onClick={() => shadd.prompt(
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',
                     { placeholder: 'my-cool-app.com', maxLength: 64, minLength: 1 },
@@ -68,9 +67,9 @@ const NavBox = observer(function NavBox() {
                         } else shadd.setError(errorFrom(options));
                     }
                 )}>
-                    <Plus className='w-6 h-6 text-white' />
-                    <span className='text-white'>Add Site</span>
-                </div>
+                    <Plus className='w-6 h-6' />
+                    <span>Add Site</span>
+                </Button>
             )}
         </div>
     )

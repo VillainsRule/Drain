@@ -7,8 +7,9 @@ import authManager from './managers/AuthManager'
 
 import Auth from './components/Auth'
 
-import Main from './components/Main'
+import Hub from './components/Hub'
 
+import MobileBar from './components/navi/MobileBar'
 import NavBox from './components/navi/NavBox'
 import SideBar from './components/navi/SideBar'
 import TopBar from './components/navi/TopBar'
@@ -40,15 +41,31 @@ function Container({ element: Element }: { element: React.ComponentType<any> }) 
         setIsNavboxOpen(false);
     }, [location.pathname]);
 
+    const [dark, setDark] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (localStorage.getItem('dark')) {
+            document.body.classList.add('dark');
+            setDark(true);
+        }
+
+        const listener = () => (window.innerWidth >= 768 && setIsNavboxOpen(false));
+
+        window.addEventListener('resize', listener);
+
+        return () => {
+            window.removeEventListener('resize', listener);
+        };
+    }, []);
+
     return (
         <div className='flex h-screen w-screen'>
             <SideBar />
 
-            <div className='flex flex-col w-full md:pr-8'>
-                {isNavboxOpen && <NavBox />}
-                <TopBar setIsNavboxOpen={setIsNavboxOpen} />
-
-                <div className='flex flex-col items-center'>{!isNavboxOpen && <Element />}</div>
+            <div className='flex flex-col w-full md:pr-8 h-screen'>
+                <TopBar dark={dark} setDark={setDark} />
+                <div className='flex-1 flex flex-col items-center overflow-auto'>{isNavboxOpen ? <NavBox /> : <Element />}</div>
+                <MobileBar setIsNavboxOpen={setIsNavboxOpen} />
             </div>
         </div>
     )
@@ -59,7 +76,7 @@ const App = observer(function App() {
         <Routes>
             <Route path='/auth' element={<Auth />} />
 
-            <Route path='/' element={<Container element={Main} />} />
+            <Route path='/' element={<Container element={Hub} />} />
 
             <Route path='/domain/*' element={<Container element={SiteRouter} />} />
 

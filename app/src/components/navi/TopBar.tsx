@@ -1,4 +1,4 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
@@ -7,7 +7,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/too
 import Code from 'lucide-react/icons/code';
 import Fingerprint from 'lucide-react/icons/fingerprint';
 import Flask from 'lucide-react/icons/flask-conical';
-import Hamburger from 'lucide-react/icons/hamburger';
 import LogOut from 'lucide-react/icons/log-out';
 import Moon from 'lucide-react/icons/moon';
 import Sun from 'lucide-react/icons/sun';
@@ -17,112 +16,81 @@ import Wrench from 'lucide-react/icons/wrench';
 import authManager from '@/managers/AuthManager';
 import labManager from '@/managers/LabManager';
 
-const TopBar = observer(function TopBar({ setIsNavboxOpen }: { setIsNavboxOpen: Dispatch<SetStateAction<boolean>> }) {
+const TopBar = observer(function TopBar({ dark, setDark }: { dark: boolean, setDark: Dispatch<SetStateAction<boolean>> }) {
     const navigate = useNavigate();
 
-    const [dark, setDark] = useState<boolean>(false);
-
-    useEffect(() => {
-        if (localStorage.getItem('dark')) {
-            document.body.classList.add('dark');
-            setDark(true);
-        }
-
-        const listener = () => {
-            if (window.innerWidth >= 768) setIsNavboxOpen(false);
-        }
-
-        document.addEventListener('resize', listener);
-
-        return () => {
-            document.removeEventListener('resize', listener);
-        };
-    }, []);
-
     return (
-        <>
-            {/* desktop bar */}
-            <div className='hidden md:flex justify-between items-center pt-6 pb-2 pl-4 z-30'>
-                <h1 className='font-semibold text-lg'>welcome, {authManager.user.username}!</h1>
+        <div className='hidden md:flex w-full justify-between items-center pt-6 pb-2 pl-4 z-30'>
+            <h1 className='font-semibold text-lg'>welcome, {authManager.user.username}!</h1>
 
-                <div className='flex items-center gap-6 min-h-full'>
-                    {labManager.get('darkMode') && <>
-                        {dark ? <Sun className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => {
-                            document.body.classList.remove('dark');
-                            localStorage.removeItem('dark');
-                            setDark(false);
-                        }} /> : <Moon className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => {
-                            document.body.classList.add('dark');
-                            localStorage.setItem('dark', '1');
-                            setDark(true);
-                        }} />}
-                    </>}
+            <div className='flex items-center gap-6 min-h-full'>
+                {labManager.get('darkMode') && <>
+                    {dark ? <Sun className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => {
+                        document.body.classList.remove('dark');
+                        localStorage.removeItem('dark');
+                        setDark(false);
+                    }} /> : <Moon className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => {
+                        document.body.classList.add('dark');
+                        localStorage.setItem('dark', '1');
+                        setDark(true);
+                    }} />}
+                </>}
 
-                    {authManager.apiKeysEnabled && <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Code className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/apiKeys')} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <span>Drain API Keys</span>
-                        </TooltipContent>
-                    </Tooltip>}
+                {authManager.apiKeysEnabled && <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Code className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/apiKeys')} />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span>Drain API Keys</span>
+                    </TooltipContent>
+                </Tooltip>}
 
-                    {authManager.webAuthnEnabled && <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Fingerprint className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/passkeys')} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <span>Passkeys</span>
-                        </TooltipContent>
-                    </Tooltip>}
+                {authManager.webAuthnEnabled && <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Fingerprint className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/passkeys')} />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span>Passkeys</span>
+                    </TooltipContent>
+                </Tooltip>}
 
-                    {authManager.user.id === 1 && <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Wrench className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/config')} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <span>Instance Config</span>
-                        </TooltipContent>
-                    </Tooltip>}
+                {authManager.user.id === 1 && <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Wrench className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/config')} />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span>Instance Config</span>
+                    </TooltipContent>
+                </Tooltip>}
 
-                    {authManager.isAdmin() && <Tooltip>
-                        <TooltipTrigger asChild>
-                            <UserCog className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/users')} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <span>User Management</span>
-                        </TooltipContent>
-                    </Tooltip>}
+                {authManager.isAdmin() && <Tooltip>
+                    <TooltipTrigger asChild>
+                        <UserCog className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/users')} />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span>User Management</span>
+                    </TooltipContent>
+                </Tooltip>}
 
-                    {authManager.isDev && <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Flask className='w-5.75 h-5.75 rotate-7 -mx-0.5 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/labs')} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <span>Labs</span>
-                        </TooltipContent>
-                    </Tooltip>}
+                {authManager.isDev && <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Flask className='w-5.75 h-5.75 rotate-7 -mx-0.5 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/labs')} />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span>Labs</span>
+                    </TooltipContent>
+                </Tooltip>}
 
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => authManager.logout()} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <span>Log Out</span>
-                        </TooltipContent>
-                    </Tooltip>
-                </div>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => authManager.logout()} />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <span>Log Out</span>
+                    </TooltipContent>
+                </Tooltip>
             </div>
-
-            {/* mobile bar */}
-            <div className='fixed bottom-0 w-full flex md:hidden justify-between items-center py-5 px-6 z-30'>
-                <div className='flex justify-center gap-3 cursor-pointer items-center mb-2 select-none' onClick={() => navigate('/')}>
-                    <h1 className='text-3xl font-bold text-primary drop-shadow-md'>drain!</h1>
-                </div>
-
-                <Hamburger className='w-8 h-8 cursor-pointer text-accent-foreground' onClick={() => setIsNavboxOpen(o => !o)} />
-            </div>
-        </>
+        </div>
     )
 });
 
