@@ -309,11 +309,19 @@ const sites = new Elysia({ name: 'sites' })
         if (user.admin || site.editors.includes(user.id) || site.readers.includes(user.id)) {
             const sites = user.admin && user.sites.length < 1 ? siteDB.getIDs() as string[] : user.sites;
 
+            const rawNewIndex = body.newIndex;
+            if (!Number.isFinite(rawNewIndex) || !Number.isInteger(rawNewIndex)) {
+                return status(400, { error: 'invalid newIndex' });
+            }
+            let newIndex = rawNewIndex;
+            if (newIndex < 0) newIndex = 0;
+            if (newIndex > sites.length) newIndex = sites.length;
+
             const idx = sites.indexOf(body.domain);
             if (idx === -1) return status(400, { error: 'site not in user list' });
 
             sites.splice(idx, 1);
-            sites.splice(body.newIndex, 0, body.domain);
+            sites.splice(newIndex, 0, body.domain);
 
             userDB.update(user.id, { sites });
             return {};

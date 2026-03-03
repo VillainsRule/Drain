@@ -17,7 +17,7 @@ import siteManager from '@/managers/SiteManager';
 const getInsertIndex = (e: React.DragEvent, itemIndex: number): number => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     return e.clientY < rect.top + rect.height / 2 ? itemIndex : itemIndex + 1;
-}
+};
 
 const DropBar = () => (
     <div className='w-full px-3 pointer-events-none'>
@@ -80,7 +80,7 @@ const SideBar = observer(function SideBar() {
             if (!res.data) {
                 setLocalSites([...siteManager.siteList]);
                 alert(errorFrom(res));
-            }
+            } else siteManager.siteList = reordered;
         });
     };
 
