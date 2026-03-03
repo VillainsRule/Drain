@@ -23,7 +23,7 @@ const perplexityBalancer = createBasicBalancer('https://api.perplexity.ai/async/
 const capmonsterBalancer = createCaptchaBalancer('https://api.capmonster.cloud/getBalance');
 const twoCaptchaBalancer = createCaptchaBalancer('https://api.2captcha.com/getBalance');
 
-const warnedDomains = new Set<string>([]);
+const warnedDomains = new Set<string>();
 
 const getBalancer = (domain: string) => {
     switch (domain) {
