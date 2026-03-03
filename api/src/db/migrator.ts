@@ -117,6 +117,7 @@ if (!fs.existsSync(v2Dir)) {
                         id: identifier
                     }
                     apiKeyDB.links.key[key.key] = identifier;
+                    userDB.target[key.userId].apiKeys.push(identifier);
                 });
 
                 fs.writeFileSync(path.join(v2Dir, 'apikeys.db'), JSON.stringify(apiKeyDB));
