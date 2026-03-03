@@ -5,7 +5,7 @@ import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const doAbsolute = 'ABSOLUTE' in Bun.env;
+const doAbsolute = true; // this was being dumb --> 'ABSOLUTE' in Bun.env;
 
 // https://vite.dev/config/
 export default defineConfig({
