@@ -52,7 +52,8 @@ const sites = new Elysia({ name: 'sites' })
                             const user = userDB.get(id);
                             return user ? [id, user.username] : null;
                         }).filter((entry): entry is [number, string] => entry !== null)
-                    )
+                    ),
+                    supportsBalancer
                 }
             }
         } else return status(401, { error: 'no permission' });

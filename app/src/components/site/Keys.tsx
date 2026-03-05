@@ -84,7 +84,7 @@ const SiteKeys = observer(function SiteKeys() {
                         <TooltipContent>sort by $$</TooltipContent>
                     </Tooltip>}
 
-                    {authManager.isAdmin() && <Tooltip>
+                    {authManager.isAdmin() && site.supportsBalancer && <Tooltip>
                         <TooltipTrigger asChild>
                             <Button className='w-12 py-2 rounded-md transition-colors duration-150 hidden md:flex' onClick={async () => {
                                 const keys = Object.keys(site.keys);
