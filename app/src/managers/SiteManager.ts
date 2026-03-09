@@ -2,8 +2,6 @@ import { makeAutoObservable } from 'mobx';
 
 import api, { errorFrom } from '@/lib/eden';
 
-import authManager from './AuthManager';
-
 import type { PublicSite } from '@/types';
 
 class SiteManager {
@@ -12,16 +10,6 @@ class SiteManager {
 
     constructor() {
         makeAutoObservable(this);
-
-        let actuallyBlurred = false;
-
-        window.onblur = () => actuallyBlurred = true;
-        window.onfocus = () => {
-            if (actuallyBlurred && authManager.loggedIn) {
-                this.refreshCurrent(false);
-                actuallyBlurred = false;
-            }
-        };
     }
 
     async getList() {

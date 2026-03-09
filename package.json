@@ -5,7 +5,7 @@
         "start": "cd api && bun src/main.ts",
         "prep": "cd app && bun install && bunx --bun vite build && cd ../api && bun install && cd ..",
         "initpk": "cd api && cp .env.example .env && nano .env",
-        "pull": "git pull && bun prep",
+        "pull": "git pull && bun prep && systemctl restart drain",
         "update": "cd app && bun update && cd ../api && bun update && cd ..",
         "apidev": "cd api && DD=1 bun --watch src/main.ts",
         "appdev": "cd app && bunx --bun vite build --watch",
