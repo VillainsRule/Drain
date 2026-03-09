@@ -26,34 +26,31 @@ const twoCaptchaBalancer = createCaptchaBalancer('https://api.2captcha.com/getBa
 const warnedDomains = new Set<string>();
 
 const getBalancer = (domain: string) => {
-    switch (domain) {
-        case 'aimlapi.com': return aimlBalancer;
-        case 'capmonster.cloud': return capmonsterBalancer;
-        case 'cartesia.ai': return cartesiaBalancer;
-        case 'cohere.com': return cohereBalancer;
-        case 'cors.sh': return corsShBalancer;
-        case 'deepgram.com': return deepgramBalancer;
-        case 'deepseek.com': return deepseekBalancer;
-        case 'elevenlabs.io': return elevenlabsBalancer;
-        case 'fireworks.ai': return fireworksBalancer;
-        case 'gemini.google': return geminiBalancer;
-        case 'groq.com': return groqBalancer;
-        case 'https.proxy': return httpsProxy;
-        case 'ipinfo.io': return ipinfoBalancer;
-        case 'mistral.ai': return mistralBalancer;
-        case 'perplexity.ai': return perplexityBalancer;
-        case 'together.ai': return togetherBalancer;
-        case 'vpnapi.io': return vpnApiBalancer;
-        case '2captcha.com': return twoCaptchaBalancer;
-        default: {
-            if (!warnedDomains.has(domain)) {
-                console.warn(`no balancer configured for domain: ${domain}`);
-                warnedDomains.add(domain);
-            }
+    if (domain.endsWith('aimlapi.com')) return aimlBalancer;
+    if (domain.endsWith('capmonster.cloud')) return capmonsterBalancer;
+    if (domain.endsWith('cartesia.ai')) return cartesiaBalancer;
+    if (domain.endsWith('cohere.com')) return cohereBalancer;
+    if (domain.endsWith('cors.sh')) return corsShBalancer;
+    if (domain.endsWith('deepgram.com')) return deepgramBalancer;
+    if (domain.endsWith('deepseek.com')) return deepseekBalancer;
+    if (domain.endsWith('elevenlabs.io')) return elevenlabsBalancer;
+    if (domain.endsWith('fireworks.ai')) return fireworksBalancer;
+    if (domain.endsWith('gemini.google')) return geminiBalancer;
+    if (domain.endsWith('groq.com')) return groqBalancer;
+    if (domain.endsWith('https.proxy')) return httpsProxy;
+    if (domain.endsWith('ipinfo.io')) return ipinfoBalancer;
+    if (domain.endsWith('mistral.ai')) return mistralBalancer;
+    if (domain.endsWith('perplexity.ai')) return perplexityBalancer;
+    if (domain.endsWith('together.ai')) return togetherBalancer;
+    if (domain.endsWith('vpnapi.io')) return vpnApiBalancer;
+    if (domain.endsWith('2captcha.com')) return twoCaptchaBalancer;
 
-            return null;
-        }
+    if (!warnedDomains.has(domain)) {
+        console.warn(`no balancer configured for domain: ${domain}`);
+        warnedDomains.add(domain);
     }
+
+    return null;
 }
 
 export default getBalancer;

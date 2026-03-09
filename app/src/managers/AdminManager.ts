@@ -11,7 +11,7 @@ class AdminManager {
         commit: 'unknown',
         localChanges: true,
         isUsingSystemd: false,
-        config: { useProxiesForBalancer: false, allowAPIKeys: true }
+        config: { balancerProxy: '', allowAPIKeys: true, nextUserId: 0 }
     };
 
     constructor() {
