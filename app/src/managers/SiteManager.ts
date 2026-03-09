@@ -14,7 +14,6 @@ class SiteManager {
 
     async getList() {
         const res = await api.sites.list.post();
-        // @ts-expect-error it's 8:07am and i'm NOT about to fix a deep-rooted LinkedDB issue
         if (res.data) this.siteList = res.data.sites || [];
         else alert(errorFrom(res));
     }

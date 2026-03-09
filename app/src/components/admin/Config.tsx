@@ -62,7 +62,7 @@ const AdminConfig = observer(function AdminConfig() {
                     const value = e.currentTarget.value;
                     adminManager.instanceInformation.config.balancerProxy = value;
 
-                    const proxyRegex = /^https:\/\/(?:(\w+:\w+)@)?([\w.-]+:\d+)$/;
+                    const proxyRegex = /^https?:\/\/(?:([^:@]+:[^:@]+)@)?([^:@]+:\d+)$/;
                     if (proxyRegex.test(value) || value === '') {
                         setBalancerProxyValid(true);
                         api.admin.instance.post({ config: adminManager.instanceInformation.config });
