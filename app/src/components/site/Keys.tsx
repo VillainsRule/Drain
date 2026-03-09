@@ -38,7 +38,8 @@ const SiteKeys = observer(function SiteKeys() {
     return (
         <>
             <div className='flex justify-between items-center flex-col lg:flex-row w-full mt-3 gap-3 lg:gap-0'>
-                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys)?.length}</h2>
+                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys)?.length} {site.totalBalance && site.totalBalance !== '0.00' && <> (${site.totalBalance})</>}</h2>
+
                 <div className='flex gap-3'>
                     <Tooltip>
                         <TooltipTrigger asChild>

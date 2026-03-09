@@ -74,6 +74,7 @@ export interface PublicSite {
     supportsBalancer: boolean;
     resolvedReaders?: Record<number, string>;
     sortable: boolean;
+    totalBalance?: string;
 }
 
 export interface DBConfig {
