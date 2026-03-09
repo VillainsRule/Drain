@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { Button } from '@/components/shadcn/button';
 import { Checkbox } from '@/components/shadcn/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
+import { Input } from '../shadcn/input';
 import { Label } from '@/components/shadcn/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
 
@@ -24,6 +25,7 @@ import superSecretAdminImage from '@/assets/superSecretAdminImage.png';
 const AdminConfig = observer(function AdminConfig() {
     const navigate = useNavigate();
 
+    const [balancerProxyValid, setBalancerProxyValid] = useState(true);
     const [gitOutput, setGitOutput] = useState<string>('');
 
     useEffect(() => {
@@ -44,16 +46,6 @@ const AdminConfig = observer(function AdminConfig() {
                 <h2 className='text-lg text-center font-medium'>has local changes?: {adminManager.instanceInformation.localChanges.toString()}</h2>
             </div>
 
-            {siteManager.siteList.includes('https.proxy') && <div className='flex items-center gap-3'>
-                <Checkbox id='useProxiesBalancer' checked={adminManager.instanceInformation.config.useProxiesForBalancer} onCheckedChange={(isChecked) => {
-                    adminManager.instanceInformation.config.useProxiesForBalancer = !!isChecked;
-                    api.admin.instance.post({ config: adminManager.instanceInformation.config })
-                        .then(() => adminManager.fetchInstanceInformation());
-                }} />
-
-                <Label htmlFor='useProxiesBalancer'>use proxies from 'https.proxy' for balancer</Label>
-            </div>}
-
             <div className='flex items-center gap-3'>
                 <Checkbox id='allowAPIKeys' checked={adminManager.instanceInformation.config.allowAPIKeys} onCheckedChange={(isChecked) => {
                     adminManager.instanceInformation.config.allowAPIKeys = !!isChecked;
@@ -63,6 +55,20 @@ const AdminConfig = observer(function AdminConfig() {
 
                 <Label htmlFor='allowAPIKeys'>allow API keys</Label>
             </div>
+
+            {<div className='flex items-center gap-3'>
+                <span className='min-w-28'>balancer proxy:</span>
+                <Input className={`py-0.5 ${!balancerProxyValid ? 'border-red-500 ring-red-500/70!' : ''}`} defaultValue={adminManager.instanceInformation.config.balancerProxy} onInput={(e) => {
+                    const value = e.currentTarget.value;
+                    adminManager.instanceInformation.config.balancerProxy = value;
+
+                    const proxyRegex = /^https:\/\/(?:(\w+:\w+)@)?([\w.-]+:\d+)$/;
+                    if (proxyRegex.test(value) || value === '') {
+                        setBalancerProxyValid(true);
+                        api.admin.instance.post({ config: adminManager.instanceInformation.config });
+                    } else setBalancerProxyValid(false);
+                }} />
+            </div>}
 
             <div className={`flex justify-center gap-3 ${adminManager.instanceInformation.localChanges && !adminManager.instanceInformation.isUsingSystemd ? 'md:hidden' : ''}`}>
                 <Tooltip>

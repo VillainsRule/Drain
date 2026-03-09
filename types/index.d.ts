@@ -77,7 +77,7 @@ export interface PublicSite {
 }
 
 export interface DBConfig {
-    useProxiesForBalancer: boolean;
+    balancerProxy: string;
     allowAPIKeys: boolean;
     nextUserId: number;
 }
@@ -86,8 +86,5 @@ export interface PublicConfig {
     commit: string;
     localChanges: boolean;
     isUsingSystemd: boolean;
-    config: {
-        allowAPIKeys: boolean;
-        useProxiesForBalancer: boolean;
-    };
+    config: DBConfig;
 }

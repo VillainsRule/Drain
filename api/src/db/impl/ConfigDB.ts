@@ -8,7 +8,14 @@ export class ConfigDB extends BasicDB<DBConfig> {
     }
 
     initializeData() {
-        this.db = { useProxiesForBalancer: false, allowAPIKeys: true, nextUserId: 2 };
+        this.db = { balancerProxy: '', allowAPIKeys: true, nextUserId: 2 };
+    }
+
+    runDBMigrations() {
+        if (!('balancerProxy' in this.db)) {
+            delete (this.db as any).useProxiesForBalancer;
+            (this.db as any).balancerProxy = '';
+        }
     }
 
     updateConfig(newConfig: Partial<DBConfig>) {
