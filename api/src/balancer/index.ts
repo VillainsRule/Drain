@@ -18,11 +18,15 @@ const aimlBalancer = createBasicBalancer('https://api.aimlapi.com/v1/chat/comple
 const cohereBalancer = createBasicBalancer('https://api.cohere.com/v1/models');
 const groqBalancer = createBasicBalancer('https://api.groq.com/openai/v1/models', { invalidCode: [401, 400] });
 const fireworksBalancer = createBasicBalancer('https://api.fireworks.ai/v1/accounts');
+
 const perplexityBalancer = createBasicBalancer('https://api.perplexity.ai/async/chat/completions');
 const serperBalancer = createBasicBalancer('https://google.serper.dev/search', { tokenHeader: 'x-api-key', validCode: 400, invalidCode: 403, method: 'POST' });
 
 const capmonsterBalancer = createCaptchaBalancer('https://api.capmonster.cloud/getBalance');
 const twoCaptchaBalancer = createCaptchaBalancer('https://api.2captcha.com/getBalance');
+
+const nvidiaPayload = '{"model":"nvidia/llama-3.1-nemotron-ultra-253b-v1","messages":[{"role":"user","content":"hello"]}';
+const nvidiaBalancer = createBasicBalancer('https://integrate.api.nvidia.com/v1/chat/completions', { validCode: 400, invalidCode: [401, 403], method: 'POST', body: nvidiaPayload, extraHeaders: { 'content-type': 'application/json' } });
 
 const warnedDomains = new Set<string>();
 
@@ -41,6 +45,7 @@ const getBalancer = (domain: string) => {
     if (domain.endsWith('https.proxy')) return httpsProxy;
     if (domain.endsWith('ipinfo.io')) return ipinfoBalancer;
     if (domain.endsWith('mistral.ai')) return mistralBalancer;
+    if (domain.endsWith('nvidia.com')) return nvidiaBalancer;
     if (domain.endsWith('perplexity.ai')) return perplexityBalancer;
     if (domain.endsWith('serper.dev')) return serperBalancer;
     if (domain.endsWith('together.ai')) return togetherBalancer;

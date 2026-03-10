@@ -6,6 +6,7 @@ interface X {
     validCode?: number;
     invalidCode?: number | number[];
     method?: 'GET' | 'POST';
+    body?: string;
     customText?: string;
 }
 
@@ -15,7 +16,8 @@ const createBasicBalancer = (url: string, x: X = {}) => async (token: string): P
         headers: {
             ...(x.tokenHeader ? { [x.tokenHeader]: token } : { 'Authorization': `Bearer ${token}` }),
             ...(x.extraHeaders ?? {})
-        }
+        },
+        body: x.body
     });
 
     const code = response.status;
@@ -26,7 +28,7 @@ const createBasicBalancer = (url: string, x: X = {}) => async (token: string): P
 
     if (code === (x.validCode || 200)) return x.customText || 'Valid';
 
-    console.log('unexpected status code for', url, code);
+    console.log('unexpected status code for', url, code, await response.text());
 
     return '?';
 };
