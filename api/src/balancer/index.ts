@@ -19,6 +19,7 @@ const cohereBalancer = createBasicBalancer('https://api.cohere.com/v1/models');
 const groqBalancer = createBasicBalancer('https://api.groq.com/openai/v1/models', { invalidCode: [401, 400] });
 const fireworksBalancer = createBasicBalancer('https://api.fireworks.ai/v1/accounts');
 const perplexityBalancer = createBasicBalancer('https://api.perplexity.ai/async/chat/completions');
+const serperBalancer = createBasicBalancer('https://google.serper.dev/search', { tokenHeader: 'x-api-key', validCode: 400, invalidCode: 403, method: 'POST' });
 
 const capmonsterBalancer = createCaptchaBalancer('https://api.capmonster.cloud/getBalance');
 const twoCaptchaBalancer = createCaptchaBalancer('https://api.2captcha.com/getBalance');
@@ -41,6 +42,7 @@ const getBalancer = (domain: string) => {
     if (domain.endsWith('ipinfo.io')) return ipinfoBalancer;
     if (domain.endsWith('mistral.ai')) return mistralBalancer;
     if (domain.endsWith('perplexity.ai')) return perplexityBalancer;
+    if (domain.endsWith('serper.dev')) return serperBalancer;
     if (domain.endsWith('together.ai')) return togetherBalancer;
     if (domain.endsWith('vpnapi.io')) return vpnApiBalancer;
     if (domain.endsWith('2captcha.com')) return twoCaptchaBalancer;
