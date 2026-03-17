@@ -1,5 +1,5 @@
 <div align='center'>
-    <img src='https://files.catbox.moe/qobaor.png' alt='Drain Preview' width='90%' />
+    <img src='./README.png' alt='Drain Preview' width='90%' />
     <h1>Drain</h1>
     <h3>a key storage tool designed for the paranoid</h3>
 </div>
