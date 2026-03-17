@@ -5,6 +5,8 @@ import configDB from '../db/impl/ConfigDB';
 import siteDB from '../db/impl/SiteDB';
 import userDB from '../db/impl/UserDB';
 
+import invalidKeyDB from '../db/InvalidKeyDB';
+
 import getBalancer from '../balancer';
 
 const usersRunningBalancer: number[] = [];
@@ -99,6 +101,7 @@ const sites = new Elysia({ name: 'sites' })
         if (!user.admin && !site.editors.includes(user.id) && !site.readers.includes(user.id)) return status(401, { error: 'no permission' });
 
         if (site.keys[body.key]) return status(403, { error: 'key already exists' });
+        if (invalidKeyDB.has(body.domain, body.key)) return status(403, { error: 'balancer already determined this key as invalid.' });
 
         const balancer = getBalancer(body.domain);
         if (balancer) {
@@ -109,8 +112,15 @@ const sites = new Elysia({ name: 'sites' })
 
             usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
 
-            if (balance === 'invalid_key') return status(424, { error: 'balancer has determined this key is invalid.' });
-            if (balance === 'leaked_key') return status(424, { error: 'balancer has determined this key was flagged.' });
+            if (balance === 'invalid_key') {
+                invalidKeyDB.add(body.domain, body.key);
+                return status(424, { error: 'balancer has determined this key is invalid.' });
+            }
+
+            if (balance === 'leaked_key') {
+                invalidKeyDB.add(body.domain, body.key);
+                return status(424, { error: 'balancer has determined this key was flagged.' });
+            }
 
             site.keys[body.key] = isNaN(Number(balance)) ? balance : `$${balance}`;
         } else site.keys[body.key] = null;
