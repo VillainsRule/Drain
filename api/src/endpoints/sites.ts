@@ -44,9 +44,7 @@ const sites = new Elysia({ name: 'sites' })
         return status(401, { error: 'not logged in' });
     })
 
-    .get('/api/v1/sites/list', async ({ user }) => {
-        return { sites: user.sites };
-    }, { detail: { description: 'returns a list of site domains the user has access to', tags: ['Sites'] } })
+    .get('/api/v1/sites/list', async ({ user }) => ({ sites: user.sites }), { detail: { description: 'returns a list of site domains the user has access to', tags: ['Sites'] } })
 
     .post('/api/v1/sites/info', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
@@ -54,24 +52,29 @@ const sites = new Elysia({ name: 'sites' })
 
         const supportsBalancer = !!getBalancer(site.id);
 
-        if (site.readers.includes(user.id)) return { site: { id: site.id, keys: site.keys, supportsBalancer } };
-        else if (site.editors.includes(user.id) || user.admin) {
-            return {
-                site: {
-                    id: site.id,
-                    keys: site.keys,
-                    readers: site.readers,
-                    editors: site.editors,
-                    resolvedReaders: Object.fromEntries(
-                        site.readers.map((id: number) => {
-                            const user = userDB.get(id);
-                            return user ? [id, user.username] : null;
-                        }).filter((entry): entry is [number, string] => entry !== null)
-                    ),
-                    supportsBalancer
-                }
-            }
-        } else return status(401, { error: 'no permission' });
+        if (site.readers.includes(user.id)) return {
+            id: site.id,
+            keys: site.keys,
+            readers: [user.id],
+            editors: [],
+            supportsBalancer
+        };
+
+        else if (site.editors.includes(user.id) || user.admin) return {
+            id: site.id,
+            keys: site.keys,
+            readers: site.readers,
+            editors: site.editors,
+            resolvedReaders: Object.fromEntries(
+                site.readers.map((id: number) => {
+                    const user = userDB.get(id);
+                    return user ? [id, user.username] : null;
+                }).filter((entry): entry is [number, string] => entry !== null)
+            ),
+            supportsBalancer
+        };
+
+        else return status(401, { error: 'no permission' });
     }, { body: t.Object({ domain: t.String() }), detail: { description: 'returns detailed information about a site, including its keys and user access lists. requires: reader/editor access or admin', tags: ['Sites'] } })
 
     .post('/api/v1/sites/create', async ({ body, user }) => {

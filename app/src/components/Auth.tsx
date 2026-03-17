@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 
@@ -21,16 +21,13 @@ const Auth = observer(function Auth() {
     const [showingAll, setShowingAll] = useState<boolean>(allowCredentials.length < 1);
 
     const [standardError, setStandardError] = useState<string>('');
-    const usernameRef = useRef<HTMLInputElement>(null);
-    const passwordRef = useRef<HTMLInputElement>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const [usernameInput, setUsernameInput] = useState<string>('');
+    const [passwordInput, setPasswordInput] = useState<string>('');
 
     useEffect(() => {
         if (authManager.user.id) navigate('/');
-
-        if (localStorage.getItem('dark')) {
-            document.body.classList.add('dark');
-        }
+        if (localStorage.getItem('dark')) document.body.classList.add('dark');
     }, []);
 
     const doWebAuthn = async () => {
@@ -60,6 +57,14 @@ const Auth = observer(function Auth() {
         });
     }
 
+    const handleLogin = () => api.auth.account.post({ username: usernameInput, password: passwordInput }).then((res) => {
+        if (res.data) {
+            authManager.motd = res.data.motd;
+            authManager.setAuth(res.data.user);
+            navigate('/');
+        } else setStandardError(errorFrom(res));
+    });
+
     return (
         <div className='min-h-screen flex items-center justify-center'>
             <Card className='w-11/12 md:w-full max-w-md'>
@@ -68,47 +73,46 @@ const Auth = observer(function Auth() {
                 </CardHeader>
 
                 {showingAll ? <CardContent className='space-y-4'>
-                    <div className='space-y-2'>
-                        <Label htmlFor='username'>Username</Label>
-                        <Input id='username' type='text' required ref={usernameRef} onKeyUp={(e) => e.key === 'Enter' && passwordRef.current!.focus()} autoFocus={true} />
-                    </div>
+                    <form onSubmit={(e) => (e.preventDefault(), handleLogin())} className='space-y-4'>
+                        <div className='space-y-2'>
+                            <Label htmlFor='username'>Username</Label>
+                            <Input
+                                type='text'
+                                value={usernameInput}
+                                required
+                                autoFocus
+                                onInput={(e) => setUsernameInput(e.currentTarget.value)}
+                            />
+                        </div>
 
-                    <div className='space-y-2'>
-                        <Label htmlFor='password'>Password</Label>
-                        <Input id='password' type='password' required ref={passwordRef} onKeyUp={(e) => e.key === 'Enter' && buttonRef.current!.click()} />
-                    </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor='password'>Password</Label>
+                            <Input
+                                type='password'
+                                value={passwordInput}
+                                required
+                                onInput={(e) => setPasswordInput(e.currentTarget.value)}
+                            />
+                        </div>
 
-                    {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
+                        {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
-                    <Button className='w-full cursor-pointer' ref={buttonRef} onClick={() => {
-                        api.auth.account.post({
-                            username: usernameRef.current!.value,
-                            password: passwordRef.current!.value
-                        }).then((res) => {
-                            if (res.data) {
-                                authManager.motd = res.data.motd;
-                                authManager.setAuth(res.data.user);
-                                navigate('/');
-                            } else setStandardError(errorFrom(res));
-                        })
-                    }}>Log In</Button>
+                        <Button type='submit' className='w-full cursor-pointer'>Log In</Button>
+                    </form>
 
                     <div className='flex w-full justify-center gap-3 items-center'>
                         <Button variant='outline' className='flex-1 min-w-0 cursor-pointer' onClick={() => shadd.prompt(
                             'have an invite code?',
                             'enter the invite code to activate your account and get started with Drain!',
-                            { placeholder: 'invite code', maxLength: 36, minLength: 9 }, // old codes are 36L and new codes are 9L, so this should cover both
-                            async (value: string) => {
-                                const options = await api.auth.invites.attempt.post({ code: value });
+                            { placeholder: 'invite code', maxLength: 36, minLength: 9 },
+                            async (code: string) => {
+                                const options = await api.auth.invites.attempt.post({ code });
                                 if (options.data) shadd.prompt(
                                     `welcome, ${options.data.username}!`,
                                     'get started by entering a password below:',
                                     { placeholder: 'password', maxLength: 24, minLength: 3 },
-                                    async (value2: string) => {
-                                        const res = await api.auth.invites.claim.post({
-                                            code: value,
-                                            password: value2
-                                        });
+                                    async (password: string) => {
+                                        const res = await api.auth.invites.claim.post({ code, password });
 
                                         if (res.data && res.data.user) {
                                             authManager.setAuth(res.data.user);
@@ -129,7 +133,7 @@ const Auth = observer(function Auth() {
 
                     {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
 
-                    <Button variant='outline' className='w-full cursor-pointer' ref={buttonRef} onClick={() => setShowingAll(true)}>sign in with alternative method</Button>
+                    <Button variant='outline' className='w-full cursor-pointer' onClick={() => setShowingAll(true)}>sign in with alternative method</Button>
                 </CardContent>}
             </Card>
         </div>

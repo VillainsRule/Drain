@@ -29,10 +29,10 @@ class SiteManager {
         if (domain) {
             const res = await api.v1.sites.info.post({ domain });
             if (res.data) this.site = {
-                ...res.data.site,
-                supportsBalancer: !!res.data.site.supportsBalancer,
-                sortable: Object.values(res.data.site.keys).some((s: any) => s && (s.startsWith('Paid') || s.includes('Tier') || s.startsWith('$'))),
-                totalBalance: fixMoneyFloatingPoint(Object.values(res.data.site.keys)[0]?.startsWith('$') && Object.values(res.data.site.keys).reduce((acc: number, s: any) => {
+                ...res.data,
+                supportsBalancer: !!res.data.supportsBalancer,
+                sortable: Object.values(res.data.keys).some((s: any) => s && (s.startsWith('Paid') || s.includes('Tier') || s.startsWith('$'))),
+                totalBalance: fixMoneyFloatingPoint(Object.values(res.data.keys)[0]?.startsWith('$') && Object.values(res.data.keys).reduce((acc: number, s: any) => {
                     if (s && s.startsWith('$')) {
                         const num = parseFloat(s.replace('$', ''));
                         if (!isNaN(num) && num >= 0) return acc + num;

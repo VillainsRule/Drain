@@ -5,8 +5,6 @@ import Hasher from '../../util/hasher';
 import { PublicUser, DBUser } from '../../../../types';
 
 export class UserDB extends LinkedDB<DBUser> {
-    adminName = 'admin';
-
     constructor() {
         super('users.db', 2, ['username', 'code', 'sessions']);
     }
@@ -24,10 +22,6 @@ export class UserDB extends LinkedDB<DBUser> {
                 apiKeys: []
             }
         };
-    }
-
-    afterInit() {
-        this.adminName = this.get(1)!.username;
     }
 
     allUsers(): PublicUser[] {
