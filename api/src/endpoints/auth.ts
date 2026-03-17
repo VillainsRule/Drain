@@ -56,7 +56,7 @@ const auth = new Elysia({ name: 'auth' })
             session.sameSite = 'strict';
             session.secure = true;
 
-            return { user: { id: user.id, username: user.username, admin: user.admin } };
+            return { user: { id: user.id, username: user.username, admin: user.admin }, motd: configDB.db.motd };
         } catch (error) {
             console.error(error);
             return status(502, {});

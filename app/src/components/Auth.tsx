@@ -70,7 +70,7 @@ const Auth = observer(function Auth() {
                 {showingAll ? <CardContent className='space-y-4'>
                     <div className='space-y-2'>
                         <Label htmlFor='username'>Username</Label>
-                        <Input id='username' type='text' required ref={usernameRef} onKeyUp={(e) => e.key === 'Enter' && passwordRef.current!.focus()} />
+                        <Input id='username' type='text' required ref={usernameRef} onKeyUp={(e) => e.key === 'Enter' && passwordRef.current!.focus()} autoFocus={true} />
                     </div>
 
                     <div className='space-y-2'>
@@ -86,6 +86,7 @@ const Auth = observer(function Auth() {
                             password: passwordRef.current!.value
                         }).then((res) => {
                             if (res.data) {
+                                authManager.motd = res.data.motd;
                                 authManager.setAuth(res.data.user);
                                 navigate('/');
                             } else setStandardError(errorFrom(res));
