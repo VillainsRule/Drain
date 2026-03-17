@@ -8,7 +8,7 @@ export class ConfigDB extends BasicDB<DBConfig> {
     }
 
     initializeData() {
-        this.db = { balancerProxy: '', allowAPIKeys: true, nextUserId: 2 };
+        this.db = { balancerProxy: '', motd: '', allowAPIKeys: true, nextUserId: 2 };
     }
 
     runDBMigrations() {
@@ -16,6 +16,8 @@ export class ConfigDB extends BasicDB<DBConfig> {
             delete (this.db as any).useProxiesForBalancer;
             (this.db as any).balancerProxy = '';
         }
+
+        if (!('motd' in this.db)) (this.db as any).motd = 'this is the boring default MOTD. the admin should put something silly here!';
     }
 
     updateConfig(newConfig: Partial<DBConfig>) {

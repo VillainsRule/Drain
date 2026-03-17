@@ -4,10 +4,10 @@ import { observer } from 'mobx-react-lite'
 
 import { startAuthentication } from '@simplewebauthn/browser'
 
-import { Button } from '@/components/shadcn/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/shadcn/card'
-import { Input } from '@/components/shadcn/input'
-import { Label } from '@/components/shadcn/label'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 import api, { errorFrom } from '@/lib/eden'
 import { shadd } from '@/lib/shadd'
@@ -97,13 +97,13 @@ const Auth = observer(function Auth() {
                             'have an invite code?',
                             'enter the invite code to activate your account and get started with Drain!',
                             { placeholder: 'invite code', maxLength: 36, minLength: 9 }, // old codes are 36L and new codes are 9L, so this should cover both
-                            async (value) => {
+                            async (value: string) => {
                                 const options = await api.auth.invites.attempt.post({ code: value });
                                 if (options.data) shadd.prompt(
                                     `welcome, ${options.data.username}!`,
                                     'get started by entering a password below:',
                                     { placeholder: 'password', maxLength: 24, minLength: 3 },
-                                    async (value2) => {
+                                    async (value2: string) => {
                                         const res = await api.auth.invites.claim.post({
                                             code: value,
                                             password: value2

@@ -2,10 +2,10 @@ import { type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/shadcn/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 import Code from 'lucide-react/icons/code';
-import Fingerprint from 'lucide-react/icons/fingerprint';
+import Fingerprint from 'lucide-react/icons/fingerprint-pattern';
 import Flask from 'lucide-react/icons/flask-conical';
 import LogOut from 'lucide-react/icons/log-out';
 import Moon from 'lucide-react/icons/moon';

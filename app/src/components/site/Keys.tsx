@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from '../shadcn/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../shadcn/dialog';
-import { Input } from '../shadcn/input';
-import { Textarea } from '../shadcn/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/tooltip';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 import ArrowDownWideNarrow from 'lucide-react/icons/arrow-down-wide-narrow';
 import Copy from 'lucide-react/icons/copy';
@@ -47,8 +47,8 @@ const SiteKeys = observer(function SiteKeys() {
                                 'add a new key',
                                 'enter the key you want to add to this site. it can be any string up to 256 characters.',
                                 { placeholder: fakeKeys[0], maxLength: 256, minLength: 1 },
-                                (value) => {
-                                    api.sites.addKey.post({
+                                (value: string) => {
+                                    api.v1.sites.keys.create.post({
                                         domain: site.id,
                                         key: value
                                     }).then((res) => {
@@ -75,7 +75,7 @@ const SiteKeys = observer(function SiteKeys() {
                     {site.sortable && <Tooltip>
                         <TooltipTrigger asChild>
                             <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => {
-                                api.sites.sortKeys.post({ domain: site.id }).then((res) => {
+                                api.v1.sites.keys.sort.post({ domain: site.id }).then((res) => {
                                     if (res.data) siteManager.refreshCurrent();
                                     else alert(errorFrom(res));
                                 });
@@ -93,7 +93,7 @@ const SiteKeys = observer(function SiteKeys() {
                                 if (hasOver50Keys && !confirm('this site has over 50 keys, rechecking all of them MAY HIT RATELIMITS AND GET THE CHECKER IP BANNED. are you sure you want to proceed?')) return;
 
                                 for (const key of keys) await new Promise((r) => {
-                                    api.sites.balancer.post({ domain: site.id, key }).then((res) => {
+                                    api.v1.sites.keys.recheck.post({ domain: site.id, key }).then((res) => {
                                         if (res.data) {
                                             siteManager.refreshCurrent();
                                             setInvalidKeys(prev => prev.filter(k => k !== key));
@@ -130,20 +130,20 @@ const SiteKeys = observer(function SiteKeys() {
                     const balance = site.keys[key]
 
                     return (
-                        <div key={i} className='flex items-center justify-center w-full rounded-md md:px-7 hover:bg-gray-50 transition-colors duration-125 py-2 cursor-pointer gap-2 md:gap-5' style={{
+                        <div key={i} className='flex items-center justify-center w-full rounded-md md:px-2 hover:bg-accent transition-colors duration-125 py-2 cursor-pointer gap-2 md:gap-5 max-h-12' style={{
                             color: validKeys.includes(key) ? 'green' : invalidKeys.includes(key) ? 'red' : ''
                         }}>
-                            <Input value={'...' + key.slice(-4)} readOnly className='font-mono w-fit text-center sm:hidden flex px-1' />
-                            <Input value={key} readOnly className='font-mono text-center hidden sm:flex' />
+                            <Input value={'...' + key.slice(-4)} readOnly className='h-8 font-mono w-fit text-center sm:hidden flex px-1 py-0.5' />
+                            <Input value={key} readOnly className='font-mono h-8 text-center hidden sm:flex py-0.5' />
 
-                            {balance && balance !== '?' && <Input value={balance} readOnly className='font-mono min-w-20 sm:min-w-0 sm:w-36 text-center px-1' />}
+                            {balance && balance !== '?' && <Input value={balance} readOnly className='font-mono min-w-20 py-0.5 sm:min-w-0 sm:w-36 text-center px-1' />}
 
                             <Button variant='outline' size='sm' onClick={() => navigator.clipboard.writeText(key)}>
                                 <Copy className='h-4 w-4' />
                             </Button>
 
                             {Boolean(site.supportsBalancer && site.editors) && <Button variant='outline' size='sm' onClick={() => {
-                                api.sites.balancer.post({ domain: site.id, key: key }).then((res) => {
+                                api.v1.sites.keys.recheck.post({ domain: site.id, key: key }).then((res) => {
                                     if (res.data) {
                                         siteManager.refreshCurrent();
                                         setInvalidKeys(prev => prev.filter(k => k !== key));
@@ -159,7 +159,7 @@ const SiteKeys = observer(function SiteKeys() {
                             </Button>}
 
                             {authManager.isAdmin() && <Button variant='destructive' size='sm' className='hidden md:flex' onClick={() => {
-                                api.sites.removeKey.post({ domain: site.id, key }).then((res) => {
+                                api.v1.sites.keys.delete.post({ domain: site.id, key }).then((res) => {
                                     if (res.data) siteManager.refreshCurrent();
                                     else alert(errorFrom(res));
                                 });
@@ -197,7 +197,7 @@ const SiteKeys = observer(function SiteKeys() {
                         for (let i = 0; i < keys.length; i++) {
                             const key = keys[i];
 
-                            const res = await api.sites.addKey.post({ domain: site.id, key });
+                            const res = await api.v1.sites.keys.create.post({ domain: site.id, key });
 
                             if (res.data) {
                                 siteManager.refreshCurrent();

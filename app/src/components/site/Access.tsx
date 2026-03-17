@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { AutoComplete } from '../shadcn/autocomplete';
-import { Button } from '../shadcn/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../shadcn/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../shadcn/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/tooltip';
+import { AutoComplete } from '../ui/autocomplete';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 import Trash from 'lucide-react/icons/trash';
 
@@ -64,7 +64,7 @@ const SiteAccess = observer(function SiteAccess() {
 
                                     <div className='flex gap-3'>
                                         <Select value={role} onValueChange={(role) => (role === 'reader' || role === 'editor') &&
-                                            api.sites.access.setRole.post({ domain: site.id, userId, role }).then((res) => {
+                                            api.v1.sites.access.setRole.post({ domain: site.id, userId, role }).then((res) => {
                                                 if (res.data) siteManager.refreshCurrent();
                                                 else alert(errorFrom(res));
                                             })
@@ -80,7 +80,7 @@ const SiteAccess = observer(function SiteAccess() {
                                         </Select>
 
                                         <Button variant='destructive' onClick={() => {
-                                            api.sites.access.removeUser.post({ domain: site.id, userId }).then((res) => {
+                                            api.v1.sites.access.remove.post({ domain: site.id, userId }).then((res) => {
                                                 if (res.data) siteManager.refreshCurrent();
                                                 else alert(errorFrom(res));
                                             });
@@ -112,7 +112,7 @@ const SiteAccess = observer(function SiteAccess() {
                     {addUserError && (<div className='text-red-500'>{addUserError}</div>)}
 
                     <Button className='w-3/4' onClick={async () => {
-                        api.sites.access.addUser.post({
+                        api.v1.sites.access.add.post({
                             domain: site.id,
                             userId: addUserSelectedId
                         }).then((res) => {

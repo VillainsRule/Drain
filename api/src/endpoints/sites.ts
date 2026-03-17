@@ -1,5 +1,7 @@
 import { Elysia, status, t } from 'elysia';
 
+import apiKeyDB from '../db/impl/APIKeyDB';
+import configDB from '../db/impl/ConfigDB';
 import siteDB from '../db/impl/SiteDB';
 import userDB from '../db/impl/UserDB';
 
@@ -8,17 +10,43 @@ import getBalancer from '../balancer';
 const usersRunningBalancer: number[] = [];
 
 const sites = new Elysia({ name: 'sites' })
-    .post('/api/sites/list', async ({ cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
+    .guard({
+        headers: t.Object({
+            authorization: t.Optional(t.String({ description: 'this is an API key you can pick up from <a href="/user/apiKeys" target="_blank">here</a>' })),
+        })
+    })
 
+    .resolve(({ headers, cookie }) => {
+        if (headers['authorization']) {
+            if (!configDB.db.allowAPIKeys) return status(403, { error: 'API keys are disabled globally on the instance' });
+
+            const inputKey = headers.authorization;
+            if (!inputKey) return status(401, { error: 'API key is required' });
+
+            const apiKey = apiKeyDB.getLink('key', inputKey);
+            if (!apiKey) return status(401, { error: 'invalid API key' });
+
+            const apiUser = userDB.get(apiKey.userId);
+            if (!apiUser) return status(401, { error: 'invalid API key' });
+
+            apiKeyDB.update(apiKey.id, { lastUsed: Date.now() });
+
+            return { apiKey: inputKey, user: apiUser };
+        } else if (cookie.session && typeof cookie.session.value === 'string') {
+            const user = userDB.getLink('sessions', cookie.session.value);
+            if (!user) return status(401, { error: 'not logged in' });
+
+            return { user };
+        }
+
+        return status(401, { error: 'not logged in' });
+    })
+
+    .get('/api/v1/sites/list', async ({ user }) => {
         return { sites: user.sites };
-    }, { cookie: t.Cookie({ session: t.String() }) })
+    }, { detail: { description: 'returns a list of site domains the user has access to', tags: ['Sites'] } })
 
-    .post('/api/sites/info', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
+    .post('/api/v1/sites/info', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
 
@@ -42,11 +70,10 @@ const sites = new Elysia({ name: 'sites' })
                 }
             }
         } else return status(401, { error: 'no permission' });
-    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String() }), detail: { description: 'returns detailed information about a site, including its keys and user access lists. requires: reader/editor access or admin', tags: ['Sites'] } })
 
-    .post('/api/sites/create', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || !user.admin) return status(401, { error: 'not logged in' });
+    .post('/api/v1/sites/create', async ({ body, user }) => {
+        if (!user.admin) return status(401, { error: 'unauthorized' });
 
         if (body.url.length > 36) return status(413, { error: 'URL too long' });
         if (siteDB.has(body.url)) return status(403, { error: 'site already exists' });
@@ -62,12 +89,9 @@ const sites = new Elysia({ name: 'sites' })
         userDB.update(user.id, { sites: user.sites });
 
         return {};
-    }, { body: t.Object({ url: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ url: t.String() }), detail: { description: 'creates a new site with the given URL. requires: admin', tags: ['Sites'] } })
 
-    .post('/api/sites/addKey', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
+    .post('/api/v1/sites/keys/create', async ({ body, user }) => {
         if (body.key.length > 256) return status(413, { error: 'key too long' });
 
         const site = siteDB.get(body.domain);
@@ -94,12 +118,9 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'adds a key to a site. if the site supports balancer, the key will be checked and its balance will be stored. requires: reader/editor access or admin', tags: ['Site Keys'] } })
 
-    .post('/api/sites/balancer', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
+    .post('/api/v1/sites/keys/recheck', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
         if (!site.editors.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
@@ -122,11 +143,10 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'checks a key with the balancer and updates its stored balance. requires: editor access or admin', tags: ['Site Keys'] } })
 
-    .post('/api/sites/removeKey', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || !user.admin) return status(401, { error: 'not logged in' });
+    .post('/api/v1/sites/keys/delete', async ({ body, user }) => {
+        if (!user.admin) return status(401, { error: 'unauthorized' });
 
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
@@ -136,14 +156,12 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), key: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'removes a key from a site. requires: admin', tags: ['Site Keys'] } })
 
-    .post('/api/sites/sortKeys', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
+    .post('/api/v1/sites/keys/sort', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
+        if (!site.readers.includes(user.id) && !site.editors.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
 
         const entries = Object.entries(site.keys);
 
@@ -186,18 +204,15 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String() }), detail: { description: 'sorts the keys of a site by their balance. requires: reader/editor access or admin', tags: ['Site Keys'] } })
 
-    .post('/api/sites/access/addUser', async ({ body, cookie: { session } }) => {
-        const reqUser = userDB.getLink('sessions', session.value);
-        if (!reqUser) return status(401, { error: 'not logged in' });
-
+    .post('/api/v1/sites/access/add', async ({ body, user }) => {
         const targetUser = userDB.get(body.userId);
         if (!targetUser) return status(401, { error: 'no permission' });
 
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
-        if (!reqUser.admin && !site.editors.includes(reqUser.id)) return status(401, { error: 'no permission' });
+        if (!user.admin && !site.editors.includes(user.id)) return status(401, { error: 'no permission' });
 
         if (
             site.readers.includes(body.userId) ||
@@ -211,18 +226,15 @@ const sites = new Elysia({ name: 'sites' })
         userDB.update(targetUser.id, { sites: targetUser.sites });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), detail: { description: 'adds a user to a site as a reader. requires: editor access or admin', tags: ['Site Access'] } })
 
-    .post('/api/sites/access/setRole', async ({ body, cookie: { session } }) => {
-        const reqUser = userDB.getLink('sessions', session.value);
-        if (!reqUser) return status(401, { error: 'not logged in' });
-
+    .post('/api/v1/sites/access/setRole', async ({ body, user }) => {
         const targetUser = userDB.get(body.userId);
         if (!targetUser) return status(401, { error: 'no permission' });
 
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
-        if (!reqUser.admin && !site.editors.includes(reqUser.id)) return status(401, { error: 'no permission' });
+        if (!user.admin && !site.editors.includes(user.id)) return status(401, { error: 'no permission' });
 
         if (body.role === 'reader') {
             if (!site.readers.includes(body.userId)) site.readers.push(body.userId);
@@ -235,19 +247,16 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.update(body.domain, { readers: site.readers, editors: site.editors });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), userId: t.Number(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String(), userId: t.Number(), role: t.Union([t.Literal('reader'), t.Literal('editor')]) }), detail: { description: 'sets a user\'s role on a site. requires: editor access or admin', tags: ['Site Access'] } })
 
-    .post('/api/sites/access/removeUser', async ({ body, cookie: { session } }) => {
-        const reqUser = userDB.getLink('sessions', session.value);
-        if (!reqUser) return status(401, { error: 'not logged in' });
-
+    .post('/api/v1/sites/access/remove', async ({ body, user }) => {
         const targetUser = userDB.get(body.userId);
         if (!targetUser) return status(401, { error: 'no permission' });
 
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
-        if (!reqUser.admin && !site.editors.includes(reqUser.id)) return status(401, { error: 'no permission' });
-        if (!reqUser.admin && !site.editors.includes(targetUser.id)) return status(401, { error: 'no permission' });
+        if (!user.admin && !site.editors.includes(user.id)) return status(401, { error: 'no permission' });
+        if (!user.admin && !site.editors.includes(targetUser.id)) return status(401, { error: 'no permission' });
 
         if (site.readers.includes(body.userId)) site.readers = site.readers.filter(u => u !== body.userId);
         if (site.editors.includes(body.userId)) site.editors = site.editors.filter(u => u !== body.userId);
@@ -255,11 +264,10 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.update(body.domain, { readers: site.readers, editors: site.editors });
 
         return {};
-    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
+    }, { body: t.Object({ domain: t.String(), userId: t.Number() }), detail: { description: 'removes a user\'s access from a site. requires: editor access or admin', tags: ['Site Access'] } })
 
-    .post('/api/sites/delete', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || !user.admin) return status(401, { error: 'not logged in' });
+    .post('/api/v1/sites/delete', async ({ body, user }) => {
+        if (!user.admin) return status(401, { error: 'unauthorized' });
 
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
@@ -283,6 +291,6 @@ const sites = new Elysia({ name: 'sites' })
         siteDB.remove(body.domain);
 
         return {};
-    }, { body: t.Object({ domain: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ domain: t.String() }), detail: { description: 'deletes a site and removes it from all users. requires: admin', tags: ['Sites'] } })
 
 export default sites;

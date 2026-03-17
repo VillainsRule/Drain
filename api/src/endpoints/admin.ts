@@ -13,9 +13,11 @@ const drainHome = path.join(import.meta.dirname, '..', '..', '..');
 
 const commit = term.execSync('git rev-parse --short HEAD', { encoding: 'utf8', cwd: drainHome }).toString().trim();
 const localChanges = term.execSync('git status --porcelain', { encoding: 'utf8', cwd: drainHome }).trim().length > 0;
-const isUsingSystemd = !!process.env['INVOCATION_ID']
+const commitsBehind = term.execSync('git rev-list --count HEAD..origin/master', { encoding: 'utf8', cwd: drainHome }).toString().trim();
 
 const admin = new Elysia({ name: 'admin' })
+    .guard({ detail: { hide: true } })
+
     .post('/api/admin/users', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
@@ -119,26 +121,7 @@ const admin = new Elysia({ name: 'admin' })
         const user = userDB.getLink('sessions', session.value);
         if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
 
-        return { commit, localChanges, isUsingSystemd, config: configDB.db };
-    }, { cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/admin/gitPull', async ({ cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
-
-        const out = term.execSync('git pull', { encoding: 'utf8', cwd: drainHome }).toString();
-        return { out };
-    }, { cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/admin/systemdRestart', async ({ cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
-
-        if (!isUsingSystemd) return status(400, { error: 'not using systemd' });
-
-        term.exec('systemctl restart drain.service');
-
-        return {};
+        return { commit, localChanges, commitsBehind, config: configDB.db };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
     .post('/api/admin/instance', async ({ body, cookie: { session } }) => {

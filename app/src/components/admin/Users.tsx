@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from '../shadcn/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../shadcn/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../shadcn/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/shadcn/tooltip';
+import { Button } from '../ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
@@ -41,14 +41,14 @@ const Users = observer(function Users() {
                     'create a new user',
                     'enter a username for the new user. they will be able to set their password and site access after the account is created.',
                     { placeholder: 'username', maxLength: 16, minLength: 1 },
-                    (value) => {
+                    (value: string) => {
                         api.admin.users.create.post({ username: value }).then((res) => {
                             if (res.data) {
                                 adminManager.fetchAllUsers();
 
                                 shadd.copy(
                                     'user created!',
-                                    `the user has been created! give them this invite code to set their password and log in:\n\n${res.data.inviteCode}`,
+                                    'the user has been created! give them this invite code to set their password and log in:',
                                     res.data.inviteCode
                                 );
                             } else shadd.setError(errorFrom(res));
@@ -70,7 +70,7 @@ const Users = observer(function Users() {
                                             'change the password',
                                             `enter a new password for @${user.username}.`,
                                             { placeholder: 'new password', maxLength: 64, minLength: 3 },
-                                            async (value) => {
+                                            async (value: string) => {
                                                 const options = await api.admin.users.setPassword.post({ userId: user.id, newPassword: value });
                                                 if (options.data) {
                                                     if (user.id === authManager.user.id) location.reload();
@@ -154,7 +154,7 @@ const Users = observer(function Users() {
 
                                 <div className='flex gap-3'>
                                     <Select value={role} onValueChange={(role) => (role === 'reader' || role === 'editor') &&
-                                        api.sites.access.setRole.post({ domain, userId: userSitesDialogTargetId, role }).then((res) => {
+                                        api.v1.sites.access.setRole.post({ domain, userId: userSitesDialogTargetId, role }).then((res) => {
                                             if (res.data) grabUserSitesDialogList(userSitesDialogTargetId);
                                             else alert(errorFrom(res));
                                         })
@@ -170,7 +170,7 @@ const Users = observer(function Users() {
                                     </Select>
 
                                     <Button variant='destructive' onClick={() => {
-                                        api.sites.access.removeUser.post({ domain, userId: userSitesDialogTargetId }).then((res) => {
+                                        api.v1.sites.access.remove.post({ domain, userId: userSitesDialogTargetId }).then((res) => {
                                             if (res.data) grabUserSitesDialogList(userSitesDialogTargetId);
                                             else alert(errorFrom(res));
                                         });

@@ -30,14 +30,12 @@ export interface DBAPIKey {
     name: string;
     createdAt: number;
     lastUsed: number;
-    lastUserAgent: string;
 }
 
 export interface PublicAPIKey {
     name: string;
     createdAt: number;
     lastUsed: number;
-    lastUserAgent: string;
 }
 
 export interface DBUser {
@@ -79,6 +77,7 @@ export interface PublicSite {
 
 export interface DBConfig {
     balancerProxy: string;
+    motd: string;
     allowAPIKeys: boolean;
     nextUserId: number;
 }
@@ -86,6 +85,6 @@ export interface DBConfig {
 export interface PublicConfig {
     commit: string;
     localChanges: boolean;
-    isUsingSystemd: boolean;
+    commitsBehind: string;
     config: DBConfig;
 }

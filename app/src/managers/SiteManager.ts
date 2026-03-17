@@ -18,7 +18,7 @@ class SiteManager {
     }
 
     async getList() {
-        const res = await api.sites.list.post();
+        const res = await api.v1.sites.list.get();
         if (res.data) this.siteList = res.data.sites || [];
         else alert(errorFrom(res));
     }
@@ -27,7 +27,7 @@ class SiteManager {
         if (!dontNullify) this.site = null;
 
         if (domain) {
-            const res = await api.sites.info.post({ domain });
+            const res = await api.v1.sites.info.post({ domain });
             if (res.data) this.site = {
                 ...res.data.site,
                 supportsBalancer: !!res.data.site.supportsBalancer,

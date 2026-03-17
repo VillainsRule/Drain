@@ -29,6 +29,8 @@ class AuthManager {
     webAuthnEnabled = false;
     isDev = false;
 
+    motd = '';
+
     constructor() {
         makeAutoObservable(this);
 
@@ -61,6 +63,7 @@ class AuthManager {
             this.webAuthnEnabled = data.isWebAuthnConfigured;
             this.isDev = data.isDev;
 
+            if (data.motd) this.motd = data.motd;
             if (data.user) this.setAuth(data.user);
         } catch (error) {
             console.error('auth error', error);

@@ -10,8 +10,8 @@ class AdminManager {
     instanceInformation: PublicConfig = {
         commit: 'unknown',
         localChanges: true,
-        isUsingSystemd: false,
-        config: { balancerProxy: '', allowAPIKeys: true, nextUserId: 0 }
+        commitsBehind: '0',
+        config: { balancerProxy: '', motd: '', allowAPIKeys: true, nextUserId: 0 }
     };
 
     constructor() {

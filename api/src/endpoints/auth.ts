@@ -28,13 +28,15 @@ const isDev = Bun.env.DD === '1';
 const isWebAuthnConfigured = typeof Bun.env.RP_ID === 'string';
 
 const auth = new Elysia({ name: 'auth' })
+    .guard({ detail: { hide: true } })
+
     .get('/api/auth/account', async ({ cookie: { session } }) => {
         if (typeof session.value !== 'string') return { isWebAuthnConfigured, isDev: false };
 
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 
-        return { user: { id: user.id, username: user.username, admin: user.admin }, isWebAuthnConfigured, isDev };
+        return { user: { id: user.id, username: user.username, admin: user.admin }, isWebAuthnConfigured, isDev, motd: configDB.db.motd };
     })
 
     .post('/api/auth/account', async ({ body, cookie: { session } }) => {
@@ -376,8 +378,7 @@ const auth = new Elysia({ name: 'auth' })
         const apiKeys = user.apiKeys.map(e => apiKeyDB.get(e)).filter((e): e is DBAPIKey => e !== null).map((e) => ({
             name: e.name,
             createdAt: e.createdAt,
-            lastUsed: e.lastUsed,
-            lastUserAgent: e.lastUserAgent
+            lastUsed: e.lastUsed
         }))
 
         return { apiKeys, enabled: configDB.db.allowAPIKeys };
@@ -400,8 +401,7 @@ const auth = new Elysia({ name: 'auth' })
             name: body.name,
             key,
             createdAt: Date.now(),
-            lastUsed: 0,
-            lastUserAgent: ''
+            lastUsed: 0
         });
 
         user.apiKeys.push(identifier);

@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from '../shadcn/button';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../shadcn/context-menu';
+import { Button } from '../ui/button';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../ui/context-menu';
 
 import Plus from 'lucide-react/icons/plus';
 
@@ -41,7 +41,7 @@ const NavBox = observer(function NavBox() {
                         </ContextMenuItem>
 
                         {authManager.isAdmin() && (<ContextMenuItem className='text-red-500 no-click' onClick={() => {
-                            api.sites.delete.post({ domain: site }).then((res) => {
+                            api.v1.sites.delete.post({ domain: site }).then((res) => {
                                 if (res.data) {
                                     siteManager.getList();
                                     siteManager.select('');
@@ -58,8 +58,8 @@ const NavBox = observer(function NavBox() {
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',
                     { placeholder: 'my-cool-app.com', maxLength: 64, minLength: 1 },
-                    async (value) => {
-                        const options = await api.sites.create.post({ url: value });
+                    async (value: string) => {
+                        const options = await api.v1.sites.create.post({ url: value });
 
                         if (options.data) {
                             siteManager.getList();

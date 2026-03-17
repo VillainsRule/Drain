@@ -9,7 +9,7 @@ api/db
 
 # tooling secrets
 gi
-keys.txt
+*.txt
 .config.ts
 
 # builds

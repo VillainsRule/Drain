@@ -2,37 +2,61 @@ import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import Code from 'lucide-react/icons/code';
-import Fingerprint from 'lucide-react/icons/fingerprint';
+import Fingerprint from 'lucide-react/icons/fingerprint-pattern';
 import LogOut from 'lucide-react/icons/log-out';
+import Pencil from 'lucide-react/icons/pencil';
 import UserCog from 'lucide-react/icons/user-cog';
 import Wrench from 'lucide-react/icons/wrench';
 
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+
+import api, { errorFrom } from '@/lib/eden';
+import { shadd } from '@/lib/shadd';
+
 import authManager from '@/managers/AuthManager';
 
-import SSAI from '@/assets/superSecretAdminImage.png';
-
-const today = new Date(Date.now());
-const shouldShowCow = Math.random() < 0.01 || (today.getMonth() === 3 && today.getDate() === 1);
+import Iconic from '@/assets/notSoSecretAnymorePublicImage.png';
 
 const Hub = observer(function Hub() {
     const navigate = useNavigate();
 
     return (
-        <div className='flex items-center flex-col gap-3 md:gap-6 h-full w-full mt-8 md:mt-16'>
-            <div className='flex text-center items-center flex-col w-full mt-10'>
-                <h1 className='text-4xl font-bold mt-10 mb-1.5'>hi, @{authManager.user.username}</h1>
-                <h3 className='text-2xl font-medium'>welcome to drain!</h3>
+        <div className='flex items-center flex-col gap-2.5 h-full w-full mt-16 md:mt-24'>
+            <div className='flex items-center gap-7.5'>
+                <img className='hidden md:flex h-24 w-48' src={Iconic} />
+
+                <div className='flex flex-col gap-2.5'>
+                    <h1 className='text-5xl font-bold'>hi, @{authManager.user.username}</h1>
+                    <h2 className='text-3xl font-medium'>welcome to drain!</h2>
+                </div>
             </div>
 
-            {shouldShowCow && <img className='hidden md:flex w-200 h-30 mt-10' src={SSAI} />}
+            <Card className='gap-1 py-4.5 px-6 mt-3 w-md'>
+                <div className='flex items-center gap-2'>
+                    <span className='text-xs text-muted-foreground'>MOTD</span>
+                    {authManager.user.id === 1 && <Pencil className='w-3.5 h-3.5 text-muted-foreground ml-auto cursor-pointer hover:text-foreground transition-colors' onClick={() => shadd.prompt(
+                        'edit MOTD',
+                        'set the message of the day that is shown to all users on the hub',
+                        { placeholder: 'welcome to my drain instance!', defaultValue: authManager.motd },
+                        async (value: string) => {
+                            const req = await api.admin.instance.post({ config: { motd: value } });
+                            if (req.data) {
+                                authManager.checkAuth();
+                                shadd.close();
+                            } else shadd.setError(errorFrom(req));
+                        }
+                    )} />}
+                </div>
+                <span className='text-sm'>{authManager.motd}</span>
+            </Card>
 
-            <div className='flex md:hidden flex-row gap-4 min-w-fit mt-2'>
-                {authManager.apiKeysEnabled && <Code className='w-8 h-8 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/apiKeys')} />}
-                {authManager.webAuthnEnabled && <Fingerprint className='w-8 h-8 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/passkeys')} />}
-                {authManager.isAdmin() && <Wrench className='w-8 h-8 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/config')} />}
-                {authManager.isAdmin() && <UserCog className='w-8 h-8 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/users')} />}
-
-                <LogOut className='w-8 h-8 cursor-pointer text-red-500' onClick={() => authManager.logout()} />
+            <div className='flex md:hidden justify-center gap-2 mt-4 flex-wrap max-w-3/5'>
+                {authManager.apiKeysEnabled && <Button variant='outline' size='sm' onClick={() => navigate('/user/apiKeys')}><Code className='w-4 h-4 mr-2' />API Keys</Button>}
+                {authManager.webAuthnEnabled && <Button variant='outline' size='sm' onClick={() => navigate('/user/passkeys')}><Fingerprint className='w-4 h-4 mr-2' />Passkeys</Button>}
+                {authManager.isAdmin() && <Button variant='outline' size='sm' onClick={() => navigate('/admin/config')}><Wrench className='w-4 h-4 mr-2' />Config</Button>}
+                {authManager.isAdmin() && <Button variant='outline' size='sm' onClick={() => navigate('/admin/users')}><UserCog className='w-4 h-4 mr-2' />Users</Button>}
+                <Button variant='destructive' size='sm' onClick={() => authManager.logout()}><LogOut className='w-4 h-4 mr-2' />Logout</Button>
             </div>
         </div>
     )

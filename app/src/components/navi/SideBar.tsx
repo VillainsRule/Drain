@@ -4,8 +4,8 @@ import { observer } from 'mobx-react-lite';
 
 import Plus from 'lucide-react/icons/plus';
 
-import { Button } from '../shadcn/button';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../shadcn/context-menu';
+import { Button } from '../ui/button';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../ui/context-menu';
 
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
@@ -66,7 +66,7 @@ const SideBar = observer(function SideBar() {
                                 >Copy URL</ContextMenuItem>
 
                                 {authManager.isAdmin() && <ContextMenuItem className='text-red-500 no-click' onClick={() => {
-                                    api.sites.delete.post({ domain: site }).then((res) => {
+                                    api.v1.sites.delete.post({ domain: site }).then((res) => {
                                         if (res.data) {
                                             siteManager.getList();
                                             siteManager.select('');
@@ -87,8 +87,8 @@ const SideBar = observer(function SideBar() {
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',
                     { placeholder: 'my-cool-app.com', maxLength: 64, minLength: 1 },
-                    async (value) => {
-                        const options = await api.sites.create.post({ url: value });
+                    async (value: string) => {
+                        const options = await api.v1.sites.create.post({ url: value });
 
                         if (options.data) {
                             siteManager.getList();

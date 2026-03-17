@@ -1,15 +1,16 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-import { Button } from '@/components/shadcn/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
-import { Input } from '@/components/shadcn/input';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 type DialogType = 'alert' | 'confirm' | 'prompt' | 'copy';
 
 interface IInput {
     placeholder: string;
-    maxLength: number | undefined;
-    minLength: number | undefined;
+    defaultValue?: string;
+    maxLength?: number;
+    minLength?: number;
 }
 
 interface DialogState {
@@ -19,10 +20,12 @@ interface DialogState {
     body: string;
     inputs: IInput[];
     copyValue: string;
-    onConfirm: (() => void) | ((value: string) => void) | null;
+    onConfirm: (() => void) | ((value: string) => void) | ((...args: string[]) => void) | null;
     onCancel: (() => void) | null;
     error: string | null;
 }
+
+type PromptCallback = ((value: string) => void) | ((...args: string[]) => void);
 
 let _setState: ((state: DialogState | ((prev: DialogState) => DialogState)) => void) | null = null;
 
@@ -61,7 +64,7 @@ export class shadd {
     static confirm(
         title: string,
         body: string,
-        onConfirm?: () => void,
+        onConfirm?: PromptCallback,
         onCancel?: () => void
     ): void {
         _setState?.({
@@ -87,7 +90,7 @@ export class shadd {
         title: string,
         body: string,
         inputs: string | string[] | IInput | IInput[],
-        onConfirm?: (value: string) => void,
+        onConfirm?: ((value: string) => void) | ((...args: string[]) => void),
         onCancel?: () => void
     ): void {
         _setState?.({
@@ -137,11 +140,23 @@ export class shadd {
 
 export function ShaddProvider() {
     const [state, setState] = useState<DialogState>(defaultState);
-    const [inputValue, setInputValue] = useState('');
+    const [inputValues, setInputValues] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (state.open && (state.type === 'prompt' || state.type === 'copy')) {
+        if (state.open && state.type === 'prompt') {
+            setInputValues(state.inputs.map((input) => input.defaultValue ?? ''));
+        }
+    }, [state.open, state.inputs, state.type]);
+
+    useEffect(() => {
+        if (state.open && state.type === 'copy') {
+            const frame = requestAnimationFrame(() => {
+                inputRef.current?.focus();
+                inputRef.current?.select();
+            });
+            return () => cancelAnimationFrame(frame);
+        } else if (state.open && state.type === 'prompt') {
             const frame = requestAnimationFrame(() => inputRef.current?.focus());
             return () => cancelAnimationFrame(frame);
         }
@@ -150,7 +165,7 @@ export function ShaddProvider() {
     _setState = useCallback((next: DialogState | ((prev: DialogState) => DialogState)) => {
         setState((prev) => {
             const nextState = typeof next === 'function' ? next(prev) : next;
-            if (typeof next !== 'function') setInputValue('');
+            if (typeof next !== 'function') setInputValues([]);
             return nextState;
         });
     }, []);
@@ -160,9 +175,13 @@ export function ShaddProvider() {
     }, []);
 
     const handleConfirm = useCallback(() => {
-        if (state.type === 'prompt') (state.onConfirm as ((value: string) => void) | null)?.(inputValue);
+        if (state.type === 'prompt') {
+            const value = state.inputs.length === 1 ? inputValues[0] : inputValues;
+            if (Array.isArray(value)) (state.onConfirm as ((...args: string[]) => void) | null)?.(...value);
+            else (state.onConfirm as ((value: string) => void) | null)?.(value);
+        }
         else (state.onConfirm as (() => void) | null)?.();
-    }, [state, inputValue]);
+    }, [state, inputValues]);
 
     const handleCancel = useCallback(() => {
         close();
@@ -187,8 +206,12 @@ export function ShaddProvider() {
                             placeholder={input.placeholder}
                             minLength={input.minLength}
                             maxLength={input.maxLength}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            value={inputValues[idx] ?? ''}
+                            onChange={(e) => setInputValues((prev) => {
+                                const updated = [...prev];
+                                updated[idx] = e.target.value;
+                                return updated;
+                            })}
                             onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
                         />))}
 
@@ -196,7 +219,7 @@ export function ShaddProvider() {
                             ref={inputRef}
                             readOnly
                             value={state.copyValue}
-                            onFocus={(e) => e.target.select()}
+                            onFocus={(e) => e.currentTarget.select()}
                         />)}
                     </div>
                 )}

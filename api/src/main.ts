@@ -1,6 +1,7 @@
 import './db/migrator';
 
-import { Elysia } from 'elysia';
+import Elysia from 'elysia';
+import openapi from '@elysiajs/openapi';
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -8,7 +9,6 @@ import path from 'node:path';
 
 import admin from './endpoints/admin';
 import auth from './endpoints/auth';
-import api from './endpoints/api';
 import sites from './endpoints/sites';
 
 const files = new Elysia({ name: 'files' });
@@ -44,15 +44,50 @@ for (const a of assets) files.get(`/a/${a}`, () => {
 });
 
 const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb */ } })
-    .get('/*', () => new Response(cachedIndex))
+    .use(openapi({
+        path: '/docs',
+        documentation: {
+            info: {
+                title: 'Drain Docs',
+                version: 'v1'
+            },
+            tags: [
+                { name: 'Sites', description: 'create, get, and manage your sites' },
+                { name: 'Site Keys', description: 'manage site keys' },
+                { name: 'Site Access', description: 'manage site access' }
+            ]
+        },
+        provider: 'scalar',
+        scalar: {
+            agent: { disabled: true },
+            mcp: { disabled: true },
+            hideClientButton: true,
+            telemetry: false,
+            withDefaultFonts: false,
+            metaData: {
+                title: 'Drain Docs',
+                description: 'Documentation for this Drain instance',
+                ogDescription: 'Documentation for this Drain instance'
+            },
+            defaultHttpClient: {
+                targetKey: 'shell',
+                clientKey: 'curl',
+            },
+            expandAllResponses: true,
+            documentDownloadType: 'json',
+            persistAuth: true,
+            theme: 'none',
+            customCss: fs.readFileSync(path.join(distDir, '..', 'public', 'openapi.css'), 'utf8')
+        }
+    }))
+    .get('/*', () => new Response(cachedIndex), { detail: { hide: true } })
     .get('/favicon.ico', ({ set }) => {
         set.headers['Cache-Control'] = 'public, max-age=31536000, immutable, no-transform';
         set.headers['Content-Type'] = 'image/x-icon';
         return Bun.file(path.join(distDir, 'favicon.ico'));
-    })
+    }, { detail: { hide: true } })
     .use(files)
     .use(admin)
-    .use(api)
     .use(auth)
     .use(sites)
     .listen(4422, () => console.log(`drain it up! ${Bun.env.RP_ID !== 'localhost' ? `https://${Bun.env.RP_ID}` : 'http://localhost:4422'}`)); 2

@@ -8,11 +8,13 @@ let keyPath = path.join(import.meta.dirname, 'keys.txt');
 if (process.argv[2]) {
     GITHUB_CONFIG.searchQuery = process.argv[2];
 
-    const comboDir = path.join(import.meta.dirname, '..', 'combos');
-    if (!fs.existsSync(comboDir)) fs.mkdirSync(comboDir);
+    if (process.argv[3]) {
+        const comboDir = path.join(import.meta.dirname, '..', 'combos');
+        if (!fs.existsSync(comboDir)) fs.mkdirSync(comboDir);
 
-    const comboFile = path.join(comboDir, `${process.argv[2].split('=')[1]}.txt`);
-    keyPath = comboFile;
+        const comboFile = path.join(comboDir, `${process.argv[2].split('=')[1]}.txt`);
+        keyPath = comboFile;
+    }
 }
 
 const githubToken = GITHUB_CONFIG.githubUserToken;
@@ -86,13 +88,6 @@ const processItems = async (items: any[]) => {
 
 const matchedKeys = new Set<string>();
 
-const saveKeys = () => {
-    if (matchedKeys.size > 0) {
-        fs.writeFileSync(keyPath, Array.from(matchedKeys).join('\n'), 'utf-8');
-        console.log(`keys written to ${keyPath}`);
-    } else console.log('no keys matched the regex.');
-}
-
 try {
     const firstResults = await rateLimitedSearchGitHub(GITHUB_CONFIG.searchQuery, '1');
     const totalCount = firstResults.total_count;
@@ -103,13 +98,17 @@ try {
     await processItems(firstResults.items);
     console.log('processed page 1');
 
-    saveKeys();
+    fs.appendFileSync(keyPath, Array.from(matchedKeys).join('\n') + '\n', 'utf-8');
+    console.log(`wrote ${matchedKeys.size} keys to ${keyPath}`);
+    matchedKeys.clear();
 
     for (let page = 2; page <= totalPages; page++) {
         const pageResults = await rateLimitedSearchGitHub(GITHUB_CONFIG.searchQuery, page.toString());
         await processItems(pageResults.items);
         console.log(`processed page ${page}`);
-        saveKeys();
+        fs.appendFileSync(keyPath, Array.from(matchedKeys).join('\n') + '\n', 'utf-8');
+        console.log(`wrote ${matchedKeys.size} keys to ${keyPath}`);
+        matchedKeys.clear();
     }
 } catch (error: any) {
     console.error(`Error: ${error.message}`);
