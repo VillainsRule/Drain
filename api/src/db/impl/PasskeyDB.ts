@@ -4,7 +4,7 @@ import { DBPasskey } from '../../../../types';
 
 export class PasskeyDB extends LinkedDB<DBPasskey> {
     constructor() {
-        super('passkeys.db', 2);
+        super('passkeys.db');
     }
 }
 

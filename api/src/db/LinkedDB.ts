@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import DBVersion from './version';
+
 import { DBId } from '../../../types';
 
 const dbRootPath = path.join(import.meta.dirname, '..', '..', 'db');
@@ -45,10 +47,10 @@ class LinkedDB<T extends { id: DBId }> {
     db: LinkedDBStructure<T>;
     linkedKeys: string[];
 
-    constructor(filename: string, version: number, linkedKeys: string[] = []) {
+    constructor(filename: string, linkedKeys: string[] = []) {
         const startTime = isDebug ? performance.now() : 0;
 
-        this.path = path.join(dbRootPath, `v${version}`, filename);
+        this.path = path.join(dbRootPath, `v${DBVersion}`, filename);
         this.linkedKeys = linkedKeys;
 
         let alreadyExisted = false;

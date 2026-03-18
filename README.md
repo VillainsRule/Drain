@@ -39,12 +39,7 @@ If you manually change any database files while Drain is running, Drain will aut
 
 There are two main concepts in Drain: users and sites. Users are people who can log into the Drain instance. Sites are collections of API keys with specific permissions.
 
-Users can have 4 levels of access to a site:
-
-- none - they cannot see it at all
-- reader - they can read and copy all API keys, as well as add single API keys
-- editor - they can recheck, sort, bulk add, and copy all API keys
-- site admin - they can do everything, including controlling the other 3 user levels and rechecking ALL keys on a site
+Users are manually assigned to individual sites by site admins. Users start with no site access.
 
 Users can have 3 levels of access to Drain:
 

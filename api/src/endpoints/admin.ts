@@ -59,14 +59,7 @@ const admin = new Elysia({ name: 'admin' })
         const targetUser = userDB.get(body.userId);
         if (!targetUser) return status(404, { error: 'user not found' });
 
-        const sites: Record<string, 'reader' | 'editor'> = {};
-
-        for (const siteId of targetUser.sites) {
-            const site = siteDB.get(siteId);
-            if (site) sites[siteId] = site.readers.includes(body.userId) ? 'reader' : 'editor';
-        }
-
-        return { sites };
+        return { sites: targetUser.admin ? siteDB.getIDs() as string[] : targetUser.sites };
     }, { body: t.Object({ userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
 
     .post('/api/admin/users/delete', async ({ body, cookie: { session } }) => {

@@ -26,7 +26,7 @@ const NavBox = observer(function NavBox() {
                             onClick={(e) => {
                                 if (!(e.target as HTMLElement).classList.contains('no-click')) {
                                     siteManager.select(site);
-                                    navigate(`/domain/${site}/keys`);
+                                    navigate(`/domain/${site}`);
                                 }
                             }}
                         >{site}</span>
@@ -35,7 +35,7 @@ const NavBox = observer(function NavBox() {
                     <ContextMenuContent>
                         <ContextMenuItem
                             className='no-click'
-                            onClick={() => navigator.clipboard.writeText(`${location.origin}/domain/${site}/keys`)}
+                            onClick={() => navigator.clipboard.writeText(`${location.origin}/domain/${site}`)}
                         >
                             Copy URL
                         </ContextMenuItem>

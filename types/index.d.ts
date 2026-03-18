@@ -59,18 +59,12 @@ export interface PublicUser {
 
 export interface DBSite {
     id: string;
-    readers: number[];
-    editors: number[];
+    users: number[];
     keys: Record<string, string | null>;
 }
 
-export interface PublicSite {
-    id: string;
-    readers?: number[];
-    editors?: number[];
-    keys: Record<string, string | null>;
+export interface PublicSite extends DBSite {
     supportsBalancer: boolean;
-    resolvedReaders?: Record<number, string>;
     sortable: boolean;
     totalBalance?: string;
 }

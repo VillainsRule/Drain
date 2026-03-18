@@ -127,3 +127,39 @@ if (!fs.existsSync(v2Dir)) {
         }
     });
 }
+
+// v2 -> v3
+const v3Files = ['users.db', 'apikeys.db', 'passkeys.db', 'config.db', 'sites.db'];
+const v3Dir = path.join(dbRootPath, 'v3');
+if (!fs.existsSync(v3Dir)) {
+    fs.mkdirSync(v3Dir);
+
+    v3Files.forEach((fileName) => {
+        const v2Path = path.join(dbRootPath, 'v2', fileName);
+        const v3Path = path.join(v3Dir, fileName);
+
+        if (fileName === 'sites.db') {
+            const v2File = JSON.parse(fs.readFileSync(v2Path, 'utf8'));
+            const siteDB: any = {
+                target: {},
+                links: {}
+            };
+
+            Object.values(v2File.target).forEach((site: any) => {
+                siteDB.target[site.id] = {
+                    id: site.id,
+                    keys: site.keys,
+                    users: [...site.readers, ...site.editors]
+                }
+            });
+
+            fs.writeFileSync(v3Path, JSON.stringify(siteDB));
+        } else if (fileName === 'apikeys.db') {
+            const v2File = JSON.parse(fs.readFileSync(v2Path, 'utf8'));
+            Object.values(v2File.target).forEach((key: any) => {
+                delete key.lastUserAgent;
+            });
+            fs.writeFileSync(v3Path, JSON.stringify(v2File));
+        } else if (fs.existsSync(v2Path)) fs.cpSync(v2Path, v3Path);
+    });
+}

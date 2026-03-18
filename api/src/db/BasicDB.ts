@@ -1,14 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import DBVersion from './version';
+
 const dbRootPath = path.join(import.meta.dirname, '..', '..', 'db');
 
 class BasicDB<DBType> {
     path: string;
     db: DBType;
 
-    constructor(filename: string, version: number = 1) {
-        this.path = path.join(dbRootPath, `v${version}`, filename);
+    constructor(filename: string) {
+        this.path = path.join(dbRootPath, `v${DBVersion}`, filename);
 
         let alreadyExisted = false;
 

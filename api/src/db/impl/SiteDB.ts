@@ -4,7 +4,7 @@ import { DBSite } from '../../../../types';
 
 export class SiteDB extends LinkedDB<DBSite> {
     constructor() {
-        super('sites.db', 2);
+        super('sites.db');
     }
 }
 
