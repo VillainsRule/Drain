@@ -80,7 +80,7 @@ const sites = new Elysia({ name: 'sites' })
 
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
-        if (!site.users.includes(user.id) || !user.admin) return status(401, { error: 'no permission' });
+        if (!site.users.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
 
         if (site.keys[body.key]) return status(403, { error: 'key already exists' });
         if (invalidKeyDB.has(body.domain, body.key)) return status(403, { error: 'balancer already determined this key as invalid.' });
