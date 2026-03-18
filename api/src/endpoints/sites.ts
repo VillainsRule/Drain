@@ -80,7 +80,7 @@ const sites = new Elysia({ name: 'sites' })
 
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
-        if (!user.admin && !site.users.includes(user.id)) return status(401, { error: 'no permission' });
+        if (!site.users.includes(user.id) || !user.admin) return status(401, { error: 'no permission' });
 
         if (site.keys[body.key]) return status(403, { error: 'key already exists' });
         if (invalidKeyDB.has(body.domain, body.key)) return status(403, { error: 'balancer already determined this key as invalid.' });
@@ -226,6 +226,9 @@ const sites = new Elysia({ name: 'sites' })
 
         siteDB.update(body.domain, { users: site.users.filter(u => u !== body.userId) });
 
+        targetUser.sites = targetUser.sites.filter(s => s !== body.domain);
+        userDB.update(targetUser.id, { sites: targetUser.sites });
+
         return {};
     }, { body: t.Object({ domain: t.String(), userId: t.Number() }), detail: { description: 'revokes a user\'s access to a site', tags: ['Site Access'] } })
 
@@ -235,8 +238,8 @@ const sites = new Elysia({ name: 'sites' })
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
 
-        site.users.forEach((r) => {
-            const u = userDB.get(r);
+        site.users.forEach((userId) => {
+            const u = userDB.get(userId);
             if (u) {
                 u.sites = u.sites.filter(s => s !== body.domain);
                 userDB.update(u.id, { sites: u.sites });

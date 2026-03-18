@@ -24,9 +24,10 @@ const Users = observer(function Users() {
     const [userSitesDialogTargetName, setUserSitesDialogTargetName] = useState('');
     const [userSitesDialogList, setUserSitesDialogList] = useState<string[]>([]);
 
-    const grabUserSitesDialogList = (userId: number) =>
-        api.admin.users.sites.post({ userId }).then((res) =>
-            setUserSitesDialogList(res.data?.sites || []));
+    const grabUserSitesDialogList = (userId: number) => api.admin.users.sites.post({ userId }).then((res) => {
+        if (res.data) setUserSitesDialogList(res.data.sites);
+        else alert(errorFrom(res));
+    });
 
     useEffect(() => {
         if (authManager.user.id > 1 && !authManager.user.admin) navigate('/');
@@ -57,9 +58,9 @@ const Users = observer(function Users() {
             </div>
 
             <div className='flex flex-col justify-center gap-5 w-full'>
-                {adminManager.users?.map((user) => (
+                {adminManager.users.map((user) => (
                     <div className='flex justify-between w-full py-3 px-6 border rounded-md'>
-                        <span className='text-lg font-bold'>@{user.username}</span>
+                        <span>@{adminManager.users.find(e => e.id === user.id)?.username || '?'}</span>
 
                         <div className='flex gap-3'>
                             <Tooltip>

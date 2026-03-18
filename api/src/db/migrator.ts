@@ -149,7 +149,7 @@ if (!fs.existsSync(v3Dir)) {
                 siteDB.target[site.id] = {
                     id: site.id,
                     keys: site.keys,
-                    users: [...site.readers, ...site.editors]
+                    users: [...new Set([...site.readers, ...site.editors])]
                 }
             });
 
