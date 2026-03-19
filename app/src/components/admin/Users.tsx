@@ -4,7 +4,6 @@ import { observer } from 'mobx-react-lite';
 
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import api, { errorFrom } from '@/lib/eden';
@@ -23,11 +22,12 @@ const Users = observer(function Users() {
     const [userSitesDialogOpen, setUserSitesDialogOpen] = useState(false);
     const [userSitesDialogTargetId, setUserSitesDialogTargetId] = useState(0);
     const [userSitesDialogTargetName, setUserSitesDialogTargetName] = useState('');
-    const [userSitesDialogList, setUserSitesDialogList] = useState<Record<string, 'reader' | 'editor'>>({});
+    const [userSitesDialogList, setUserSitesDialogList] = useState<string[]>([]);
 
-    const grabUserSitesDialogList = (userId: number) =>
-        api.admin.users.sites.post({ userId }).then((res) =>
-            setUserSitesDialogList(res.data?.sites || {}));
+    const grabUserSitesDialogList = (userId: number) => api.admin.users.sites.post({ userId }).then((res) => {
+        if (res.data) setUserSitesDialogList(res.data.sites);
+        else alert(errorFrom(res));
+    });
 
     useEffect(() => {
         if (authManager.user.id > 1 && !authManager.user.admin) navigate('/');
@@ -58,9 +58,9 @@ const Users = observer(function Users() {
             </div>
 
             <div className='flex flex-col justify-center gap-5 w-full'>
-                {adminManager.users?.map((user) => (
+                {adminManager.users.map((user) => (
                     <div className='flex justify-between w-full py-3 px-6 border rounded-md'>
-                        <span className='text-lg font-bold'>@{user.username}</span>
+                        <span>@{adminManager.users.find(e => e.id === user.id)?.username || '?'}</span>
 
                         <div className='flex gap-3'>
                             <Tooltip>
@@ -146,36 +146,16 @@ const Users = observer(function Users() {
                     </DialogHeader>
 
                     <div className='flex flex-col w-full py-3 px-6 gap-3 border rounded-md'>
-                        {Object.keys(userSitesDialogList).length ? Object.entries(userSitesDialogList).map(([domain, role], i) => (
+                        {userSitesDialogList.length ? userSitesDialogList.map((domain, i) => (
                             <div className='flex justify-between gap-3 w-full' key={i}>
-                                <div className='flex items-center'>
-                                    <span className='text-lg font-bold'>{domain}</span>
-                                </div>
+                                <span className='text-lg font-bold'>{domain}</span>
 
-                                <div className='flex gap-3'>
-                                    <Select value={role} onValueChange={(role) => (role === 'reader' || role === 'editor') &&
-                                        api.v1.sites.access.setRole.post({ domain, userId: userSitesDialogTargetId, role }).then((res) => {
-                                            if (res.data) grabUserSitesDialogList(userSitesDialogTargetId);
-                                            else alert(errorFrom(res));
-                                        })
-                                    }>
-                                        <SelectTrigger>
-                                            <SelectValue>role: {role}</SelectValue>
-                                        </SelectTrigger>
-
-                                        <SelectContent>
-                                            <SelectItem value='reader'>Viewer</SelectItem>
-                                            <SelectItem value='editor'>Editor</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <Button variant='destructive' onClick={() => {
-                                        api.v1.sites.access.remove.post({ domain, userId: userSitesDialogTargetId }).then((res) => {
-                                            if (res.data) grabUserSitesDialogList(userSitesDialogTargetId);
-                                            else alert(errorFrom(res));
-                                        });
-                                    }}>remove user</Button>
-                                </div>
+                                <Button variant='destructive' onClick={() => {
+                                    api.v1.sites.access.remove.post({ domain, userId: userSitesDialogTargetId }).then((res) => {
+                                        if (res.data) grabUserSitesDialogList(userSitesDialogTargetId);
+                                        else alert(errorFrom(res));
+                                    });
+                                }}>remove user</Button>
                             </div>
                         )) : <span className='mx-auto'>this user has no site access.</span>}
                     </div>

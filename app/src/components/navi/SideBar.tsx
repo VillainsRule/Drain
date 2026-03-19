@@ -54,7 +54,7 @@ const SideBar = observer(function SideBar() {
                                 <span className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer hover:translate-x-1 text-lg ${pathname.startsWith('/domain/') && siteManager.site?.id === site && 'font-semibold tracking-tight'}`} onClick={(e) => {
                                     if (!(e.target as HTMLElement).classList.contains('no-click')) {
                                         siteManager.select(site);
-                                        navigate(`/domain/${site}/keys`);
+                                        navigate(`/domain/${site}`);
                                     }
                                 }}>{site}</span>
                             </ContextMenuTrigger>
@@ -62,7 +62,7 @@ const SideBar = observer(function SideBar() {
                             <ContextMenuContent>
                                 <ContextMenuItem
                                     className='no-click'
-                                    onClick={() => navigator.clipboard.writeText(`${location.origin}/domain/${site}/keys`)}
+                                    onClick={() => navigator.clipboard.writeText(`${location.origin}/domain/${site}`)}
                                 >Copy URL</ContextMenuItem>
 
                                 {authManager.isAdmin() && <ContextMenuItem className='text-red-500 no-click' onClick={() => {

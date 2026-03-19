@@ -6,7 +6,7 @@ import { PublicUser, DBUser } from '../../../../types';
 
 export class UserDB extends LinkedDB<DBUser> {
     constructor() {
-        super('users.db', 2, ['username', 'code', 'sessions']);
+        super('users.db', ['username', 'code', 'sessions']);
     }
 
     getBaseItems(): LinkedDBTarget<DBUser> {

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { AutoComplete } from './ui/autocomplete';
+import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 import ArrowDownWideNarrow from 'lucide-react/icons/arrow-down-wide-narrow';
 import Copy from 'lucide-react/icons/copy';
@@ -13,12 +14,14 @@ import ListPlus from 'lucide-react/icons/list-plus';
 import Plus from 'lucide-react/icons/plus';
 import RefreshCw from 'lucide-react/icons/refresh-cw';
 import Trash from 'lucide-react/icons/trash';
+import UserCog from 'lucide-react/icons/user-cog';
 
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
 
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
+import adminManager from '@/managers/AdminManager';
 
 const randomHex = (len: number) => Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 const fakeKeys = [randomHex(16), randomHex(16), randomHex(16)];
@@ -28,6 +31,12 @@ const SiteKeys = observer(function SiteKeys() {
     const [bulkAddError, setBulkAddError] = useState('');
     const [bulkAddProgress, setBulkAddProgress] = useState('');
 
+    const [accessDialogOpen, setAccessDialogOpen] = useState(false);
+
+    const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+    const [addUserSelectedId, setAddUserSelectedId] = useState<number | null>(null);
+    const [addUserError, setAddUserError] = useState('');
+
     const [validKeys, setValidKeys] = useState<string[]>([]);
     const [invalidKeys, setInvalidKeys] = useState<string[]>([]);
 
@@ -36,9 +45,9 @@ const SiteKeys = observer(function SiteKeys() {
     if (!site) return <div className='flex justify-center items-center w-full mt-10 text-muted-foreground text-lg'>fetching site...</div>
 
     return (
-        <>
-            <div className='flex justify-between items-center flex-col lg:flex-row w-full mt-3 gap-3 lg:gap-0'>
-                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys)?.length} {site.totalBalance && site.totalBalance !== '0.00' && <> (${site.totalBalance})</>}</h2>
+        <div className='flex flex-col w-11/12 drain-scrollbar'>
+            <div className='flex justify-between items-center flex-col lg:flex-row w-full mt-5 gap-3 lg:gap-0'>
+                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys).length} {site.totalBalance && site.totalBalance !== '0.00' && <> (${site.totalBalance})</>}</h2>
 
                 <div className='flex gap-3'>
                     <Tooltip>
@@ -122,8 +131,16 @@ const SiteKeys = observer(function SiteKeys() {
 
                         <TooltipContent>copy all keys</TooltipContent>
                     </Tooltip>
+
+                    {authManager.isAdmin() && <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button className='w-12 py-2 rounded-md transition-colors duration-150 hidden md:flex' onClick={() => setAccessDialogOpen(true)}><UserCog className='w-4 h-4' /></Button>
+                        </TooltipTrigger>
+
+                        <TooltipContent>manage access</TooltipContent>
+                    </Tooltip>}
                 </div>
-            </div >
+            </div>
 
             <div className='flex flex-col items-center justify-start gap-1 mt-4 pb-4'>
                 {Object.keys(site.keys).map((key, i) => {
@@ -142,7 +159,7 @@ const SiteKeys = observer(function SiteKeys() {
                                 <Copy className='h-4 w-4' />
                             </Button>
 
-                            {Boolean(site.supportsBalancer && site.editors) && <Button variant='outline' size='sm' onClick={() => {
+                            {Boolean(site.supportsBalancer && site.users) && <Button variant='outline' size='sm' onClick={() => {
                                 api.v1.sites.keys.recheck.post({ domain: site.id, key: key }).then((res) => {
                                     if (res.data) {
                                         siteManager.refreshCurrent();
@@ -217,7 +234,71 @@ const SiteKeys = observer(function SiteKeys() {
                     }}>submit</Button>
                 </DialogContent>
             </Dialog>
-        </>
+
+            <Dialog open={accessDialogOpen} onOpenChange={(isOpen) => setAccessDialogOpen(isOpen)}>
+                <DialogContent className='max-h-9/10'>
+                    <DialogHeader>
+                        <DialogTitle>manage access</DialogTitle>
+                        <DialogDescription>manage who can access {site.id}</DialogDescription>
+                    </DialogHeader>
+
+                    <div className='flex flex-col gap-3'>
+                        {site.users.map((userId) => (
+                            <div key={userId} className='flex items-center justify-between rounded-md px-2 py-1 hover:bg-accent transition-colors duration-125'>
+                                <span>@{adminManager.users.find(e => e.id === userId)?.username || '?'}</span>
+                                <Button variant='outline' size='sm' onClick={() => {
+                                    api.v1.sites.access.remove.post({ domain: site.id, userId }).then((res) => {
+                                        if (res.data) siteManager.refreshCurrent();
+                                        else alert(errorFrom(res));
+                                    });
+                                }}>revoke access</Button>
+                            </div>
+                        ))}
+
+                        <div className='border-t pt-3'>
+                            <Button variant='outline' size='sm' className='w-full' onClick={() => setAddUserDialogOpen(true)}>
+                                + add user
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={addUserDialogOpen} onOpenChange={(isOpen) => setAddUserDialogOpen(isOpen)}>
+                <DialogContent className='max-h-9/10'>
+                    <DialogHeader>
+                        <DialogTitle>add user</DialogTitle>
+                        <DialogDescription>grant access to {site.id} for a user by entering their username</DialogDescription>
+                    </DialogHeader>
+
+                    <div className='flex flex-col gap-3'>
+                        <AutoComplete
+                            options={adminManager.users
+                                .filter(e => !e.admin && !site.users.includes(e.id))
+                                .map(e => ({ value: e.id.toString(), label: '@' + e.username }))}
+                            onValueChange={(e) => setAddUserSelectedId(Number(e.value))}
+                        />
+
+                        {addUserError && <div className='text-red-500 text-sm'>{addUserError}</div>}
+
+                        <Button
+                            className='w-full'
+                            disabled={!addUserSelectedId}
+                            onClick={() => {
+                                if (addUserSelectedId) api.v1.sites.access.add.post({ domain: site.id, userId: addUserSelectedId }).then((res) => {
+                                    if (res.data) {
+                                        siteManager.refreshCurrent();
+                                        setAddUserDialogOpen(false);
+                                    } else setAddUserError(errorFrom(res));
+                                });
+                            }}
+                        >
+                            grant access
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
     )
 });
 

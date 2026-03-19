@@ -28,19 +28,21 @@ class SiteManager {
 
         if (domain) {
             const res = await api.v1.sites.info.post({ domain });
-            if (res.data) this.site = {
-                ...res.data,
-                supportsBalancer: !!res.data.supportsBalancer,
-                sortable: Object.values(res.data.keys).some((s: any) => s && (s.startsWith('Paid') || s.includes('Tier') || s.startsWith('$'))),
-                totalBalance: fixMoneyFloatingPoint(Object.values(res.data.keys)[0]?.startsWith('$') && Object.values(res.data.keys).reduce((acc: number, s: any) => {
-                    if (s && s.startsWith('$')) {
-                        const num = parseFloat(s.replace('$', ''));
-                        if (!isNaN(num) && num >= 0) return acc + num;
-                    }
-                    return acc;
-                }, 0) || 0)
-            }
-            else alert(errorFrom(res));
+            if (res.data) {
+                const keyValues: (string | null)[] = Object.values(res.data.keys);
+                const isMoneyBased = keyValues[0]?.startsWith('$');
+
+                this.site = {
+                    ...res.data,
+                    supportsBalancer: !!res.data.supportsBalancer,
+                    sortable: (keyValues[0] && (keyValues[0].startsWith('Paid') || keyValues[0].startsWith('Free') || keyValues[0].startsWith('Tier') || isMoneyBased)) || false,
+                    totalBalance: fixMoneyFloatingPoint(isMoneyBased ? keyValues.reduce((acc: number, s: any) => {
+                        if (!s?.startsWith('$')) return acc;
+                        const num = parseFloat(s.slice(1));
+                        return (!isNaN(num) && num >= 0) ? acc + num : acc;
+                    }, 0) : 0)
+                };
+            } else alert(errorFrom(res));
         }
     }
 

@@ -18,7 +18,7 @@ import AdminConfig from './components/admin/Config'
 import Labs from './components/admin/Labs'
 import Users from './components/admin/Users'
 
-import SiteRouter from './components/site/Router'
+import Site from './components/Site'
 
 import APIKeys from './components/user/APIKeys'
 import Passkeys from './components/user/Passkeys'
@@ -64,7 +64,7 @@ function Container({ element: Element }: { element: React.ComponentType<any> }) 
 
             <div className='flex flex-col w-full md:pr-8 h-screen'>
                 <TopBar dark={dark} setDark={setDark} />
-                <div className='flex-1 flex flex-col items-center overflow-auto'>{isNavboxOpen ? <NavBox /> : <Element />}</div>
+                <div className='flex-1 flex flex-col items-center overflow-auto drain-scrollbar'>{isNavboxOpen ? <NavBox /> : <Element />}</div>
                 <MobileBar setIsNavboxOpen={setIsNavboxOpen} />
             </div>
         </div>
@@ -78,7 +78,7 @@ const App = observer(function App() {
 
             <Route path='/' element={<Container element={Hub} />} />
 
-            <Route path='/domain/*' element={<Container element={SiteRouter} />} />
+            <Route path='/domain/*' element={<Container element={Site} />} />
 
             <Route path='/user/apiKeys' element={<Container element={APIKeys} />} />
             <Route path='/user/passkeys' element={<Container element={Passkeys} />} />

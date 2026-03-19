@@ -30,10 +30,10 @@ const AdminConfig = observer(function AdminConfig() {
             <div className='grid grid-cols-2 gap-6 items-start'>
                 <div className='flex flex-col gap-1 text-sm'>
                     <p className='text-xs uppercase tracking-widest font-medium text-muted-foreground/80 mb-2'>instance</p>
-                    <span>{adminManager.users?.length || 0} users &middot; {siteManager.siteList.length || 0} sites</span>
+                    <span>{adminManager.users.length || 0} users &middot; {siteManager.siteList.length || 0} sites</span>
                     <span>commit <a className='font-mono underline text-blue-500' href={`https://github.com/VillainsRule/Drain/commit/${info.commit}`} target='_blank'>{info.commit || '—'}</a></span>
                     <span>{info.commitsBehind} commits behind</span>
-                    <span>local changes: {info.localChanges?.toString() ?? 'false'}</span>
+                    <span>local changes: {info.localChanges.toString() ?? 'false'}</span>
                 </div>
 
                 <div className='flex flex-col gap-4'>
