@@ -30,5 +30,6 @@ export default async function deepseekBalancer(token: string): Promise<string> {
         else if (info.currency === 'CNY') totalBalance += yuanToUSD(Number(info.total_balance));
     });
 
-    return totalBalance.toFixed(2);
+    const rounded = totalBalance.toFixed(2);
+    return rounded === '-0.00' ? '0.00' : rounded;
 }
