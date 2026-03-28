@@ -1,10 +1,12 @@
-import LinkedDB from '../LinkedDB';
+import LinkedDB from '../struct/LinkedDB';
 
 import { DBAPIKey } from '../../../../types';
 
-export class APIKeyDB extends LinkedDB<DBAPIKey> {
+const linkedKeys = [{ prop: 'key', type: 'string' }] as const;
+
+export class APIKeyDB extends LinkedDB<DBAPIKey, typeof linkedKeys> {
     constructor() {
-        super('apikeys.db', ['key']);
+        super('apikeys.db', linkedKeys);
     }
 }
 

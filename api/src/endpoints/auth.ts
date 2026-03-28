@@ -16,6 +16,7 @@ import {
 import apiKeyDB from '../db/impl/APIKeyDB';
 import configDB from '../db/impl/ConfigDB';
 import passkeyDB from '../db/impl/PasskeyDB';
+import requestDB from '../db/impl/RequestDB';
 import userDB from '../db/impl/UserDB';
 
 import Hasher from '../util/hasher';
@@ -24,19 +25,29 @@ import { DBAPIKey, DBPasskey } from '../../../types';
 
 const currentRegistrations: Record<number, { name: string, value: string, expiry: number }> = {};
 
-const isDev = Bun.env.DD === '1';
-const isWebAuthnConfigured = typeof Bun.env.RP_ID === 'string';
+const passkeysConfigured = typeof Bun.env.RP_ID === 'string';
 
 const auth = new Elysia({ name: 'auth' })
     .guard({ detail: { hide: true } })
 
     .get('/api/auth/account', async ({ cookie: { session } }) => {
-        if (typeof session.value !== 'string') return { isWebAuthnConfigured, isDev: false };
+        if (typeof session.value !== 'string') return { instance: { allowPasskeys: passkeysConfigured } };
 
         const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
+        if (!user) return { instance: { allowPasskeys: passkeysConfigured } };
 
-        return { user: { id: user.id, username: user.username, admin: user.admin }, isWebAuthnConfigured, isDev, motd: configDB.db.motd };
+        return {
+            user: {
+                id: user.id,
+                username: user.username,
+                admin: user.admin
+            },
+            instance: {
+                allowPasskeys: passkeysConfigured,
+                motd: configDB.db.motd,
+                numRequests: user.admin && requestDB.getSize()
+            }
+        };
     })
 
     .post('/api/auth/account', async ({ body, cookie: { session } }) => {
@@ -148,7 +159,7 @@ const auth = new Elysia({ name: 'auth' })
     }, { body: t.Object({ id: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
     .post('/api/auth/webauthn/register/options', async ({ body, cookie: { session } }) => {
-        if (!isWebAuthnConfigured) return status(404);
+        if (!passkeysConfigured) return status(404);
 
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
@@ -188,7 +199,7 @@ const auth = new Elysia({ name: 'auth' })
     }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
     .post('/api/auth/webauthn/register/verify', async ({ body, headers: { origin }, cookie: { session } }) => {
-        if (!isWebAuthnConfigured) return status(404);
+        if (!passkeysConfigured) return status(404);
         if (!origin) return status(404);
 
         const user = userDB.getLink('sessions', session.value);
@@ -276,7 +287,7 @@ const auth = new Elysia({ name: 'auth' })
     })
 
     .post('/api/auth/webauthn/login/options', async ({ cookie: { webauthn } }) => {
-        if (!isWebAuthnConfigured) return status(404);
+        if (!passkeysConfigured) return status(404);
 
         const options = await generateAuthenticationOptions({
             rpID: Bun.env.RP_ID!,
@@ -293,7 +304,7 @@ const auth = new Elysia({ name: 'auth' })
     })
 
     .post('/api/auth/webauthn/login/verify', async ({ body, headers: { origin }, cookie: { webauthn, session } }) => {
-        if (!isWebAuthnConfigured) return status(404);
+        if (!passkeysConfigured) return status(404);
         if (!origin) return status(404);
 
         const passableBody = body as AuthenticationResponseJSON;
@@ -370,7 +381,7 @@ const auth = new Elysia({ name: 'auth' })
     })
 
     .get('/api/auth/api/keys', async ({ cookie: { session } }) => {
-        if (!isWebAuthnConfigured) return status(404);
+        if (!passkeysConfigured) return status(404);
 
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });

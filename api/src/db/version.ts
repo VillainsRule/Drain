@@ -1,2 +1,2 @@
-const DBVersion = 3;
+const DBVersion = 4;
 export default DBVersion;

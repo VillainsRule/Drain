@@ -1,10 +1,10 @@
-import LinkedDB from '../LinkedDB';
+import LinkedDB from '../struct/LinkedDB';
 
 import { DBPasskey } from '../../../../types';
 
 export class PasskeyDB extends LinkedDB<DBPasskey> {
     constructor() {
-        super('passkeys.db');
+        super('passkeys.db', []);
     }
 }
 

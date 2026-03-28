@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
+import Globe from 'lucide-react/icons/globe';
 import Plus from 'lucide-react/icons/plus';
 
 import { Button } from '../ui/button';
@@ -83,7 +84,7 @@ const SideBar = observer(function SideBar() {
             </div>
 
             {authManager.isAdmin() && (
-                <Button className='flex items-center justify-center gap-2 w-full py-5 rounded-lg shadow-lg transition-colors duration-125 cursor-pointer font-semibold text-lg' onClick={() => shadd.prompt(
+                <Button variant='outline' className='w-full' onClick={() => shadd.prompt(
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',
                     { placeholder: 'my-cool-app.com', maxLength: 64, minLength: 1 },
@@ -96,10 +97,15 @@ const SideBar = observer(function SideBar() {
                         } else shadd.setError(errorFrom(options));
                     }
                 )}>
-                    <Plus className='w-6 h-6 text-primary-foreground' />
-                    <span className='text-primary-foreground'>add site</span>
+                    <Plus className='w-6 h-6' />
+                    <span>create site</span>
                 </Button>
             )}
+
+            <Button variant='outline' className='mt-2.5 w-full' onClick={() => navigate('/discovery')}>
+                <Globe className='w-6 h-6' />
+                <span>discovery</span>
+            </Button>
         </div>
     )
 });

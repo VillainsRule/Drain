@@ -27,7 +27,6 @@ const Auth = observer(function Auth() {
 
     useEffect(() => {
         if (authManager.user.id) navigate('/');
-        if (localStorage.getItem('dark')) document.body.classList.add('dark');
     }, []);
 
     const doWebAuthn = async () => {

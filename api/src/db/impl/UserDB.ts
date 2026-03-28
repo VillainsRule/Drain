@@ -1,16 +1,18 @@
-import LinkedDB, { LinkedDBTarget } from '../LinkedDB';
+import LinkedDB from '../struct/LinkedDB';
 
 import Hasher from '../../util/hasher';
 
-import { PublicUser, DBUser } from '../../../../types';
+import { DBUser } from '../../../../types';
 
-export class UserDB extends LinkedDB<DBUser> {
+const linkedKeys = [
+    { prop: 'username', type: 'string' },
+    { prop: 'code', type: 'string' },
+    { prop: 'sessions', type: 'string' }
+] as const;
+
+export class UserDB extends LinkedDB<DBUser, typeof linkedKeys> {
     constructor() {
-        super('users.db', ['username', 'code', 'sessions']);
-    }
-
-    getBaseItems(): LinkedDBTarget<DBUser> {
-        return {
+        super('users.db', linkedKeys, {
             [1]: {
                 id: 1,
                 username: 'admin',
@@ -21,16 +23,7 @@ export class UserDB extends LinkedDB<DBUser> {
                 passkeyIds: [],
                 apiKeys: []
             }
-        };
-    }
-
-    allUsers(): PublicUser[] {
-        return this.getAll().map((u) => ({ id: u.id, username: u.username, admin: u.admin, stillPendingLogin: !!u.code }));
-    }
-
-    getPublicUser(userId: number): PublicUser | null {
-        const u = this.get(userId);
-        return u ? { id: u.id, username: u.username, admin: u.admin } : null;
+        });
     }
 }
 

@@ -163,3 +163,28 @@ if (!fs.existsSync(v3Dir)) {
         } else if (fs.existsSync(v2Path)) fs.cpSync(v2Path, v3Path);
     });
 }
+
+// v3 -> v4
+const v4Files = ['users.db', 'apikeys.db', 'passkeys.db', 'config.db', 'sites.db'];
+const v4Dir = path.join(dbRootPath, 'v4');
+if (!fs.existsSync(v4Dir)) {
+    fs.mkdirSync(v4Dir);
+
+    v4Files.forEach((fileName) => {
+        const v3Path = path.join(dbRootPath, 'v3', fileName);
+        const v4Path = path.join(v4Dir, fileName);
+
+        if (fileName === 'users.db') {
+            const v3File = JSON.parse(fs.readFileSync(v3Path, 'utf8'));
+            Object.values(v3File.target).forEach((user: any) => {
+                user.requests = [];
+            });
+            delete v3File.links;
+            fs.writeFileSync(v4Path, JSON.stringify(v3File));
+        } else if (fs.existsSync(v3Path)) {
+            const v3File = JSON.parse(fs.readFileSync(v3Path, 'utf8'));
+            if ('links' in v3File) delete v3File.links;
+            fs.writeFileSync(v4Path, JSON.stringify(v3File));
+        }
+    });
+}

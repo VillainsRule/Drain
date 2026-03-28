@@ -12,7 +12,6 @@ configure({ enforceActions: 'never' });
 
 class AuthManager {
     hasInit = false;
-    loggedIn = false;
 
     placeholderUser = {
         id: 0,
@@ -27,7 +26,7 @@ class AuthManager {
 
     apiKeysEnabled = true;
     webAuthnEnabled = false;
-    isDev = false;
+    numRequests = 0;
 
     motd = '';
 
@@ -38,7 +37,6 @@ class AuthManager {
     }
 
     setAuth(user: PublicUser) {
-        this.loggedIn = true;
         this.user = user;
 
         if (localStorage.getItem('resavePasskeys')) {
@@ -57,14 +55,18 @@ class AuthManager {
     async checkAuth() {
         try {
             const res = await api.auth.account.get();
-            const data = res.data || res.error.value as any;
+            const data = res.data;
+            if (!data) throw new Error('authentication fetch error');
 
             this.hasInit = true;
-            this.webAuthnEnabled = data.isWebAuthnConfigured;
-            this.isDev = data.isDev;
+            this.webAuthnEnabled = data.instance.allowPasskeys;
 
-            if (data.motd) this.motd = data.motd;
-            if (data.user) this.setAuth(data.user);
+            if ('user' in data) {
+                if (data.user) this.setAuth(data.user);
+
+                if (data.instance.motd) this.motd = data.instance.motd;
+                if (data.instance.numRequests) this.numRequests = data.instance.numRequests;
+            }
         } catch (error) {
             console.error('auth error', error);
             alert('error checking authentication, try reloading?');

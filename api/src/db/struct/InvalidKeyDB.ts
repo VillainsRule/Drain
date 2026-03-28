@@ -6,7 +6,7 @@ class SingleInvalidKeyDB {
     keys: Set<string> = new Set();
 
     constructor(platform: string) {
-        this.filePath = path.join(import.meta.dirname, '..', '..', 'db', 'invalidKeys', `${platform}.txt`);
+        this.filePath = path.join(import.meta.dirname, '..', '..', '..', 'db', 'invalidKeys', `${platform}.txt`);
 
         if (!fs.existsSync(this.filePath)) {
             fs.mkdirSync(path.dirname(this.filePath), { recursive: true });

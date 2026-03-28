@@ -3,11 +3,13 @@ import { observer } from 'mobx-react-lite';
 
 import Code from 'lucide-react/icons/code';
 import Fingerprint from 'lucide-react/icons/fingerprint-pattern';
+import Link from 'lucide-react/icons/link';
 import LogOut from 'lucide-react/icons/log-out';
 import Pencil from 'lucide-react/icons/pencil';
 import UserCog from 'lucide-react/icons/user-cog';
 import Wrench from 'lucide-react/icons/wrench';
 
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
@@ -50,6 +52,11 @@ const Hub = observer(function Hub() {
                 </div>
                 <span className='text-sm'>{authManager.motd}</span>
             </Card>
+
+            {authManager.numRequests > 0 && <Badge variant='outline' className='mt-4 px-3 py-1 cursor-pointer' onClick={() => navigate('/discovery/requests')}>
+                <Link className='w-3.5 h-3.5 text-muted-foreground mr-1' />
+                <span>{authManager.numRequests} pending request{authManager.numRequests > 1 && 's'}</span>
+            </Badge>}
 
             <div className='flex md:hidden justify-center gap-2 mt-4 flex-wrap max-w-3/5'>
                 {authManager.apiKeysEnabled && <Button variant='outline' size='sm' onClick={() => navigate('/user/apiKeys')}><Code className='w-4 h-4 mr-2' />API Keys</Button>}

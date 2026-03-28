@@ -15,8 +15,10 @@ import SideBar from './components/navi/SideBar'
 import TopBar from './components/navi/TopBar'
 
 import AdminConfig from './components/admin/Config'
-import Labs from './components/admin/Labs'
 import Users from './components/admin/Users'
+
+import Discovery from './components/discovery/Discovery'
+import Requests from './components/discovery/Requests'
 
 import Site from './components/Site'
 
@@ -41,14 +43,7 @@ function Container({ element: Element }: { element: React.ComponentType<any> }) 
         setIsNavboxOpen(false);
     }, [location.pathname]);
 
-    const [dark, setDark] = useState<boolean>(false);
-
     useEffect(() => {
-        if (localStorage.getItem('dark')) {
-            document.body.classList.add('dark');
-            setDark(true);
-        }
-
         const listener = () => (window.innerWidth >= 768 && setIsNavboxOpen(false));
 
         window.addEventListener('resize', listener);
@@ -63,7 +58,7 @@ function Container({ element: Element }: { element: React.ComponentType<any> }) 
             <SideBar />
 
             <div className='flex flex-col w-full md:pr-8 h-screen'>
-                <TopBar dark={dark} setDark={setDark} />
+                <TopBar />
                 <div className='flex-1 flex flex-col items-center overflow-auto drain-scrollbar'>{isNavboxOpen ? <NavBox /> : <Element />}</div>
                 <MobileBar setIsNavboxOpen={setIsNavboxOpen} />
             </div>
@@ -80,11 +75,13 @@ const App = observer(function App() {
 
             <Route path='/domain/*' element={<Container element={Site} />} />
 
+            <Route path='/discovery' element={<Container element={Discovery} />} />
+            <Route path='/discovery/requests' element={<Container element={Requests} />} />
+
             <Route path='/user/apiKeys' element={<Container element={APIKeys} />} />
             <Route path='/user/passkeys' element={<Container element={Passkeys} />} />
 
             <Route path='/admin/config' element={<Container element={AdminConfig} />} />
-            <Route path='/admin/labs' element={<Container element={Labs} />} />
             <Route path='/admin/users' element={<Container element={Users} />} />
 
             <Route path='*' element={<div className='flex flex-col justify-center items-center gap-2 h-screen w-screen'>

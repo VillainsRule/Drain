@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import DBVersion from './version';
+import DBVersion from '../version';
 
-const dbRootPath = path.join(import.meta.dirname, '..', '..', 'db');
+const dbRootPath = path.join(import.meta.dirname, '..', '..', '..', 'db');
 
 class BasicDB<DBType> {
     path: string;

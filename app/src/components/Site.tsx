@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
 import { AutoComplete } from './ui/autocomplete';
@@ -28,8 +28,10 @@ const fakeKeys = [randomHex(16), randomHex(16), randomHex(16)];
 
 const SiteKeys = observer(function SiteKeys() {
     const [bulkAddDialogOpen, setBulkAddDialogOpen] = useState(false);
+    const [bulkQueue, setBulkQueue] = useState<{ key: string; status: 'pending' | 'processing' | 'ok' | 'err'; error?: string }[]>([]);
+    const [bulkTextarea, setBulkTextarea] = useState('');
     const [bulkAddError, setBulkAddError] = useState('');
-    const [bulkAddProgress, setBulkAddProgress] = useState('');
+    const bulkTailRef = useRef<Promise<void>>(Promise.resolve());
 
     const [accessDialogOpen, setAccessDialogOpen] = useState(false);
 
@@ -47,7 +49,7 @@ const SiteKeys = observer(function SiteKeys() {
     return (
         <div className='flex flex-col w-11/12 drain-scrollbar'>
             <div className='flex justify-between items-center flex-col lg:flex-row w-full mt-5 gap-3 lg:gap-0'>
-                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys).length} {site.totalBalance && site.totalBalance !== '0.00' && <> (${site.totalBalance})</>}</h2>
+                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys).length} {site.totalBalance && site.totalBalance !== 0 && <> (${site.totalBalance})</>}</h2>
 
                 <div className='flex gap-3'>
                     <Tooltip>
@@ -189,49 +191,116 @@ const SiteKeys = observer(function SiteKeys() {
             </div>
 
             <Dialog open={bulkAddDialogOpen} onOpenChange={(isOpen) => {
+                if (!isOpen && bulkQueue.some(k => k.status === 'pending' || k.status === 'processing')) return;
+
                 setBulkAddDialogOpen(isOpen);
-                setBulkAddProgress('');
-                setBulkAddError('');
+
+                if (!isOpen) {
+                    setBulkQueue([]);
+                    setBulkTextarea('');
+                    setBulkAddError('');
+                }
             }}>
-                <DialogContent className='max-h-9/10'>
+                <DialogContent className='max-h-9/10 flex flex-col gap-3'>
                     <DialogHeader>
                         <DialogTitle>bulk add keys</DialogTitle>
-                        <DialogDescription>add multiple keys to {site.id}!</DialogDescription>
+                        <DialogDescription>{site.id}</DialogDescription>
                     </DialogHeader>
 
-                    <Textarea placeholder={fakeKeys.join('\n')} id='bulkAddTextarea' className='max-h-74 overflow-auto' />
+                    {bulkQueue.length > 0 && (() => {
+                        const done = bulkQueue.filter(k => k.status === 'ok' || k.status === 'err').length;
+                        const pct = (done / bulkQueue.length) * 100;
+                        return (
+                            <div className='w-full h-1.5 rounded-full bg-muted overflow-hidden'>
+                                <div
+                                    className='h-full bg-primary transition-all duration-300 rounded-full'
+                                    style={{ width: `${pct}%` }}
+                                />
+                            </div>
+                        );
+                    })()}
 
-                    {bulkAddError && (<div className='text-red-500'>{bulkAddError}</div>)}
-                    {bulkAddProgress && (<div className='text-muted-foreground'>{bulkAddProgress}</div>)}
-
-                    <Button className='w-3/4' onClick={async () => {
-                        const input = (document.getElementById('bulkAddTextarea') as HTMLInputElement).value;
-                        const keys = input.split('\n').map(key => key.trim()).filter(key => key.length > 0);
-                        if (keys.length === 0) return setBulkAddError('Please enter at least one key.');
-
-                        if (keys.some(k => k.length > 256)) return setBulkAddError('you have 1 or more keys with >256 length, which is too long');
-
-                        for (let i = 0; i < keys.length; i++) {
-                            const key = keys[i];
-
-                            const res = await api.v1.sites.keys.create.post({ domain: site.id, key });
-
-                            if (res.data) {
-                                siteManager.refreshCurrent();
+                    <div className='flex flex-col gap-2'>
+                        <Textarea
+                            placeholder={fakeKeys.join('\n')}
+                            value={bulkTextarea}
+                            onChange={(e) => {
+                                setBulkTextarea(e.target.value);
                                 setBulkAddError('');
-                            } else setBulkAddError(`${key}: ${errorFrom(res)}`);
+                            }}
+                            className='max-h-40 overflow-auto font-mono text-sm'
+                        />
 
-                            setBulkAddProgress(`${i + 1}/${keys.length} keys processed`);
+                        {bulkAddError && <div className='text-red-500 text-sm'>{bulkAddError}</div>}
 
-                            if ((i + 1) === keys.length) {
-                                setBulkAddError('');
-                                setBulkAddProgress('');
-                                setBulkAddDialogOpen(false);
+                        <Button onClick={() => {
+                            const keys = bulkTextarea
+                                .split('\n')
+                                .map(k => k.trim())
+                                .filter(k => k.length > 0);
+
+                            if (keys.length === 0) return setBulkAddError('enter at least one key.');
+                            if (keys.some(k => k.length > 256)) return setBulkAddError('one or more keys exceed 256 chars.');
+
+                            const alreadyQueued = new Set(bulkQueue.map(i => i.key));
+                            const newItems = keys.filter(k => !alreadyQueued.has(k));
+
+                            if (newItems.length === 0) return setBulkAddError('all those keys are already queued.');
+
+                            setBulkQueue(prev => [...prev, ...newItems.map(key => ({ key, status: 'pending' as const }))]);
+                            setBulkTextarea('');
+
+                            for (const key of newItems) {
+                                bulkTailRef.current = bulkTailRef.current.then(async () => {
+                                    setBulkQueue(prev => prev.map(k => k.key === key ? { ...k, status: 'processing' } : k));
+
+                                    const res = await api.v1.sites.keys.create.post({ domain: site.id, key });
+
+                                    if (res.data) {
+                                        siteManager.refreshCurrent();
+                                        setBulkQueue(prev => prev.map(k => k.key === key ? { ...k, status: 'ok' } : k));
+                                    } else {
+                                        setBulkQueue(prev => prev.map(k => k.key === key ? { ...k, status: 'err', error: errorFrom(res) } : k));
+                                    }
+
+                                    await new Promise(r => setTimeout(r, 100));
+                                });
                             }
+                        }}>
+                            queue keys
+                        </Button>
+                    </div>
 
-                            await new Promise(resolve => setTimeout(resolve, 100));
-                        }
-                    }}>submit</Button>
+                    {bulkQueue.length > 0 && (
+                        <div className='flex flex-col gap-0.5 overflow-auto max-h-64 border rounded-md p-1'>
+                            {bulkQueue.map((item, i) => (
+                                <div key={i} className='flex items-center justify-between rounded px-2 py-1.5 hover:bg-accent gap-3'>
+                                    <span className='font-mono text-xs truncate flex-1 text-muted-foreground'>{item.key}</span>
+                                    {item.status === 'pending' && <span className='text-xs text-muted-foreground shrink-0'>queued</span>}
+                                    {item.status === 'processing' && <span className='text-xs text-blue-500 shrink-0'>adding...</span>}
+                                    {item.status === 'ok' && <span className='text-xs text-green-500 shrink-0'>✓ added</span>}
+                                    {item.status === 'err' && <span className='text-xs text-red-500 shrink-0' title={item.error}>✗ {item.error}</span>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {bulkQueue.length > 0 && !bulkQueue.some(k => k.status === 'pending' || k.status === 'processing') && (
+                        <div className='flex items-center justify-between text-sm text-muted-foreground'>
+                            <span>
+                                {bulkQueue.filter(k => k.status === 'ok').length} added,{' '}
+                                {bulkQueue.filter(k => k.status === 'err').length} failed
+                            </span>
+
+                            <Button variant='outline' size='sm' onClick={() => {
+                                setBulkAddDialogOpen(false);
+                                setBulkQueue([]);
+                                setBulkTextarea('');
+                            }}>
+                                close
+                            </Button>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
 

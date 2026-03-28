@@ -22,7 +22,7 @@ const admin = new Elysia({ name: 'admin' })
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const users = userDB.allUsers();
+        const users = userDB.getAll().map((u) => ({ id: u.id, username: u.username, admin: u.admin, pendingLogin: !!u.code }));
         return { users };
     }, { cookie: t.Cookie({ session: t.String() }) })
 
@@ -68,7 +68,7 @@ const admin = new Elysia({ name: 'admin' })
 
         if (body.userId === 1) return status(403, { error: 'cannot modify primary admin' });
 
-        const target = userDB.getPublicUser(body.userId);
+        const target = userDB.get(body.userId);
         if (!target) return status(404, { error: 'user not found' });
 
         if (user.id !== 1 && target.admin && target.id !== user.id)
@@ -83,10 +83,10 @@ const admin = new Elysia({ name: 'admin' })
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const targetUser = userDB.getPublicUser(body.userId);
-        if (!targetUser) return status(404, { error: 'user not found' });
-
         if (body.userId === 1) return status(403, { error: 'cannot modify primary admin' });
+
+        const doesTargetExist = userDB.has(body.userId);
+        if (!doesTargetExist) return status(404, { error: 'user not found' });
 
         userDB.update(body.userId, { admin: body.isAdmin ? 1 : 0 });
 
@@ -99,7 +99,7 @@ const admin = new Elysia({ name: 'admin' })
 
         if (body.newPassword.length > 24) return status(413, { error: 'password too long' });
 
-        const target = userDB.getPublicUser(body.userId);
+        const target = userDB.get(body.userId);
         if (!target) return status(404, { error: 'user not found' });
 
         if (user.id !== 1 && target.admin && target.id !== user.id)

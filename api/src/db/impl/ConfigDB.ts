@@ -1,4 +1,4 @@
-import BasicDB from '../BasicDB';
+import BasicDB from '../struct/BasicDB';
 
 import { DBConfig } from '../../../../types';
 

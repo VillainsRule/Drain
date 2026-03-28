@@ -54,7 +54,7 @@ export interface PublicUser {
     id: number;
     username: string;
     admin: 0 | 1;
-    stillPendingLogin?: boolean;
+    pendingLogin?: boolean;
 }
 
 export interface DBSite {
@@ -66,7 +66,7 @@ export interface DBSite {
 export interface PublicSite extends DBSite {
     supportsBalancer: boolean;
     sortable: boolean;
-    totalBalance?: string;
+    totalBalance?: number;
 }
 
 export interface DBConfig {
@@ -81,4 +81,11 @@ export interface PublicConfig {
     localChanges: boolean;
     commitsBehind: string;
     config: DBConfig;
+}
+
+export interface DBRequest {
+    id: string;
+    site: string;
+    user: number;
+    timestamp: number;
 }

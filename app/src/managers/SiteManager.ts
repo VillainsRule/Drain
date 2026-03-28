@@ -4,11 +4,6 @@ import api, { errorFrom } from '@/lib/eden';
 
 import type { PublicSite } from '@/types';
 
-const fixMoneyFloatingPoint = (num: number): string => {
-    const rounded = Math.round(num * 100) / 100;
-    return rounded.toFixed(2);
-}
-
 class SiteManager {
     siteList: string[] = [];
     site: PublicSite | null = null;
@@ -35,12 +30,7 @@ class SiteManager {
                 this.site = {
                     ...res.data,
                     supportsBalancer: !!res.data.supportsBalancer,
-                    sortable: (keyValues[0] && (keyValues[0].startsWith('Paid') || keyValues[0].startsWith('Free') || keyValues[0].startsWith('Tier') || isMoneyBased)) || false,
-                    totalBalance: fixMoneyFloatingPoint(isMoneyBased ? keyValues.reduce((acc: number, s: any) => {
-                        if (!s?.startsWith('$')) return acc;
-                        const num = parseFloat(s.slice(1));
-                        return (!isNaN(num) && num >= 0) ? acc + num : acc;
-                    }, 0) : 0)
+                    sortable: (keyValues[0] && (keyValues[0].startsWith('Paid') || keyValues[0].startsWith('Free') || keyValues[0].startsWith('Tier') || isMoneyBased)) || false
                 };
             } else alert(errorFrom(res));
         }

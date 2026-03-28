@@ -9,6 +9,7 @@ import path from 'node:path';
 
 import admin from './endpoints/admin';
 import auth from './endpoints/auth';
+import discovery from './endpoints/discovery';
 import sites from './endpoints/sites';
 
 const files = new Elysia({ name: 'files' });
@@ -89,6 +90,7 @@ const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb
     .use(files)
     .use(admin)
     .use(auth)
+    .use(discovery)
     .use(sites)
     .listen(4422, () => console.log(`drain it up! ${Bun.env.RP_ID !== 'localhost' ? `https://${Bun.env.RP_ID}` : 'http://localhost:4422'}`)); 2
 
