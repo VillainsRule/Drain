@@ -6,7 +6,6 @@ import DBVersion from '../version';
 import { DBId } from '../../../../types';
 
 const dbRootPath = path.join(import.meta.dirname, '..', '..', '..', 'db');
-const isDebug = !!Bun.env.DEBUG;
 
 export type LinkedDBTarget<T> = { [id: DBId]: T };
 
@@ -78,9 +77,7 @@ class LinkedDB<
 
     updateDB(): void {
         const stringified = JSON.stringify(this.db);
-        const startTime2 = isDebug ? performance.now() : 0;
         Bun.write(this.path, stringified);
-        if (isDebug) console.log(`[LinkedDB] (${this.filename}) updateDB() writing took ${(performance.now() - startTime2).toFixed(2)}ms`);
     }
 
     add(item: T): void {

@@ -13,6 +13,8 @@ import Search from 'lucide-react/icons/search';
 
 import siteManager from '@/managers/SiteManager';
 
+import { displayMoney } from '@/lib/utils';
+
 const iconSize = 32;
 
 const extractPrimaryColor = (img: HTMLImageElement): string => {
@@ -163,7 +165,7 @@ const Discovery = observer(function Discovery() {
                                         {site.balance !== undefined && (
                                             <span className='text-xs text-muted-foreground flex items-center ml-2 gap-1'>
                                                 <CircleDollarSign className='h-3 w-3 mt-px' />
-                                                {site.balance}
+                                                {displayMoney(site.balance)}
                                             </span>
                                         )}
                                     </span>
