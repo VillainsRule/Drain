@@ -37,6 +37,7 @@ const Hub = observer(function Hub() {
             <Card className='gap-1 py-4.5 px-6 mt-3 w-md'>
                 <div className='flex items-center gap-2'>
                     <span className='text-xs text-muted-foreground'>MOTD</span>
+
                     {authManager.user.id === 1 && <Pencil className='w-3.5 h-3.5 text-muted-foreground ml-auto cursor-pointer hover:text-foreground transition-colors' onClick={() => shadd.prompt(
                         'edit MOTD',
                         'set the message of the day that is shown to all users on the hub',
@@ -50,7 +51,8 @@ const Hub = observer(function Hub() {
                         }
                     )} />}
                 </div>
-                <span className='text-sm'>{authManager.motd}</span>
+
+                <span className='text-sm whitespace-pre-wrap'>{authManager.motd.replaceAll('\\n', '\n')}</span>
             </Card>
 
             {authManager.numRequests > 0 && <Badge variant='outline' className='mt-4 px-3 py-1 cursor-pointer' onClick={() => navigate('/discovery/requests')}>
