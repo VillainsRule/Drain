@@ -24,7 +24,7 @@ const createBasicBalancer = (url: string, x: X = {}) => async (token: string): P
 
     if (typeof x.invalidCode === 'object' && x.invalidCode.includes(code)) return 'invalid_key';
     else if (typeof x.invalidCode === 'number' && code === x.invalidCode) return 'invalid_key';
-    else if (code === 401) return 'invalid_key';
+    else if (code === 401 || code === 402) return 'invalid_key';
 
     if (code === (x.validCode || 200)) return x.customText || 'Valid';
 
