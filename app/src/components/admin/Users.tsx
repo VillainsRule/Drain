@@ -127,7 +127,7 @@ const Users = observer(function Users() {
                                 </TooltipTrigger>
 
                                 <TooltipContent>
-                                    {user.admin ? 'admins have access to all sites' : 'manage site access'}
+                                    {user.admin ? 'admins can access all sites' : 'manage site access'}
                                 </TooltipContent>
                             </Tooltip>
 
@@ -146,7 +146,7 @@ const Users = observer(function Users() {
                                 </TooltipTrigger>
 
                                 <TooltipContent>
-                                    {user.id === 1 ? 'this admin cannot be modified' : user.admin ? 'demote to regular user' : 'promote to admin'}
+                                    {user.id === 1 ? 'this admin cannot be modified' : user.admin ? 'demote from admin' : 'promote to admin'}
                                 </TooltipContent>
                             </Tooltip>
 
