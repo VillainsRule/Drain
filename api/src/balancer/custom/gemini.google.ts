@@ -21,6 +21,7 @@ export default async function geminiBalancer(token: string): Promise<string> {
         if (data.error?.message?.includes('API has not been used in project')) return 'invalid_key';
         if (data.error?.message?.includes('are blocked')) return 'invalid_key';
         if (data.error?.message?.includes('has been suspended')) return 'invalid_key';
+        if (data.error?.message?.includes('has an IP address restriction')) return 'invalid_key';
 
         if (data.error?.message?.includes('reported as leaked')) return 'leaked_key';
 
