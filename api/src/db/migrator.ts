@@ -6,6 +6,7 @@ import path from 'node:path';
 const oldFiles = ['sites.db', 'users.db', 'config.db'];
 
 // v0 -> v1
+// 1/8 - moving to a v1 folder
 const dbRootPath = path.join(import.meta.dirname, '..', '..', 'db');
 if (fs.existsSync(path.join(dbRootPath, 'users.db'))) oldFiles.forEach((filename) => {
     const v1FolderPath = path.join(dbRootPath, 'v1');
@@ -16,6 +17,7 @@ if (fs.existsSync(path.join(dbRootPath, 'users.db'))) oldFiles.forEach((filename
 });
 
 // v1 -> v2
+// 2/14 - links, optimization, yummy stuff
 const v2Dir = path.join(dbRootPath, 'v2');
 if (!fs.existsSync(v2Dir)) {
     fs.mkdirSync(v2Dir);
@@ -129,6 +131,7 @@ if (!fs.existsSync(v2Dir)) {
 }
 
 // v2 -> v3
+// 3/18 - flattening of readers and editors
 const v3Files = ['users.db', 'apikeys.db', 'passkeys.db', 'config.db', 'sites.db'];
 const v3Dir = path.join(dbRootPath, 'v3');
 if (!fs.existsSync(v3Dir)) {
@@ -165,6 +168,7 @@ if (!fs.existsSync(v3Dir)) {
 }
 
 // v3 -> v4
+// 3/28 - discovery feature
 const v4Files = ['users.db', 'apikeys.db', 'passkeys.db', 'config.db', 'sites.db'];
 const v4Dir = path.join(dbRootPath, 'v4');
 if (!fs.existsSync(v4Dir)) {
@@ -188,3 +192,27 @@ if (!fs.existsSync(v4Dir)) {
         }
     });
 }
+
+// v4 -> v5
+// 3/29 - cleanup of old bugs from DB v2 (sob)
+let v5UserNumbers: number[] = [];
+const v5Dir = path.join(dbRootPath, 'v5');
+if (!fs.existsSync(v5Dir)) {
+    fs.mkdirSync(v5Dir);
+
+    const v4UserFile = JSON.parse(fs.readFileSync(path.join(dbRootPath, 'v4', 'users.db'), 'utf8'));
+    Object.values(v4UserFile.target).forEach((user: any) => v5UserNumbers.push(user.id));
+
+    v4Files.forEach((fileName) => {
+        const v4Path = path.join(dbRootPath, 'v4', fileName);
+        const v5Path = path.join(v5Dir, fileName);
+
+        if (fileName === 'sites.db') {
+            const contents = JSON.parse(fs.readFileSync(v4Path, 'utf8'));
+            Object.values(contents.target).forEach((site: any) => site.users = site.users.filter((userId: number) => v5UserNumbers.includes(userId)));
+            fs.writeFileSync(v5Path, JSON.stringify(contents));
+        } else fs.cpSync(v4Path, v5Path);
+    });
+};
+
+export const DBVersion = 5;

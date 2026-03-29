@@ -74,6 +74,11 @@ const admin = new Elysia({ name: 'admin' })
         if (user.id !== 1 && target.admin && target.id !== user.id)
             return status(403, { error: 'cannot delete other admins' });
 
+        user.sites.forEach((siteId) => {
+            const site = siteDB.get(siteId);
+            if (site) siteDB.update(siteId, { users: site.users.filter(u => u !== body.userId) });
+        });
+
         userDB.remove(body.userId);
 
         return {};

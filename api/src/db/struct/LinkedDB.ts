@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import DBVersion from '../version';
+import { DBVersion } from '../migrator';
 
 import { DBId } from '../../../../types';
 

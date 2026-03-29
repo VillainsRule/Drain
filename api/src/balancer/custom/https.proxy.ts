@@ -16,7 +16,8 @@ export default async function httpsProxy(proxy: string): Promise<string> {
                 tls: { rejectUnauthorized: false }
             });
             if (attempt.status === 407) return 'invalid_key';
-            if (attempt.ok) return 'Valid';
+            else if (attempt.ok) return 'Valid';
+            else console.log('proxy failure', attempt);
             await new Promise(res => setTimeout(res, 1000));
         }
 
