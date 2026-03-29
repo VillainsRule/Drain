@@ -41,7 +41,7 @@ const Hub = observer(function Hub() {
                     {authManager.user.id === 1 && <Pencil className='w-3.5 h-3.5 text-muted-foreground ml-auto cursor-pointer hover:text-foreground transition-colors' onClick={() => shadd.prompt(
                         'edit MOTD',
                         'set the message of the day that is shown to all users on the hub',
-                        { placeholder: 'welcome to my drain instance!', defaultValue: authManager.motd },
+                        { placeholder: 'welcome to my drain instance!', defaultValue: authManager.motd, textarea: true },
                         async (value: string) => {
                             const req = await api.admin.instance.post({ config: { motd: value } });
                             if (req.data) {

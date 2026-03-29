@@ -3,6 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 type DialogType = 'alert' | 'confirm' | 'prompt' | 'copy';
 
@@ -11,6 +12,7 @@ interface IInput {
     defaultValue?: string;
     maxLength?: number;
     minLength?: number;
+    textarea?: boolean;
 }
 
 interface DialogState {
@@ -42,7 +44,7 @@ const defaultState: DialogState = {
 };
 
 const handleInputs = (inputs: (string | IInput)[]) =>
-    inputs.map((input) => typeof input === 'string' ? { placeholder: input, maxLength: undefined, minLength: undefined } : input);
+    inputs.map((input) => typeof input === 'string' ? { placeholder: input, maxLength: undefined, minLength: undefined, textarea: false } : input);
 
 export class shadd {
     /**
@@ -141,7 +143,7 @@ export class shadd {
 export function ShaddProvider() {
     const [state, setState] = useState<DialogState>(defaultState);
     const [inputValues, setInputValues] = useState<string[]>([]);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
     useEffect(() => {
         if (state.open && state.type === 'prompt') {
@@ -200,8 +202,20 @@ export function ShaddProvider() {
 
                 {hasInput && (
                     <div className='flex flex-col py-2 gap-2'>
-                        {state.type === 'prompt' && state.inputs.map((input, idx) => (<Input
-                            ref={idx === 0 ? inputRef : undefined}
+                        {state.type === 'prompt' && state.inputs.map((input, idx) => input.textarea ? (<Textarea
+                            ref={idx === 0 ? (inputRef as React.RefObject<HTMLTextAreaElement>) : undefined}
+                            key={idx}
+                            placeholder={input.placeholder}
+                            minLength={input.minLength}
+                            maxLength={input.maxLength}
+                            value={inputValues[idx] ?? ''}
+                            onChange={(e) => setInputValues((prev) => {
+                                const updated = [...prev];
+                                updated[idx] = e.target.value;
+                                return updated;
+                            })}
+                        />) : (<Input
+                            ref={idx === 0 ? (inputRef as React.RefObject<HTMLInputElement>) : undefined}
                             key={idx}
                             placeholder={input.placeholder}
                             minLength={input.minLength}
@@ -216,7 +230,7 @@ export function ShaddProvider() {
                         />))}
 
                         {state.type === 'copy' && (<Input
-                            ref={inputRef}
+                            ref={inputRef as React.RefObject<HTMLInputElement>}
                             readOnly
                             value={state.copyValue}
                             onFocus={(e) => e.currentTarget.select()}
