@@ -94,6 +94,7 @@ try {
     const perPage = 100;
     const totalPages = Math.ceil(totalCount / perPage);
     console.log(`total pages to process: ${totalPages}`);
+    if (totalPages > 10) console.log('>> note: only processing the first 10 pages of results');
 
     await processItems(firstResults.items);
     console.log('processed page 1');
@@ -102,7 +103,7 @@ try {
     console.log(`wrote ${matchedKeys.size} keys to ${keyPath}`);
     matchedKeys.clear();
 
-    for (let page = 2; page <= totalPages; page++) {
+    for (let page = 2; page <= Math.min(totalPages, 10); page++) {
         const pageResults = await rateLimitedSearchGitHub(GITHUB_CONFIG.searchQuery, page.toString());
         await processItems(pageResults.items);
         console.log(`processed page ${page}`);

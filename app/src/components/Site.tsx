@@ -245,7 +245,7 @@ const SiteKeys = observer(function SiteKeys() {
                             if (keys.some(k => k.length > 256)) return setBulkAddError('one or more keys exceed 256 chars.');
 
                             const alreadyQueued = new Set(bulkQueue.map(i => i.key));
-                            const newItems = keys.filter(k => !alreadyQueued.has(k));
+                            const newItems = Array.from(new Set(keys)).filter(k => !alreadyQueued.has(k));
 
                             if (newItems.length === 0) return setBulkAddError('all those keys are already queued.');
 
