@@ -51,7 +51,7 @@ const SiteKeys = observer(function SiteKeys() {
     return (
         <div className='flex flex-col w-11/12 drain-scrollbar'>
             <div className='flex justify-between items-center flex-col lg:flex-row w-full mt-5 gap-3 lg:gap-0'>
-                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys).length} {!!site.totalBalance && site.totalBalance !== 0 && <> (${displayMoney(site.totalBalance)})</>}</h2>
+                <h2 className='text-2xl font-bold'>{site.id} x{Object.keys(site.keys).length} {!!(site.totalBalance && site.totalBalance > 0) && <>(${displayMoney(site.totalBalance)})</>}</h2>
 
                 <div className='flex gap-3'>
                     <Tooltip>
