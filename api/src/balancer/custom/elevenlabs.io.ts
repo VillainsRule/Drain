@@ -25,5 +25,5 @@ export default async function elevenlabsBalancer(token: string): Promise<string>
     if (userTier === 'free') return 'Free Tier';
     if (!tiersHighestToLowest.includes(userTier)) return 'Unknown Tier';
 
-    return `T${tiersHighestToLowest.indexOf(userTier) + 1} (${userTier.charAt(0).toUpperCase() + userTier.slice(1)})`;
+    return `Tier ${tiersHighestToLowest.indexOf(userTier) + 1} (${userTier.charAt(0).toUpperCase() + userTier.slice(1)})`;
 }

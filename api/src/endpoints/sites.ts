@@ -135,7 +135,7 @@ const sites = new Elysia({ name: 'sites' })
 
         const oldBalance = site.keys[body.key];
         if (oldBalance && oldBalance.startsWith('$')) o1Optimizer.subtractFromBalance(body.domain, Number(oldBalance.slice(1)));
-        if (!isNaN(Number(balance))) o1Optimizer.addToBalance(body.domain, Number(balance));
+        if (balance && balance.startsWith('$')) o1Optimizer.addToBalance(body.domain, Number(balance.slice(1)));
 
         site.keys[body.key] = isNaN(Number(balance)) ? balance : `$${balance}`;
         siteDB.update(body.domain, { keys: site.keys });
@@ -156,50 +156,44 @@ const sites = new Elysia({ name: 'sites' })
 
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'removes a key from a site. requires: admin', tags: ['Site Keys'] } })
-
     .post('/api/v1/sites/keys/sort', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
         if (!site.users.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
 
-        const entries = Object.entries(site.keys);
+        const dedupedEntries = Array.from(new Map(Object.entries(site.keys)).entries());
+        if (dedupedEntries.length === 0) return status(404, { error: 'no keys with balance to sort' });
 
-        const dedupedEntries = Array.from(
-            entries.reduce((map, [token, balance]) => map.set(token, balance), new Map()).entries()
-        );
+        const score = (balance: string): number => {
+            if (balance.startsWith('$')) {
+                const num = parseFloat(balance.slice(1));
+                return isNaN(num) ? 0 : 10_000 + num;
+            }
 
-        if (entries.length === dedupedEntries.length && dedupedEntries.length === 0)
-            return status(404, { error: 'no keys with balance to sort' });
+            const tierMatch = balance.match(/Tier\s*(\d+)/i);
+            if (tierMatch) return 1_000 + parseInt(tierMatch[1], 10);
 
-        const firstBalance = dedupedEntries[0]?.[1];
-        if (!firstBalance) return status(404, { error: 'no keys with balance to sort' });
+            if (/paid|premium|prod/i.test(balance)) return 500;
+            if (/has credits/i.test(balance)) return 200;
+            if (/trial|free|valid/i.test(balance)) return 100;
+            if (/empty/i.test(balance)) return 0;
+            if (/unknown|\?/i.test(balance)) return -1;
 
-        let sortedEntries: [string, string][];
+            return 0;
+        };
 
-        if (firstBalance.startsWith('$')) {
-            const parseBalance = (balance: string) => {
-                const num = parseFloat(balance.replace(/^\$/, ''));
-                return isNaN(num) ? 0 : num;
-            };
+        let hasSignificant = false;
 
-            sortedEntries = dedupedEntries.sort((a, b) => parseBalance(b[1]) - parseBalance(a[1]));
-        } else if (firstBalance.startsWith('Paid ')) {
-            sortedEntries = dedupedEntries.sort((a, b) => {
-                const aPaid = a[1].startsWith('Paid ');
-                const bPaid = b[1].startsWith('Paid ');
-                return bPaid ? 1 : aPaid ? -1 : 0;
-            });
-        } else if (firstBalance.includes('Tier')) {
-            const tierOrder = (balance: string) => {
-                if (balance === 'Free Tier' || balance === 'Free Key') return 0;
-                const match = balance.match(/^T(\d+)/) || balance.match(/^Tier (\d+)/);
-                return match ? parseInt(match[1], 10) : -1;
-            };
+        const sorted = dedupedEntries.sort((a, b) => {
+            const sa = score(a[1] || '?');
+            const sb = score(b[1] || '?');
+            if (sa !== 0 || sb !== 0) hasSignificant = true;
+            return sb - sa;
+        });
 
-            sortedEntries = dedupedEntries.sort((a, b) => tierOrder(b[1]) - tierOrder(a[1]));
-        } else return status(404, { error: 'no keys with balance to sort' });
+        if (!hasSignificant) return status(404, { error: 'no keys with balance to sort' });
 
-        site.keys = Object.fromEntries(sortedEntries);
+        site.keys = Object.fromEntries(sorted);
         siteDB.update(body.domain, { keys: site.keys });
 
         return {};

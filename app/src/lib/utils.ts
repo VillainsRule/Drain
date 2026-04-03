@@ -30,5 +30,4 @@ export const getRelativeTime = (timestamp: number): string => {
     return 'just now';
 }
 
-export const displayMoney = (amount: number): string =>
-    amount < 1000 ? amount.toFixed(2) : Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+export const displayMoney = (amount: number): string => amount.toFixed(2);

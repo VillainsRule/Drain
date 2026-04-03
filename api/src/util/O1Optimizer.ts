@@ -44,11 +44,13 @@ class O1Optimizer {
     }
 
     addToBalance(siteId: string, amount: number): void {
-        this.balanceCache[siteId] = fixFloatingPoint((this.balanceCache[siteId] ?? 0) + amount);
+        if (typeof amount === 'number')
+            this.balanceCache[siteId] = fixFloatingPoint((this.balanceCache[siteId] ?? 0) + amount);
     }
 
     subtractFromBalance(siteId: string, amount: number): void {
-        this.balanceCache[siteId] = fixFloatingPoint(Math.max((this.balanceCache[siteId] ?? 0) - amount, 0));
+        if (typeof amount === 'number')
+            this.balanceCache[siteId] = fixFloatingPoint(Math.max((this.balanceCache[siteId] ?? 0) - amount, 0));
     }
 }
 

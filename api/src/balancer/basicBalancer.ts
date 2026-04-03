@@ -17,7 +17,8 @@ const createBasicBalancer = (url: string, x: X = {}) => async (token: string): P
             ...(x.tokenHeader ? { [x.tokenHeader]: token } : { 'Authorization': `Bearer ${token}` }),
             ...(x.extraHeaders ?? {})
         },
-        body: x.body
+        body: x.body,
+        signal: AbortSignal.timeout(5000)
     });
 
     const code = response.status;

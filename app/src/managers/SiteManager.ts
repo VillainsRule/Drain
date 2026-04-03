@@ -4,6 +4,8 @@ import api, { errorFrom } from '@/lib/eden';
 
 import type { PublicSite } from '@/types';
 
+const SORTABLE_KEYWORDS = ['paid', 'premium', 'prod', 'trial', 'tier', 'free', '$', 'valid', 'empty'];
+
 class SiteManager {
     siteList: string[] = [];
     site: PublicSite | null = null;
@@ -24,13 +26,12 @@ class SiteManager {
         if (domain) {
             const res = await api.v1.sites.info.post({ domain });
             if (res.data) {
-                const keyValues: (string | null)[] = Object.values(res.data.keys);
-                const isMoneyBased = keyValues[0]?.startsWith('$');
+                const firstKey = res.data.keys[Object.keys(res.data.keys)[0]] ?? '';
 
                 this.site = {
                     ...res.data,
                     supportsBalancer: !!res.data.supportsBalancer,
-                    sortable: (keyValues[0] && (keyValues[0].startsWith('Paid') || keyValues[0].startsWith('Free') || keyValues[0].startsWith('Tier') || isMoneyBased)) || false
+                    sortable: (firstKey && SORTABLE_KEYWORDS.some(k => firstKey.toLowerCase().includes(k))) || false
                 };
             } else alert(errorFrom(res));
         }

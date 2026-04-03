@@ -10,6 +10,7 @@ api/db
 # tooling secrets
 gi
 *.txt
+!robots.txt
 .config.ts
 
 # builds

@@ -7,7 +7,8 @@ const createCaptchaBalancer = (url: string) => async (token: string): Promise<st
             Accept: 'application/json',
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ clientKey: token })
+        body: JSON.stringify({ clientKey: token }),
+        signal: AbortSignal.timeout(5000)
     });
 
     const data = await req.json() as any;
