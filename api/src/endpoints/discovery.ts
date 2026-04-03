@@ -9,10 +9,8 @@ import requestDB from '../db/impl/RequestDB';
 
 const discovery = new Elysia()
     .guard({
-        hide: true,
-        headers: t.Object({
-            authorization: t.Optional(t.String({ description: 'this is an API key you can pick up from <a href="/user/apiKeys" target="_blank">here</a>' })),
-        })
+        detail: { hide: true },
+        headers: t.Object({ authorization: t.Optional(t.String({ description: 'this is an API key you can pick up from <a href="/user/apiKeys" target="_blank">here</a>' })), })
     })
 
     .resolve(({ headers, cookie }) => {
