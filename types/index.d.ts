@@ -34,8 +34,9 @@ export interface DBAPIKey {
 
 export interface PublicAPIKey {
     name: string;
-    createdAt: number;
-    lastUsed: number;
+    key: string;
+    createdAt: string;
+    lastUsed: string;
 }
 
 export interface DBUser {
@@ -44,6 +45,7 @@ export interface DBUser {
     admin: 0 | 1;
     password: string;
     code?: string | undefined;
+    invitedBy: number;
     sessions: string[];
     passkeyIds: string[];
     sites: string[];
@@ -54,13 +56,21 @@ export interface PublicUser {
     id: number;
     username: string;
     admin: 0 | 1;
-    pendingLogin?: boolean;
+}
+
+export interface PublicAdminUser extends PublicUser {
+    pendingLogin: boolean;
+    invitedBy: number;
+    sites: string[];
 }
 
 export interface DBSite {
     id: string;
+    description: string;
+    public: boolean;
     users: number[];
     keys: Record<string, string | null>;
+    useProxy: boolean;
 }
 
 export interface PublicSite extends DBSite {
@@ -88,4 +98,17 @@ export interface DBRequest {
     site: string;
     user: number;
     timestamp: number;
+}
+
+export interface DBAuditEntry {
+    id: string;
+    action: string;
+    user: number;
+    timestamp: number;
+    details: string;
+}
+
+export interface PublicInvite {
+    username: string;
+    accepted: boolean;
 }

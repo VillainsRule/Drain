@@ -40,7 +40,7 @@ const NavBox = observer(function NavBox() {
                             Copy URL
                         </ContextMenuItem>
 
-                        {authManager.isAdmin() && (<ContextMenuItem className='text-red-500 no-click' onClick={() => {
+                        {!!authManager.admin && (<ContextMenuItem className='text-red-500 no-click' onClick={() => {
                             api.v1.sites.delete.post({ domain: site }).then((res) => {
                                 if (res.data) {
                                     siteManager.getList();
@@ -53,7 +53,7 @@ const NavBox = observer(function NavBox() {
                 </ContextMenu>)}
             </div>
 
-            {authManager.isAdmin() && (
+            {!!authManager.admin && (
                 <Button variant='outline' className='flex items-center justify-center gap-2 w-full py-2 shadow-sm font-semibold text-lg' onClick={() => shadd.prompt(
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',

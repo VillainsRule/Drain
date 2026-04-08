@@ -25,44 +25,19 @@ import authManager from '@/managers/AuthManager';
 const Users = observer(function Users() {
     const navigate = useNavigate();
 
-    const [userSitesDialogOpen, setUserSitesDialogOpen] = useState(false);
-    const [userSitesDialogTargetId, setUserSitesDialogTargetId] = useState(0);
-    const [userSitesDialogTargetName, setUserSitesDialogTargetName] = useState('');
-    const [userSitesDialogList, setUserSitesDialogList] = useState<string[]>([]);
-
-    const grabUserSitesDialogList = (userId: number) => api.admin.users.sites.post({ userId }).then((res) => {
-        if (res.data) setUserSitesDialogList(res.data.sites);
-        else alert(errorFrom(res));
-    });
+    const [sitePopupTarget, setSitePopupTarget] = useState(0);
 
     useEffect(() => {
-        if (authManager.user.id > 1 && !authManager.user.admin) navigate('/');
+        if (!authManager.admin) navigate('/');
     }, []);
 
     return (
         <div className='flex flex-col items-center h-full w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
                 <h2 className='text-2xl font-bold'>user manager</h2>
-                <Button className='w-48 py-2 rounded-md transition-colors duration-150' onClick={() => shadd.prompt(
-                    'create a new user',
-                    'enter a username for the new user. they will be able to set their password and site access after the account is created.',
-                    { placeholder: 'username', maxLength: 16, minLength: 1 },
-                    (value: string) => {
-                        api.admin.users.create.post({ username: value }).then((res) => {
-                            if (res.data) {
-                                adminManager.fetchAllUsers();
-
-                                shadd.copy(
-                                    'user created!',
-                                    'the user has been created! give them this invite code to set their password and log in:',
-                                    res.data.inviteCode
-                                );
-                            } else shadd.setError(errorFrom(res));
-                        });
-                    }
-                )}>
-                    <UserPlus className='h-4 w-4 mr-2' />
-                    create user
+                <Button className='flex items-center gap-2 w-48 py-2 rounded-md transition-colors duration-150' onClick={() => navigate('/user/invites?op=invite')}>
+                    <UserPlus className='h-4 w-4' />
+                    invite user
                 </Button>
             </div>
 
@@ -70,7 +45,15 @@ const Users = observer(function Users() {
                 {adminManager.users.map((user) => (
                     <div key={user.id} className='flex items-center justify-between w-full py-3 px-4 border rounded-md gap-4'>
                         <div className='flex items-center gap-2 min-w-0'>
-                            <span className='font-medium truncate'>@{user.username}</span>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <span className='font-medium truncate'>@{user.username}</span>
+                                </TooltipTrigger>
+
+                                {!!user.invitedBy && <TooltipContent>
+                                    {user.id === 1 ? 'created with drain' : `invited by @${adminManager.users.find(u => u.id === user.invitedBy)?.username || 'unknown'}`}
+                                </TooltipContent>}
+                            </Tooltip>
 
                             {user.id === 1 && (<Badge variant='secondary' className='gap-1 shrink-0'>
                                 <Crown className='h-3 w-3' />
@@ -91,14 +74,14 @@ const Users = observer(function Users() {
                         <div className='flex items-center gap-1 shrink-0'>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button size='sm' variant='ghost' disabled={user.pendingLogin || !!(user.admin && authManager.user.id !== 1)} onClick={() => shadd.prompt(
+                                    <Button size='sm' variant='ghost' disabled={user.pendingLogin || !!(user.admin && authManager.id !== 1)} onClick={() => shadd.prompt(
                                         'change the password',
                                         `enter a new password for @${user.username}.`,
                                         { placeholder: 'new password', maxLength: 64, minLength: 3 },
                                         async (value: string) => {
                                             const options = await api.admin.users.setPassword.post({ userId: user.id, newPassword: value });
                                             if (options.data) {
-                                                if (user.id === authManager.user.id) location.reload();
+                                                if (user.id === authManager.id) location.reload();
                                                 else shadd.close();
                                             } else shadd.setError(errorFrom(options));
                                         }
@@ -109,18 +92,13 @@ const Users = observer(function Users() {
                                 </TooltipTrigger>
 
                                 <TooltipContent>
-                                    {user.pendingLogin ? 'user has not logged in yet' : (user.admin && authManager.user.id !== 1) ? 'cannot change another admin\'s password' : 'change password'}
+                                    {user.pendingLogin ? 'user has not logged in yet' : (user.admin && authManager.id !== 1) ? 'cannot change another admin\'s password' : 'change password'}
                                 </TooltipContent>
                             </Tooltip>
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button size='sm' variant='ghost' disabled={!!user.admin} onClick={() => {
-                                        setUserSitesDialogOpen(true);
-                                        setUserSitesDialogTargetId(user.id);
-                                        setUserSitesDialogTargetName(user.username);
-                                        grabUserSitesDialogList(user.id);
-                                    }}>
+                                    <Button size='sm' variant='ghost' disabled={!!user.admin} onClick={() => setSitePopupTarget(user.id)}>
                                         <ScanSearch className='h-4 w-4' />
                                         <span className='hidden lg:inline ml-1.5'>sites</span>
                                     </Button>
@@ -160,7 +138,10 @@ const Users = observer(function Users() {
                                         onClick={() => shadd.confirm(
                                             'delete user',
                                             `are you sure you want to delete @${user.username}? this action cannot be undone.`,
-                                            () => api.admin.users.delete.post({ userId: user.id }).then(() => adminManager.fetchAllUsers())
+                                            () => api.admin.users.delete.post({ userId: user.id }).then(() => {
+                                                adminManager.fetchAllUsers();
+                                                shadd.close();
+                                            })
                                         )}
                                     >
                                         <Trash2 className='h-4 w-4' />
@@ -176,16 +157,16 @@ const Users = observer(function Users() {
                 ))}
             </div>
 
-            <Dialog open={userSitesDialogOpen} onOpenChange={() => userSitesDialogOpen && setUserSitesDialogOpen(false)}>
+            <Dialog open={sitePopupTarget > 0} onOpenChange={(isOpen) => !isOpen && setSitePopupTarget(0)}>
                 <DialogContent className='max-h-3/4 overflow-y-auto overflow-x-hidden'>
                     <DialogHeader>
                         <DialogTitle>site access</DialogTitle>
-                        <DialogDescription>@{userSitesDialogTargetName}'s permitted domains</DialogDescription>
+                        <DialogDescription>@{adminManager.getUser(sitePopupTarget)?.username}'s permitted domains</DialogDescription>
                     </DialogHeader>
 
                     <div className='flex flex-col w-full gap-2'>
-                        {userSitesDialogList.length ? userSitesDialogList.map((domain, i) => (
-                            <div className='flex justify-between items-center gap-3 w-full py-2 px-4 border rounded-md' key={i}>
+                        {sitePopupTarget && adminManager.getUser(sitePopupTarget).sites.length > 1 ? adminManager.getUser(sitePopupTarget).sites.map((domain) => (
+                            <div className='flex justify-between items-center gap-3 w-full py-2 px-4 border rounded-md' key={domain}>
                                 <span className='font-mono text-sm'>{domain}</span>
 
                                 <Button
@@ -193,8 +174,8 @@ const Users = observer(function Users() {
                                     variant='ghost'
                                     className='text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0'
                                     onClick={() => {
-                                        api.v1.sites.access.remove.post({ domain, userId: userSitesDialogTargetId }).then((res) => {
-                                            if (res.data) grabUserSitesDialogList(userSitesDialogTargetId);
+                                        api.v1.sites.access.remove.post({ domain, userId: sitePopupTarget }).then((res) => {
+                                            if (res.data) adminManager.fetchAllUsers();
                                             else alert(errorFrom(res));
                                         });
                                     }}
@@ -203,10 +184,10 @@ const Users = observer(function Users() {
                                     remove
                                 </Button>
                             </div>
-                        )) : (<p className='text-center text-muted-foreground text-sm py-4'>this user has no site access.</p>)}
+                        )) : <p className='text-center text-muted-foreground text-sm py-4'>this user has no site access.</p>}
                     </div>
 
-                    <Button variant='outline' className='w-3/4 mx-auto' onClick={() => setUserSitesDialogOpen(false)}>close</Button>
+                    <Button variant='outline' className='w-3/4 mx-auto' onClick={() => setSitePopupTarget(0)}>close</Button>
                 </DialogContent>
             </Dialog>
         </div>

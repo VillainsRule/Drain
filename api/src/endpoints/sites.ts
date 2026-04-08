@@ -52,7 +52,10 @@ const sites = new Elysia({ name: 'sites' })
             keys: site.keys,
             users: user.admin ? site.users : [user.id],
             supportsBalancer: !!getBalancer(site.id),
-            totalBalance: o1Optimizer.getBalance(site.id)
+            totalBalance: o1Optimizer.getBalance(site.id),
+            description: site.description,
+            public: site.public,
+            useProxy: site.useProxy
         }
         else return status(401, { error: 'no permission' });
     }, { body: t.Object({ domain: t.String() }), detail: { description: 'returns detailed information about a site, including its keys and (if admin) allowed users', tags: ['Sites'] } })
@@ -65,8 +68,11 @@ const sites = new Elysia({ name: 'sites' })
 
         siteDB.add({
             id: body.url,
+            description: '',
+            public: false,
             users: [user.id],
-            keys: {}
+            keys: {},
+            useProxy: false
         });
 
         user.sites.push(body.url);
@@ -135,7 +141,7 @@ const sites = new Elysia({ name: 'sites' })
 
         const oldBalance = site.keys[body.key];
         if (oldBalance && oldBalance.startsWith('$')) o1Optimizer.subtractFromBalance(body.domain, Number(oldBalance.slice(1)));
-        if (balance && balance.startsWith('$')) o1Optimizer.addToBalance(body.domain, Number(balance.slice(1)));
+        if (!isNaN(Number(balance))) o1Optimizer.addToBalance(body.domain, Number(balance));
 
         site.keys[body.key] = isNaN(Number(balance)) ? balance : `$${balance}`;
         siteDB.update(body.domain, { keys: site.keys });
@@ -156,6 +162,7 @@ const sites = new Elysia({ name: 'sites' })
 
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'removes a key from a site. requires: admin', tags: ['Site Keys'] } })
+
     .post('/api/v1/sites/keys/sort', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
@@ -251,5 +258,32 @@ const sites = new Elysia({ name: 'sites' })
 
         return {};
     }, { body: t.Object({ domain: t.String() }), detail: { description: 'deletes a site and removes it from all users. requires admin', tags: ['Sites'] } })
+
+    .post('/api/v1/sites/settings/public', async ({ body, user }) => {
+        const site = siteDB.get(body.domain);
+        if (!site || !user.admin) return status(401, { error: 'no permission' });
+
+        siteDB.update(body.domain, { public: body.public });
+
+        return {};
+    }, { body: t.Object({ domain: t.String(), public: t.Boolean() }), detail: { description: 'sets whether a site is public or not. public sites are visible to everyone in the discovery endpoint', tags: ['Site Settings'] } })
+
+    .post('/api/v1/sites/settings/description', async ({ body, user }) => {
+        const site = siteDB.get(body.domain);
+        if (!site || !user.admin) return status(401, { error: 'no permission' });
+
+        siteDB.update(body.domain, { description: body.description });
+
+        return {};
+    }, { body: t.Object({ domain: t.String(), description: t.String() }), detail: { description: 'sets a site\'s description. requires admin or site access', tags: ['Site Settings'] } })
+
+    .post('/api/v1/sites/settings/useProxy', async ({ body, user }) => {
+        const site = siteDB.get(body.domain);
+        if (!site || !user.admin) return status(401, { error: 'no permission' });
+
+        siteDB.update(body.domain, { useProxy: body.useProxy });
+
+        return {};
+    }, { body: t.Object({ domain: t.String(), useProxy: t.Boolean() }), detail: { description: 'sets whether a site should be accessed through the proxy. requires admin or site access', tags: ['Site Settings'] } });
 
 export default sites;

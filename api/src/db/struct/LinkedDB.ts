@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { DBVersion } from '../migrator';
+import { DBVersion } from '../version';
 
 import { DBId } from '../../../../types';
 
@@ -114,8 +114,16 @@ class LinkedDB<
             const value = (item as any)[prop];
             if (value == null) continue;
 
-            if (type === 'array' && Array.isArray(value)) for (const v of value) delete this.links[prop][String(v)];
-            else delete this.links[prop][String(value)];
+            if (type === 'array') {
+                const cat = this.links[prop][String(value)] as T['id'][];
+                if (Array.isArray(cat)) {
+                    if (cat.includes(item.id)) cat.splice(cat.indexOf(item.id), 1);
+                    if (cat.length === 0) delete this.links[prop][String(value)];
+                }
+            } else {
+                if (Array.isArray(value)) value.forEach(v => delete this.links[prop][String(v)]);
+                else delete this.links[prop][String(value)];
+            }
         }
     }
 
@@ -128,9 +136,9 @@ class LinkedDB<
         return id === undefined ? undefined : this.get(id);
     }
 
-    getLinks<K extends LinkedKeyProps<Keys>>(linkKey: K, linkValue: string | number): T[] | undefined {
+    getLinks<K extends LinkedKeyProps<Keys>>(linkKey: K, linkValue: string | number): T[] {
         const ids = this.links[linkKey as string]?.[linkValue] as T['id'][] | undefined;
-        return ids === undefined ? undefined : ids.map(id => this.get(id)!);
+        return ids === undefined ? [] : ids.map(id => this.get(id)!);
     }
 
     update(id: T['id'], updates: Partial<T>): boolean {

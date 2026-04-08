@@ -3,7 +3,8 @@ import { observer } from 'mobx-react-lite';
 
 import { AutoComplete } from './ui/autocomplete';
 import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Checkbox } from './ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
@@ -13,6 +14,7 @@ import Copy from 'lucide-react/icons/copy';
 import ListPlus from 'lucide-react/icons/list-plus';
 import Plus from 'lucide-react/icons/plus';
 import RefreshCw from 'lucide-react/icons/refresh-cw';
+import SlidersHorizontal from 'lucide-react/icons/sliders-horizontal';
 import Trash from 'lucide-react/icons/trash';
 import UserCog from 'lucide-react/icons/user-cog';
 
@@ -45,7 +47,6 @@ const SiteKeys = observer(function SiteKeys() {
     const [invalidKeys, setInvalidKeys] = useState<string[]>([]);
 
     const site = siteManager.site;
-
     if (!site) return <div className='flex justify-center items-center w-full mt-10 text-muted-foreground text-lg'>fetching site...</div>
 
     return (
@@ -56,7 +57,7 @@ const SiteKeys = observer(function SiteKeys() {
                 <div className='flex gap-3'>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => shadd.prompt(
+                            <Button variant='outline' className='hidden md:flex' onClick={() => shadd.prompt(
                                 'add a new key',
                                 'enter the key you want to add to this site. it can be any string up to 256 characters.',
                                 { placeholder: fakeKeys[0], maxLength: 256, minLength: 1 },
@@ -79,7 +80,7 @@ const SiteKeys = observer(function SiteKeys() {
 
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => setBulkAddDialogOpen(true)}><ListPlus /></Button>
+                            <Button variant='outline' className='hidden md:flex' onClick={() => setBulkAddDialogOpen(true)}><ListPlus /></Button>
                         </TooltipTrigger>
 
                         <TooltipContent>bulk add keys</TooltipContent>
@@ -87,7 +88,7 @@ const SiteKeys = observer(function SiteKeys() {
 
                     {site.sortable && <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={() => {
+                            <Button variant='outline' onClick={() => {
                                 api.v1.sites.keys.sort.post({ domain: site.id }).then((res) => {
                                     if (res.data) siteManager.refreshCurrent();
                                     else alert(errorFrom(res));
@@ -98,9 +99,9 @@ const SiteKeys = observer(function SiteKeys() {
                         <TooltipContent>sort by $$</TooltipContent>
                     </Tooltip>}
 
-                    {authManager.isAdmin() && site.supportsBalancer && <Tooltip>
+                    {!!authManager.admin && site.supportsBalancer && <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button className='w-12 py-2 rounded-md transition-colors duration-150 hidden md:flex' onClick={async () => {
+                            <Button variant='outline' onClick={async () => {
                                 const keys = Object.keys(site.keys);
                                 const hasOver50Keys = keys.length > 50;
                                 if (hasOver50Keys && !confirm('this site has over 50 keys, rechecking all of them MAY HIT RATELIMITS AND GET THE CHECKER IP BANNED. are you sure you want to proceed?')) return;
@@ -127,7 +128,7 @@ const SiteKeys = observer(function SiteKeys() {
 
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button className='w-12 py-2 rounded-md transition-colors duration-150' onClick={async () => {
+                            <Button variant='outline' onClick={async () => {
                                 const allKeys = Object.keys(site.keys).join('\n');
                                 await navigator.clipboard.writeText(allKeys);
                             }}><Copy /></Button>
@@ -136,13 +137,64 @@ const SiteKeys = observer(function SiteKeys() {
                         <TooltipContent>copy all keys</TooltipContent>
                     </Tooltip>
 
-                    {authManager.isAdmin() && <Tooltip>
+                    {!!authManager.admin && <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button className='w-12 py-2 rounded-md transition-colors duration-150 hidden md:flex' onClick={() => setAccessDialogOpen(true)}><UserCog className='w-4 h-4' /></Button>
+                            <Button variant='outline' onClick={() => setAccessDialogOpen(true)}><UserCog className='w-4 h-4' /></Button>
                         </TooltipTrigger>
 
                         <TooltipContent>manage access</TooltipContent>
                     </Tooltip>}
+
+                    {!!authManager.admin && <Dialog>
+                        <DialogTrigger asChild>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant='outline'><SlidersHorizontal className='w-4 h-4' /></Button>
+                                </TooltipTrigger>
+
+                                <TooltipContent>site settings</TooltipContent>
+                            </Tooltip>
+                        </DialogTrigger>
+
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>site settings</DialogTitle>
+                                <DialogDescription>configure settings for {site.id}</DialogDescription>
+                            </DialogHeader>
+
+                            <div className='flex flex-col gap-3'>
+                                <label className='flex items-center gap-2'>
+                                    <Checkbox checked={site.public} onCheckedChange={(e) => {
+                                        api.v1.sites.settings.public.post({ domain: site.id, public: !!e.valueOf() }).then((res) => {
+                                            if (res.data) siteManager.refreshCurrent();
+                                            else alert(errorFrom(res));
+                                        });
+                                    }} />
+                                    <span>public (anyone can join the site from discovery)</span>
+                                </label>
+
+                                <label className='flex items-center gap-2'>
+                                    <Checkbox checked={site.useProxy} onCheckedChange={(e) => {
+                                        api.v1.sites.settings.useProxy.post({ domain: site.id, useProxy: !!e.valueOf() }).then((res) => {
+                                            if (res.data) siteManager.refreshCurrent();
+                                            else alert(errorFrom(res));
+                                        });
+                                    }} />
+                                    <span>proxy balancer (avoids ratelimits on some sites)</span>
+                                </label>
+
+                                <div className='flex flex-col gap-1'>
+                                    <span>description</span>
+                                    <Input defaultValue={site.description} onChange={(e) => {
+                                        api.v1.sites.settings.description.post({ domain: site.id, description: e.target.value }).then((res) => {
+                                            if (res.data) siteManager.refreshCurrent();
+                                            else alert(errorFrom(res));
+                                        });
+                                    }} />
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>}
                 </div>
             </div>
 
@@ -154,16 +206,16 @@ const SiteKeys = observer(function SiteKeys() {
                         <div key={i} className='flex items-center justify-center w-full rounded-md md:px-2 hover:bg-accent transition-colors duration-125 py-2 cursor-pointer gap-2 md:gap-5 max-h-12' style={{
                             color: validKeys.includes(key) ? 'green' : invalidKeys.includes(key) ? 'red' : ''
                         }}>
-                            <Input value={'...' + key.slice(-4)} readOnly className='h-8 font-mono w-fit text-center sm:hidden flex px-1 py-0.5' />
-                            <Input value={key} readOnly className='font-mono h-8 text-center hidden sm:flex py-0.5' />
+                            <Input value={'...' + key.slice(-4)} readOnly className='h-8 font-mono w-fit text-center sm:hidden flex px-1 py-0.5 border-none shadow-none' />
+                            <Input value={key} readOnly className='font-mono h-8 text-center hidden sm:flex py-0.5 border-none shadow-none' />
 
-                            {balance && balance !== '?' && <Input value={balance} readOnly className='font-mono min-w-20 py-0.5 sm:min-w-0 sm:w-36 text-center px-1' />}
+                            {balance && balance !== '?' && <Input value={balance} readOnly className='font-mono min-w-20 py-0.5 sm:min-w-0 sm:w-36 text-center px-1 border-none shadow-none' />}
 
-                            <Button variant='outline' size='sm' onClick={() => navigator.clipboard.writeText(key)}>
+                            <Button variant='ghost' size='sm' onClick={() => navigator.clipboard.writeText(key)}>
                                 <Copy className='h-4 w-4' />
                             </Button>
 
-                            {Boolean(site.supportsBalancer && site.users) && <Button variant='outline' size='sm' onClick={() => {
+                            {Boolean(site.supportsBalancer && site.users) && <Button variant='ghost' size='sm' onClick={() => {
                                 api.v1.sites.keys.recheck.post({ domain: site.id, key: key }).then((res) => {
                                     if (res.data) {
                                         siteManager.refreshCurrent();
@@ -179,13 +231,13 @@ const SiteKeys = observer(function SiteKeys() {
                                 <RefreshCw className='h-4 w-4' />
                             </Button>}
 
-                            {authManager.isAdmin() && <Button variant='destructive' size='sm' className='hidden md:flex' onClick={() => {
+                            {!!authManager.admin && <Button variant='ghost' size='sm' className='hidden md:flex' onClick={() => {
                                 api.v1.sites.keys.delete.post({ domain: site.id, key }).then((res) => {
                                     if (res.data) siteManager.refreshCurrent();
                                     else alert(errorFrom(res));
                                 });
                             }}>
-                                <Trash className='h-4 w-4' />
+                                <Trash className='h-4 w-4 text-red-500' />
                             </Button>}
                         </div>
                     )

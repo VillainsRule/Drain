@@ -55,7 +55,8 @@ const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb
             tags: [
                 { name: 'Sites', description: 'create, get, and manage your sites' },
                 { name: 'Site Keys', description: 'manage site keys' },
-                { name: 'Site Access', description: 'manage site access' }
+                { name: 'Site Access', description: 'manage site access' },
+                { name: 'Site Settings', description: 'manage site information' }
             ]
         },
         provider: 'scalar',
@@ -65,6 +66,8 @@ const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb
             hideClientButton: true,
             telemetry: false,
             withDefaultFonts: false,
+            hideDarkModeToggle: true,
+            darkMode: false,
             metaData: {
                 title: 'Drain Docs',
                 description: 'Documentation for this Drain instance',
@@ -77,7 +80,7 @@ const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb
             expandAllResponses: true,
             documentDownloadType: 'json',
             persistAuth: true,
-            theme: 'none',
+            theme: 'default',
             customCss: fs.readFileSync(path.join(distDir, '..', 'public', 'openapi.css'), 'utf8')
         }
     }))

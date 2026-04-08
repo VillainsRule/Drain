@@ -12,24 +12,35 @@ import adminManager from '@/managers/AdminManager';
 import authManager from '@/managers/AuthManager';
 import siteManager from '@/managers/SiteManager';
 
+import type { PublicConfig } from '@/types';
+
 const AdminConfig = observer(function AdminConfig() {
     const navigate = useNavigate();
+
     const [balancerProxyValid, setBalancerProxyValid] = useState(true);
+    const [info, setInfo] = useState<PublicConfig | null>(null);
+
+    const fetchInstanceInfo = async () => {
+        const res = await api.admin.instance.get();
+        if (res.data) setInfo(res.data);
+    }
 
     useEffect(() => {
-        if (authManager.user.id > 1) navigate('/');
-        adminManager.fetchInstanceInformation();
+        if (authManager.id > 1) navigate('/');
+        else fetchInstanceInfo();
     }, []);
 
-    const info = adminManager.instanceInformation;
+    if (!info) return <div className='flex justify-center items-center w-full h-full'>
+        <span className='text-sm text-muted-foreground'>loading...</span>
+    </div>;
 
     return (
         <div className='w-5/6 mx-auto mt-8 h-full overflow-y-auto drain-scrollbar'>
-            <h1 className='text-xl font-semibold mb-6'>drain config controls 🤯 🤯 🤯</h1>
+            <h1 className='text-xl font-semibold mb-6'>drain sudoer panel 🤯 🤯 🤯</h1>
 
             <div className='grid grid-cols-2 gap-6 items-start'>
                 <div className='flex flex-col gap-1 text-sm'>
-                    <p className='text-xs uppercase tracking-widest font-medium text-muted-foreground/80 mb-2'>instance</p>
+                    <p className='text-xs uppercase tracking-widest font-medium text-muted-foreground/80 mb-2'>information</p>
                     <span>{adminManager.users.length || 0} users &middot; {siteManager.siteList.length || 0} sites</span>
                     <span>commit <a className='font-mono underline text-blue-500' href={`https://github.com/VillainsRule/Drain/commit/${info.commit}`} target='_blank'>{info.commit || '—'}</a></span>
                     <span>{info.commitsBehind} commits behind</span>
@@ -37,13 +48,12 @@ const AdminConfig = observer(function AdminConfig() {
                 </div>
 
                 <div className='flex flex-col gap-4'>
-                    <p className='text-xs uppercase tracking-widest font-medium text-muted-foreground/80'>config</p>
+                    <p className='text-xs uppercase tracking-widest font-medium text-muted-foreground/80'>controls</p>
 
                     <div className='flex items-center gap-2.5'>
                         <Checkbox id='allowAPIKeys' checked={info.config.allowAPIKeys} onCheckedChange={(isChecked) => {
                             info.config.allowAPIKeys = !!isChecked;
-                            api.admin.instance.post({ config: info.config })
-                                .then(() => adminManager.fetchInstanceInformation());
+                            api.admin.instance.post({ config: info.config }).then(fetchInstanceInfo);
                         }} />
                         <Label htmlFor='allowAPIKeys' className='cursor-pointer text-sm'>allow API keys</Label>
                     </div>

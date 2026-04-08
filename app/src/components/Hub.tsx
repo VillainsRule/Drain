@@ -29,7 +29,7 @@ const Hub = observer(function Hub() {
                 <img className='hidden md:flex h-24 w-48' src={Iconic} />
 
                 <div className='flex flex-col gap-2.5'>
-                    <h1 className='text-5xl font-bold'>hi, @{authManager.user.username}</h1>
+                    <h1 className='text-5xl font-bold'>hi, @{authManager.username}</h1>
                     <h2 className='text-3xl font-medium'>welcome to drain!</h2>
                 </div>
             </div>
@@ -38,10 +38,10 @@ const Hub = observer(function Hub() {
                 <div className='flex items-center gap-2'>
                     <span className='text-xs text-muted-foreground'>MOTD</span>
 
-                    {authManager.user.id === 1 && <Pencil className='w-3.5 h-3.5 text-muted-foreground ml-auto cursor-pointer hover:text-foreground transition-colors' onClick={() => shadd.prompt(
+                    {authManager.id === 1 && <Pencil className='w-3.5 h-3.5 text-muted-foreground ml-auto cursor-pointer hover:text-foreground transition-colors' onClick={() => shadd.prompt(
                         'edit MOTD',
-                        'set the message of the day that is shown to all users on the hub',
-                        { placeholder: 'welcome to my drain instance!', defaultValue: authManager.motd, textarea: true },
+                        'all users will see this when they log in. make it funny.',
+                        { placeholder: 'welcome to my drain instance!', defaultValue: authManager.instance.motd, textarea: true },
                         async (value: string) => {
                             const req = await api.admin.instance.post({ config: { motd: value } });
                             if (req.data) {
@@ -52,19 +52,19 @@ const Hub = observer(function Hub() {
                     )} />}
                 </div>
 
-                <span className='text-sm whitespace-pre-wrap'>{authManager.motd.replaceAll('\\n', '\n')}</span>
+                <span className='text-sm whitespace-pre-wrap'>{authManager.instance.motd.replaceAll('\\n', '\n')}</span>
             </Card>
 
-            {authManager.numRequests > 0 && <Badge variant='outline' className='mt-4 px-3 py-1 cursor-pointer' onClick={() => navigate('/discovery/requests')}>
+            {authManager.instance.numRequests > 0 && <Badge variant='outline' className='mt-4 px-3 py-1 cursor-pointer' onClick={() => navigate('/discovery/requests')}>
                 <Link className='w-3.5 h-3.5 text-muted-foreground mr-1' />
-                <span>{authManager.numRequests} pending request{authManager.numRequests > 1 && 's'}</span>
+                <span>{authManager.instance.numRequests} pending request{authManager.instance.numRequests > 1 && 's'}</span>
             </Badge>}
 
             <div className='flex md:hidden justify-center gap-2 mt-4 flex-wrap max-w-3/5'>
-                {authManager.apiKeysEnabled && <Button variant='outline' size='sm' onClick={() => navigate('/user/apiKeys')}><Code className='w-4 h-4 mr-2' />API Keys</Button>}
-                {authManager.webAuthnEnabled && <Button variant='outline' size='sm' onClick={() => navigate('/user/passkeys')}><Fingerprint className='w-4 h-4 mr-2' />Passkeys</Button>}
-                {authManager.isAdmin() && <Button variant='outline' size='sm' onClick={() => navigate('/admin/config')}><Wrench className='w-4 h-4 mr-2' />Config</Button>}
-                {authManager.isAdmin() && <Button variant='outline' size='sm' onClick={() => navigate('/admin/users')}><UserCog className='w-4 h-4 mr-2' />Users</Button>}
+                {authManager.instance.allowAPIKeys && <Button variant='outline' size='sm' onClick={() => navigate('/user/apiKeys')}><Code className='w-4 h-4 mr-2' />API Keys</Button>}
+                {authManager.instance.allowPasskeys && <Button variant='outline' size='sm' onClick={() => navigate('/user/passkeys')}><Fingerprint className='w-4 h-4 mr-2' />Passkeys</Button>}
+                {!!authManager.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/config')}><Wrench className='w-4 h-4 mr-2' />Config</Button>}
+                {!!authManager.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/users')}><UserCog className='w-4 h-4 mr-2' />Users</Button>}
                 <Button variant='destructive' size='sm' onClick={() => authManager.logout()}><LogOut className='w-4 h-4 mr-2' />Logout</Button>
             </div>
         </div>

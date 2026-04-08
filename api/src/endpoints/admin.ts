@@ -3,6 +3,7 @@ import { Elysia, status, t } from 'elysia';
 import term from 'node:child_process';
 import path from 'node:path';
 
+import auditDB from '../db/impl/AuditDB';
 import configDB from '../db/impl/ConfigDB';
 import siteDB from '../db/impl/SiteDB';
 import userDB from '../db/impl/UserDB';
@@ -22,45 +23,9 @@ const admin = new Elysia({ name: 'admin' })
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const users = userDB.getAll().map((u) => ({ id: u.id, username: u.username, admin: u.admin, pendingLogin: !!u.code }));
+        const users = userDB.getAll().map((u) => ({ id: u.id, username: u.username, admin: u.admin, pendingLogin: !!u.code, invitedBy: u.invitedBy, sites: u.sites }));
         return { users };
     }, { cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/admin/users/create', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || !user.admin) return status(401, { error: 'not logged in' });
-
-        if (body.username.length > 16) return status(413, { error: 'username too long' });
-        if (userDB.getLink('username', body.username)) return status(400, { error: 'user already exists' });
-
-        const inviteCode = [...Array(9)].map((_, i) => i == 4 ? '-' : String.fromCharCode(97 + Math.random() * 26)).join('').toUpperCase();
-
-        userDB.add({
-            id: configDB.db.nextUserId,
-            username: body.username,
-            password: Hasher.encode(crypto.randomUUID()),
-            code: inviteCode,
-            admin: 0,
-            sites: [],
-            sessions: [],
-            passkeyIds: [],
-            apiKeys: []
-        });
-
-        configDB.updateConfig({ nextUserId: configDB.db.nextUserId + 1 });
-
-        return { inviteCode };
-    }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/admin/users/sites', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || !user.admin) return status(401, { error: 'not logged in' });
-
-        const targetUser = userDB.get(body.userId);
-        if (!targetUser) return status(404, { error: 'user not found' });
-
-        return { sites: targetUser.admin ? siteDB.getIDs() as string[] : targetUser.sites };
-    }, { body: t.Object({ userId: t.Number() }), cookie: t.Cookie({ session: t.String() }) })
 
     .post('/api/admin/users/delete', async ({ body, cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
@@ -129,6 +94,13 @@ const admin = new Elysia({ name: 'admin' })
         configDB.updateConfig(body.config);
 
         return {};
-    }, { body: t.Object({ config: t.Any() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ config: t.Any() }), cookie: t.Cookie({ session: t.String() }) })
+
+    .get('/api/admin/audit', async ({ cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
+        if (!user || user.id !== 1) return status(401, { error: 'not logged in' });
+
+        return auditDB.getAll();
+    }, { cookie: t.Cookie({ session: t.String() }) });
 
 export default admin;

@@ -66,7 +66,7 @@ const SideBar = observer(function SideBar() {
                                     onClick={() => navigator.clipboard.writeText(`${location.origin}/domain/${site}`)}
                                 >Copy URL</ContextMenuItem>
 
-                                {authManager.isAdmin() && <ContextMenuItem className='text-red-500 no-click' onClick={() => {
+                                {!!authManager.admin && <ContextMenuItem className='text-red-500 no-click' onClick={() => {
                                     api.v1.sites.delete.post({ domain: site }).then((res) => {
                                         if (res.data) {
                                             siteManager.getList();
@@ -83,7 +83,7 @@ const SideBar = observer(function SideBar() {
                 {showGradient && <div className='absolute bottom-0 left-0 right-0 h-20 bg-linear-to-t from-white dark:from-gray-950 to-transparent pointer-events-none' />}
             </div>
 
-            {authManager.isAdmin() && (
+            {!!authManager.admin && (
                 <Button variant='outline' className='w-full' onClick={() => shadd.prompt(
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',

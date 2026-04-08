@@ -13,6 +13,7 @@ import {
     type VerifiedRegistrationResponse
 } from '@simplewebauthn/server';
 
+import auditDB from '../db/impl/AuditDB';
 import apiKeyDB from '../db/impl/APIKeyDB';
 import configDB from '../db/impl/ConfigDB';
 import passkeyDB from '../db/impl/PasskeyDB';
@@ -44,6 +45,7 @@ const auth = new Elysia({ name: 'auth' })
             },
             instance: {
                 allowPasskeys: passkeysConfigured,
+                allowAPIKeys: configDB.db.allowAPIKeys,
                 motd: configDB.db.motd,
                 numRequests: user.admin && requestDB.getSize()
             }
@@ -107,6 +109,9 @@ const auth = new Elysia({ name: 'auth' })
             session.path = '/';
             session.sameSite = 'strict';
             session.secure = true;
+
+            const inviter = userDB.get(user.invitedBy);
+            auditDB.log('claimInvite', user.id, `claimed an invite created by @${inviter?.username || 'unknown user'}`);
 
             return { user: { id: user.id, username: user.username, admin: user.admin } };
         } catch (error) {
@@ -389,8 +394,9 @@ const auth = new Elysia({ name: 'auth' })
         const apiKeys = user.apiKeys.map(e => apiKeyDB.get(e)).filter((e): e is DBAPIKey => e !== null).map((e) => ({
             name: e.name,
             createdAt: e.createdAt,
-            lastUsed: e.lastUsed
-        }))
+            lastUsed: e.lastUsed,
+            key: e.key.slice(-4).padStart(e.key.length, '*').slice(-24)
+        }));
 
         return { apiKeys, enabled: configDB.db.allowAPIKeys };
     }, { cookie: t.Cookie({ session: t.String() }) })
@@ -443,10 +449,71 @@ const auth = new Elysia({ name: 'auth' })
         const identifier = `${user.id} ${body.name}`;
         if (!apiKeyDB.has(identifier)) return status(400, { error: 'you do not have an API key with that name' });
 
-        const newKey = crypto.randomBytes(24).toString('hex');
+        const newKey = crypto.randomBytes(12).toString('hex');
         apiKeyDB.update(identifier, { key: newKey });
 
         return { key: newKey };
-    }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) });
+    }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+
+    .get('/api/auth/invites', async ({ cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        const invites = userDB.getLinks('invitedBy', user.id).filter(u => u.id !== 1).map((u) => ({
+            username: u.username,
+            accepted: !(!!u.code)
+        }));
+
+        return { invites };
+    }, { cookie: t.Cookie({ session: t.String() }) })
+
+    .post('/api/auth/invites/create', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        const currentInvites = userDB.getLinks('invitedBy', user.id);
+        if (!user.admin && currentInvites.filter(e => !!e.code).length >= 3) return status(400, { error: 'you have reached the maximum number of invites you can create (3)' });
+
+        if (body.username.length > 16) return status(413, { error: 'username too long' });
+        if (!body.username.match(/^[a-zA-Z0-9_]+$/)) return status(400, { error: 'username can only contain letters, numbers, and underscores' });
+        if (userDB.getLink('username', body.username)) return status(400, { error: 'a user with that username already exists' });
+
+        const inviteCode = [...Array(9)].map((_, i) => i == 4 ? '-' : String.fromCharCode(97 + Math.random() * 26)).join('').toUpperCase();
+
+        userDB.add({
+            id: configDB.db.nextUserId,
+            username: body.username,
+            password: Hasher.encode(crypto.randomUUID()),
+            code: inviteCode,
+            invitedBy: user.id,
+            admin: 0,
+            sites: [],
+            sessions: [],
+            passkeyIds: [],
+            apiKeys: []
+        });
+
+        auditDB.log('createInvite', user.id, `created an invite for @${body.username}`);
+
+        configDB.updateConfig({ nextUserId: configDB.db.nextUserId + 1 });
+
+        return { inviteCode };
+    }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) })
+
+    .post('/api/auth/invites/revoke', async ({ body, cookie: { session } }) => {
+        const user = userDB.getLink('sessions', session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        const targetInvite = userDB.getLink('username', body.username);
+        if (!targetInvite) return status(404, { error: 'invite not found' });
+        if (targetInvite.invitedBy !== user.id) return status(403, { error: 'you can only revoke invites you have created' });
+        if (targetInvite.code === undefined) return status(400, { error: 'that invite has already been claimed' });
+
+        auditDB.log('revokeInvite', user.id, `revoked an invite for @${body.username}`);
+
+        userDB.remove(targetInvite.id);
+
+        return {};
+    }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
 export default auth;

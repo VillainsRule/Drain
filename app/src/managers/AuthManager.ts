@@ -6,29 +6,25 @@ import { getRelativeTime } from '@/lib/utils';
 import adminManager from './AdminManager';
 import siteManager from './SiteManager';
 
-import type { PublicAPIKey, PublicPasskey, PublicUser } from '@/types';
+import type { PublicPasskey, PublicUser } from '@/types';
 
 configure({ enforceActions: 'never' });
 
 class AuthManager {
     hasInit = false;
 
-    placeholderUser = {
-        id: 0,
-        username: '',
-        admin: 0
-    } as const;
-
-    user: PublicUser = this.placeholderUser;
+    id = 0;
+    username = '';
+    admin = 0;
 
     passkeys: PublicPasskey[] = [];
-    apiKeys: PublicAPIKey[] = [];
 
-    apiKeysEnabled = true;
-    webAuthnEnabled = false;
-    numRequests = 0;
-
-    motd = '';
+    instance = {
+        allowAPIKeys: true,
+        allowPasskeys: true,
+        numRequests: 0,
+        motd: ''
+    };
 
     constructor() {
         makeAutoObservable(this);
@@ -37,7 +33,9 @@ class AuthManager {
     }
 
     setAuth(user: PublicUser) {
-        this.user = user;
+        this.id = user.id;
+        this.username = user.username;
+        this.admin = user.admin;
 
         if (localStorage.getItem('resavePasskeys')) {
             this.fetchPasskeys();
@@ -49,7 +47,7 @@ class AuthManager {
         const urlParts = location.pathname.split('/');
         if (urlParts[1] === 'domain' && urlParts[2].includes('.')) siteManager.select(urlParts[2]);
 
-        if (this.user.admin) adminManager.fetchAllUsers();
+        if (this.admin) adminManager.fetchAllUsers();
     }
 
     async checkAuth() {
@@ -59,13 +57,11 @@ class AuthManager {
             if (!data) throw new Error('authentication fetch error');
 
             this.hasInit = true;
-            this.webAuthnEnabled = data.instance.allowPasskeys;
+            this.instance.allowPasskeys = data.instance.allowPasskeys;
 
-            if ('user' in data) {
-                if (data.user) this.setAuth(data.user);
-
-                if (data.instance.motd) this.motd = data.instance.motd;
-                if (data.instance.numRequests) this.numRequests = data.instance.numRequests;
+            if (data.user) {
+                this.setAuth(data.user);
+                this.instance = data.instance;
             }
         } catch (error) {
             console.error('auth error', error);
@@ -75,33 +71,10 @@ class AuthManager {
 
     async fetchPasskeys() {
         const { data } = await api.auth.passkeys.get();
-        if (!data) return;
-
-        const passkeys = data.passkeys.map((pk: any) => {
-            pk.lastUsed = getRelativeTime(pk.lastUsed);
-            return pk;
-        }) as PublicPasskey[];
-
-        this.passkeys = passkeys;
-        localStorage.setItem('passkeys', JSON.stringify(passkeys.map(e => ({ type: 'public-key', id: e.id, transports: e.transports }))));
-    }
-
-    async fetchAPIKeys() {
-        const { data } = await api.auth.api.keys.get();
-        if (!data) return;
-
-        const apiKeys = data.apiKeys.map((a: any) => {
-            a.createdAt = getRelativeTime(a.createdAt);
-            a.lastUsed = getRelativeTime(a.lastUsed);
-            return a;
-        }) as PublicAPIKey[];
-
-        this.apiKeys = apiKeys;
-        this.apiKeysEnabled = data.enabled;
-    }
-
-    isAdmin() {
-        return !!this.user.admin;
+        if (data) {
+            this.passkeys = data.passkeys.map((pk) => ({ ...pk, lastUsed: getRelativeTime(pk.lastUsed) }));
+            localStorage.setItem('passkeys', JSON.stringify(this.passkeys.map(e => ({ type: 'public-key', id: e.id, transports: e.transports }))));
+        }
     }
 
     async logout() {

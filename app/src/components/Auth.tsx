@@ -26,7 +26,7 @@ const Auth = observer(function Auth() {
     const [passwordInput, setPasswordInput] = useState<string>('');
 
     useEffect(() => {
-        if (authManager.user.id) navigate('/');
+        if (authManager.id) navigate('/');
     }, []);
 
     const doWebAuthn = async () => {
@@ -58,7 +58,7 @@ const Auth = observer(function Auth() {
 
     const handleLogin = () => api.auth.account.post({ username: usernameInput, password: passwordInput }).then((res) => {
         if (res.data) {
-            authManager.motd = res.data.motd;
+            authManager.instance.motd = res.data.motd;
             authManager.setAuth(res.data.user);
             navigate('/');
         } else setStandardError(errorFrom(res));
@@ -71,7 +71,7 @@ const Auth = observer(function Auth() {
                     <CardTitle className='text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm'>Drain</CardTitle>
                 </CardHeader>
 
-                {showingAll ? <CardContent className='space-y-4'>
+                {showingAll || !authManager.instance.allowPasskeys ? <CardContent className='space-y-4'>
                     <form onSubmit={(e) => (e.preventDefault(), handleLogin())} className='space-y-4'>
                         <div className='space-y-2'>
                             <Label htmlFor='username'>Username</Label>
@@ -123,7 +123,7 @@ const Auth = observer(function Auth() {
                             }
                         )}>i have an invite code</Button>
 
-                        {authManager.webAuthnEnabled && <Button variant='outline' className='flex-1 min-w-0 cursor-pointer' onClick={doWebAuthn}>i have a passkey</Button>}
+                        {authManager.instance.allowPasskeys && <Button variant='outline' className='flex-1 min-w-0 cursor-pointer' onClick={doWebAuthn}>i have a passkey</Button>}
                     </div>
                 </CardContent> : <CardContent className='space-y-4'>
                     <div className='border-2 border-dashed bg-background p-6 text-center flex justify-center items-center w-full h-36 rounded-sm cursor-pointer hover:scale-101 transition-all duration-100' onClick={doWebAuthn}>

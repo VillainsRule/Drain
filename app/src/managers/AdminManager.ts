@@ -2,17 +2,10 @@ import { makeAutoObservable } from 'mobx';
 
 import api, { errorFrom } from '@/lib/eden';
 
-import type { PublicConfig, PublicUser } from '@/types';
+import type { PublicAdminUser } from '@/types';
 
 class AdminManager {
-    users: PublicUser[] = [];
-
-    instanceInformation: PublicConfig = {
-        commit: 'unknown',
-        localChanges: true,
-        commitsBehind: '0',
-        config: { balancerProxy: '', motd: '', allowAPIKeys: true, nextUserId: 0 }
-    };
+    users: PublicAdminUser[] = [];
 
     constructor() {
         makeAutoObservable(this);
@@ -24,14 +17,9 @@ class AdminManager {
         else alert(errorFrom(req));
     }
 
-    async fetchInstanceInformation() {
-        const req = await api.admin.instance.get();
-        if (req.data) this.instanceInformation = req.data;
-        else alert(errorFrom(req));
-    }
-
-    getUser(id: number) {
-        return this.users.find(u => u.id === id);
+    getUser(id: number): PublicAdminUser {
+        // yes, this is very not type-safe, BUT if the user is nullish, it'll throw an exception, which is good since that tells us something's wrong
+        return this.users.find(u => u.id === id)!;
     }
 }
 

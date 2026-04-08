@@ -58,7 +58,7 @@ const extractPrimaryColor = (img: HTMLImageElement): string => {
 const Discovery = observer(function Discovery() {
     const navigate = useNavigate();
 
-    const [sites, setSites] = useState<{ domain: string, keys: number, balance?: number }[]>([]);
+    const [sites, setSites] = useState<{ domain: string, keys: number, balance?: number, public: boolean, description?: string }[]>([]);
     const [requested, setRequested] = useState<Set<string>>(new Set());
     const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
     const [iconColors, setIconColors] = useState<Record<string, string>>({});
@@ -91,6 +91,11 @@ const Discovery = observer(function Discovery() {
         else alert(errorFrom(res));
     });
 
+    const handleJoin = (domain: string) => api.v1.discovery.join.post({ domain }).then((res) => {
+        if (res.data) getDiscovery();
+        else alert(errorFrom(res));
+    });
+
     const filtered = sites.filter(s => s.domain.toLowerCase().includes(search.toLowerCase()));
 
     return (
@@ -110,8 +115,8 @@ const Discovery = observer(function Discovery() {
             {loading ? (
                 <div className='flex flex-col gap-3 w-full'>
                     {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className='flex items-center gap-4 px-5 py-4 border rounded-xl animate-pulse'>
-                            <div className='w-11 h-11 rounded-xl bg-muted shrink-0' />
+                        <div key={i} className='flex items-center gap-4 px-5 py-4 border rounded-md animate-pulse'>
+                            <div className='w-11 h-11 rounded-md bg-muted shrink-0' />
                             <div className='flex flex-col gap-2 flex-1'>
                                 <div className='h-4 w-32 rounded bg-muted' />
                                 <div className='h-3 w-20 rounded bg-muted' />
@@ -134,11 +139,11 @@ const Discovery = observer(function Discovery() {
                         return (
                             <div
                                 key={site.domain}
-                                className={`flex items-center gap-4 px-5 py-4 border rounded-xl transition-colors duration-150 ${hasAccess ? 'border-green-500/40 bg-green-500/5' : 'hover:border-border'}`}
+                                className={`flex items-center gap-4 px-5 py-4 border rounded-md transition-colors duration-150 ${hasAccess ? 'border-green-500/40 bg-green-500/5' : 'hover:border-border'}`}
                                 style={{ background: backgroundBg }}
                             >
                                 <div
-                                    className='w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300'
+                                    className='w-13 h-13 rounded-md flex items-center justify-center shrink-0 transition-colors duration-300'
                                     style={{ background: iconBg }}
                                 >
                                     {imgErrors.has(site.domain) ? (
@@ -147,7 +152,7 @@ const Discovery = observer(function Discovery() {
                                         <img
                                             src={`https://icon.horse/icon/${site.domain}`}
                                             alt={site.domain}
-                                            className='w-6 h-6 object-contain rounded-xs'
+                                            className='w-7 h-7 object-contain rounded-xs'
                                             crossOrigin='anonymous'
                                             onLoad={e => handleIconLoad(site.domain, e)}
                                             onError={() => setImgErrors(prev => new Set([...prev, site.domain]))}
@@ -157,6 +162,10 @@ const Discovery = observer(function Discovery() {
 
                                 <div className='flex flex-col gap-0.5 flex-1 min-w-0'>
                                     <span className='text-sm font-semibold truncate'>{site.domain}</span>
+
+                                    {site.description && (
+                                        <span className='text-xs text-muted-foreground truncate'>{site.description}</span>
+                                    )}
 
                                     <span className='text-xs text-muted-foreground flex items-center gap-1'>
                                         <KeyRound className='h-3 w-3' />
@@ -172,32 +181,38 @@ const Discovery = observer(function Discovery() {
                                 </div>
 
                                 <div className='shrink-0'>
-                                    <div className='shrink-0'>
-                                        {hasAccess ? (
-                                            <Badge
-                                                variant='outline'
-                                                className='gap-1.5 text-green-600 border-green-500/40 px-3 py-1.5 cursor-pointer hover:bg-green-500/10 transition-colors'
-                                                onClick={() => {
-                                                    siteManager.select(site.domain);
-                                                    navigate('/domain/' + site.domain);
-                                                }}
-                                            >
-                                                visit site
-                                            </Badge>
-                                        ) : requested.has(site.domain) ? (
-                                            <Badge variant='outline' className='text-muted-foreground px-3 py-1.5'>
-                                                pending review
-                                            </Badge>
-                                        ) : (
-                                            <Badge
-                                                variant='outline'
-                                                className='px-3 py-1.5 cursor-pointer hover:bg-accent transition-colors'
-                                                onClick={() => handleRequest(site.domain)}
-                                            >
-                                                request access
-                                            </Badge>
-                                        )}
-                                    </div>
+                                    {hasAccess ? (
+                                        <Badge
+                                            variant='outline'
+                                            className='gap-1.5 text-green-600 border-green-500/40 px-3 py-1.5 cursor-pointer hover:bg-green-500/10 transition-colors'
+                                            onClick={() => {
+                                                siteManager.select(site.domain);
+                                                navigate('/domain/' + site.domain);
+                                            }}
+                                        >
+                                            visit site
+                                        </Badge>
+                                    ) : site.public ? (
+                                        <Badge
+                                            variant='outline'
+                                            className='px-3 py-1.5 cursor-pointer hover:bg-accent transition-colors'
+                                            onClick={() => handleJoin(site.domain)}
+                                        >
+                                            join site
+                                        </Badge>
+                                    ) : requested.has(site.domain) ? (
+                                        <Badge variant='outline' className='text-muted-foreground px-3 py-1.5'>
+                                            pending review
+                                        </Badge>
+                                    ) : (
+                                        <Badge
+                                            variant='outline'
+                                            className='px-3 py-1.5 cursor-pointer hover:bg-accent transition-colors'
+                                            onClick={() => handleRequest(site.domain)}
+                                        >
+                                            request access
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
                         );

@@ -1,11 +1,13 @@
 import Elysia, { status, t } from 'elysia';
 
-import siteDB from '../db/impl/SiteDB';
-import o1Optimizer from '../util/O1Optimizer';
-import configDB from '../db/impl/ConfigDB';
 import apiKeyDB from '../db/impl/APIKeyDB';
-import userDB from '../db/impl/UserDB';
+import auditDB from '../db/impl/AuditDB';
+import configDB from '../db/impl/ConfigDB';
 import requestDB from '../db/impl/RequestDB';
+import siteDB from '../db/impl/SiteDB';
+import userDB from '../db/impl/UserDB';
+
+import o1Optimizer from '../util/O1Optimizer';
 
 const discovery = new Elysia()
     .guard({
@@ -38,7 +40,17 @@ const discovery = new Elysia()
     })
 
     .get('/api/v1/discovery', async ({ user }) => {
-        const sites = siteDB.getIDs().map((id) => ({ domain: id, keys: o1Optimizer.getKeyCount(id), balance: o1Optimizer.getBalance(id) }));
+        const sites = siteDB.getIDs().map((id) => {
+            const info = siteDB.get(id);
+
+            return {
+                domain: id,
+                keys: o1Optimizer.getKeyCount(id),
+                balance: o1Optimizer.getBalance(id),
+                public: info?.public || false,
+                description: info?.description || ''
+            };
+        });
         const requests = requestDB.getLinks('user', user.id) || [];
         return { sites, requests };
     }, { detail: { description: 'returns a list of available sites for discovery', tags: ['Discovery'] } })
@@ -90,6 +102,18 @@ const discovery = new Elysia()
         requestDB.remove(request.id);
 
         return {};
-    }, { body: t.Object({ id: t.String() }) });
+    }, { body: t.Object({ id: t.String() }) })
+
+    .post('/api/v1/discovery/join', async ({ body, user }) => {
+        const site = siteDB.get(body.domain);
+        if (!site || !site.public) return status(404, { error: 'site not found' });
+
+        if (!user.sites.includes(body.domain)) userDB.update(user.id, { sites: [...user.sites, body.domain] });
+        if (!site.users.includes(user.id)) siteDB.update(body.domain, { users: [...site.users, user.id] });
+
+        auditDB.log('joinSite', user.id, `joined site ${body.domain}`);
+
+        return {};
+    }, { body: t.Object({ domain: t.String() }) });
 
 export default discovery;

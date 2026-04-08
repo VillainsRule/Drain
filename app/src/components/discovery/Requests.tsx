@@ -31,7 +31,7 @@ const Requests = observer(function Requests() {
                 ...r,
                 username: adminManager.users.find(u => u.id === r.user)?.username ?? `user#${r.user}`
             }));
-            authManager.numRequests = enriched.length;
+            authManager.instance.numRequests = enriched.length;
             setRequests(enriched.sort((a: EnrichedRequest, b: EnrichedRequest) => b.timestamp - a.timestamp));
         }
         setLoading(false);

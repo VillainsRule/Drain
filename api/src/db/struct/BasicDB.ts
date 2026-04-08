@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { DBVersion } from '../migrator';
+import { DBVersion } from '../version';
 
 const dbRootPath = path.join(import.meta.dirname, '..', '..', '..', 'db');
 

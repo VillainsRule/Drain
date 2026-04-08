@@ -7,7 +7,8 @@ import { DBUser } from '../../../../types';
 const linkedKeys = [
     { prop: 'username', type: 'string' },
     { prop: 'code', type: 'string' },
-    { prop: 'sessions', type: 'string' }
+    { prop: 'sessions', type: 'string' },
+    { prop: 'invitedBy', type: 'array' }
 ] as const;
 
 export class UserDB extends LinkedDB<DBUser, typeof linkedKeys> {
@@ -18,6 +19,7 @@ export class UserDB extends LinkedDB<DBUser, typeof linkedKeys> {
                 username: 'admin',
                 password: Hasher.encode('admin'),
                 admin: 1,
+                invitedBy: 0,
                 sites: [],
                 sessions: [],
                 passkeyIds: [],

@@ -14,6 +14,7 @@ import NavBox from './components/navi/NavBox'
 import SideBar from './components/navi/SideBar'
 import TopBar from './components/navi/TopBar'
 
+import Audit from './components/admin/Audit'
 import AdminConfig from './components/admin/Config'
 import Users from './components/admin/Users'
 
@@ -23,6 +24,7 @@ import Requests from './components/discovery/Requests'
 import Site from './components/Site'
 
 import APIKeys from './components/user/APIKeys'
+import Invites from './components/user/Invites'
 import Passkeys from './components/user/Passkeys'
 
 import { ShaddProvider } from './lib/shadd'
@@ -34,8 +36,8 @@ function Container({ element: Element }: { element: React.ComponentType<any> }) 
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!location.pathname.includes('auth') && !authManager.user.id) navigate('/auth');
-    }, [authManager.user.id]);
+        if (!location.pathname.includes('auth') && !authManager.id) navigate('/auth');
+    }, [authManager.id]);
 
     const [isNavboxOpen, setIsNavboxOpen] = useState(false);
 
@@ -79,8 +81,10 @@ const App = observer(function App() {
             <Route path='/discovery/requests' element={<Container element={Requests} />} />
 
             <Route path='/user/apiKeys' element={<Container element={APIKeys} />} />
+            <Route path='/user/invites' element={<Container element={Invites} />} />
             <Route path='/user/passkeys' element={<Container element={Passkeys} />} />
 
+            <Route path='/admin/audit' element={<Container element={Audit} />} />
             <Route path='/admin/config' element={<Container element={AdminConfig} />} />
             <Route path='/admin/users' element={<Container element={Users} />} />
 

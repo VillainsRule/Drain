@@ -215,4 +215,30 @@ if (!fs.existsSync(v5Dir)) {
     });
 };
 
-export const DBVersion = 5;
+// v5 -> v6
+// 4/6 - add site settings, user invitedby (friendship update!!), audit logs
+const v6Dir = path.join(dbRootPath, 'v6');
+if (!fs.existsSync(v6Dir)) {
+    fs.mkdirSync(v6Dir);
+
+    v4Files.forEach((fileName) => {
+        const v5Path = path.join(dbRootPath, 'v5', fileName);
+        const v6Path = path.join(v6Dir, fileName);
+
+        if (fileName === 'users.db') {
+            const v5File = JSON.parse(fs.readFileSync(v5Path, 'utf8'));
+            Object.values(v5File.target).forEach((user: any) => {
+                user.invitedBy = 1;
+            });
+            fs.writeFileSync(v6Path, JSON.stringify(v5File));
+        } else if (fileName === 'sites.db') {
+            const v5File = JSON.parse(fs.readFileSync(v5Path, 'utf8'));
+            Object.values(v5File.target).forEach((site: any) => {
+                site.description = '';
+                site.public = false;
+                site.useProxy = false;
+            });
+            fs.writeFileSync(v6Path, JSON.stringify(v5File));
+        } else if (fs.existsSync(v5Path)) fs.cpSync(v5Path, v6Path);
+    });
+}

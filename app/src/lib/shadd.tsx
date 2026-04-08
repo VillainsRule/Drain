@@ -214,6 +214,7 @@ export function ShaddProvider() {
                                 updated[idx] = e.target.value;
                                 return updated;
                             })}
+                            autoFocus={idx === 0}
                         />) : (<Input
                             ref={idx === 0 ? (inputRef as React.RefObject<HTMLInputElement>) : undefined}
                             key={idx}
@@ -227,6 +228,7 @@ export function ShaddProvider() {
                                 return updated;
                             })}
                             onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+                            autoFocus={idx === 0}
                         />))}
 
                         {state.type === 'copy' && (<Input
@@ -245,7 +247,7 @@ export function ShaddProvider() {
 
                     {state.type === 'confirm' && <>
                         <Button variant='outline' onClick={handleCancel}>Cancel</Button>
-                        <Button onClick={handleConfirm}>Confirm</Button>
+                        <Button onClick={handleConfirm} autoFocus={true}>Confirm</Button>
                     </>}
 
                     {state.type === 'prompt' && <>
