@@ -61,11 +61,12 @@ const discovery = new Elysia()
     }, { detail: { description: 'returns a list of your discovery requests', tags: ['Discovery'] } })
 
     .post('/api/v1/discovery/requests', async ({ body, user }) => {
-        const currentRequests = requestDB.getLinks('user', user.id) || [];
-        if (currentRequests.some(r => r.site === body.domain)) return status(400, { error: 'you have already made a request for this site' });
-
         const site = siteDB.get(body.domain);
         if (!site) return status(404, { error: 'site not found' });
+        if (site.public) return status(400, { error: 'this site is already public' });
+
+        const currentRequests = requestDB.getLinks('user', user.id) || [];
+        if (currentRequests.some(r => r.site === body.domain)) return status(400, { error: 'you have already made a request for this site' });
 
         const requestId = crypto.randomUUID();
         requestDB.add({ id: requestId, site: body.domain, user: user.id, timestamp: Date.now() });

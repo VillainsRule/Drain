@@ -92,7 +92,7 @@ const Discovery = observer(function Discovery() {
     });
 
     const handleJoin = (domain: string) => api.v1.discovery.join.post({ domain }).then((res) => {
-        if (res.data) getDiscovery();
+        if (res.data) siteManager.getList();
         else alert(errorFrom(res));
     });
 

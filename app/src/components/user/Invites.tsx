@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import Trash2 from 'lucide-react/icons/trash-2';
 import UserPlus from 'lucide-react/icons/user-plus';
 
+import adminManager from '@/managers/AdminManager';
 import authManager from '@/managers/AuthManager';
 
 import api, { errorFrom } from '@/lib/eden';
@@ -39,6 +40,8 @@ const Invites = observer(function Invites() {
                         'the user has been created! give them this invite code to set their password and log in:',
                         res.data.inviteCode
                     );
+
+                    if (authManager.admin) adminManager.fetchAllUsers();
                 } else shadd.setError(errorFrom(res));
             });
         }
