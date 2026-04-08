@@ -146,9 +146,9 @@ const SiteKeys = observer(function SiteKeys() {
                     </Tooltip>}
 
                     {!!authManager.admin && <Dialog>
-                        <DialogTrigger asChild>
+                        <DialogTrigger>
                             <Tooltip>
-                                <TooltipTrigger asChild>
+                                <TooltipTrigger>
                                     <Button variant='outline'><SlidersHorizontal className='w-4 h-4' /></Button>
                                 </TooltipTrigger>
 
