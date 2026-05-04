@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 
 import Code from 'lucide-react/icons/code';
-import Fingerprint from 'lucide-react/icons/fingerprint-pattern';
 import Link from 'lucide-react/icons/link';
 import LogOut from 'lucide-react/icons/log-out';
 import Pencil from 'lucide-react/icons/pencil';
@@ -62,7 +61,6 @@ const Hub = observer(function Hub() {
 
             <div className='flex md:hidden justify-center gap-2 mt-4 flex-wrap max-w-3/5'>
                 {authManager.instance.allowAPIKeys && <Button variant='outline' size='sm' onClick={() => navigate('/user/apiKeys')}><Code className='w-4 h-4 mr-2' />API Keys</Button>}
-                {authManager.instance.allowPasskeys && <Button variant='outline' size='sm' onClick={() => navigate('/user/passkeys')}><Fingerprint className='w-4 h-4 mr-2' />Passkeys</Button>}
                 {!!authManager.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/config')}><Wrench className='w-4 h-4 mr-2' />Config</Button>}
                 {!!authManager.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/users')}><UserCog className='w-4 h-4 mr-2' />Users</Button>}
                 <Button variant='destructive' size='sm' onClick={() => authManager.logout()}><LogOut className='w-4 h-4 mr-2' />Logout</Button>

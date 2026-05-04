@@ -17,9 +17,6 @@ import authManager from '@/managers/AuthManager'
 const Auth = observer(function Auth() {
     const navigate = useNavigate();
 
-    const [allowCredentials] = useState<any[]>(JSON.parse(localStorage.getItem('passkeys') || '[]'));
-    const [showingAll, setShowingAll] = useState<boolean>(allowCredentials.length < 1);
-
     const [standardError, setStandardError] = useState<string>('');
 
     const [usernameInput, setUsernameInput] = useState<string>('');
@@ -33,11 +30,6 @@ const Auth = observer(function Auth() {
         const res = await api.auth.webauthn.login.options.post({});
         if (!res.data) return alert(errorFrom(res));
 
-        if (!showingAll) {
-            res.data.allowCredentials = localStorage.getItem('internalTransport') ? allowCredentials.map(e => ({ ...e, transports: ['internal'] })) : allowCredentials;
-            res.data.userVerification = 'required';
-        }
-
         let assertionResp;
         try {
             assertionResp = await startAuthentication({ optionsJSON: res.data });
@@ -49,10 +41,8 @@ const Auth = observer(function Auth() {
         }
 
         api.auth.webauthn.login.verify.post(assertionResp).then((res) => {
-            if (res.data) {
-                location.reload();
-                localStorage.setItem('resavePasskeys', '1');
-            } else setStandardError(errorFrom(res));
+            if (res.data) location.reload();
+            else setStandardError(errorFrom(res));
         });
     }
 
@@ -71,7 +61,7 @@ const Auth = observer(function Auth() {
                     <CardTitle className='text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm'>Drain</CardTitle>
                 </CardHeader>
 
-                {showingAll || !authManager.instance.allowPasskeys ? <CardContent className='space-y-4'>
+                <CardContent className='space-y-4'>
                     <form onSubmit={(e) => (e.preventDefault(), handleLogin())} className='space-y-4'>
                         <div className='space-y-2'>
                             <Label htmlFor='username'>Username</Label>
@@ -123,17 +113,9 @@ const Auth = observer(function Auth() {
                             }
                         )}>i have an invite code</Button>
 
-                        {authManager.instance.allowPasskeys && <Button variant='outline' className='flex-1 min-w-0 cursor-pointer' onClick={doWebAuthn}>i have a passkey</Button>}
+                        {authManager.instance.allowPasskeys && <Button variant='outline' className='flex-1 min-w-0 cursor-pointer' onClick={doWebAuthn}>use a passkey (LEGACY)</Button>}
                     </div>
-                </CardContent> : <CardContent className='space-y-4'>
-                    <div className='border-2 border-dashed bg-background p-6 text-center flex justify-center items-center w-full h-36 rounded-sm cursor-pointer hover:scale-101 transition-all duration-100' onClick={doWebAuthn}>
-                        <span className='text-muted-foreground'>reauthenticate with your passkey</span>
-                    </div>
-
-                    {standardError && <div className='text-red-500 text-sm'>{standardError}</div>}
-
-                    <Button variant='outline' className='w-full cursor-pointer' onClick={() => setShowingAll(true)}>sign in with alternative method</Button>
-                </CardContent>}
+                </CardContent>
             </Card>
         </div>
     )

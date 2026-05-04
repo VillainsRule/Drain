@@ -22,7 +22,7 @@ import userDB from '../db/impl/UserDB';
 
 import Hasher from '../util/hasher';
 
-import { DBAPIKey, DBPasskey } from '../../../types';
+import { DBAPIKey } from '../../../types';
 
 const currentRegistrations: Record<number, { name: string, value: string, expiry: number }> = {};
 
@@ -136,32 +136,6 @@ const auth = new Elysia({ name: 'auth' })
 
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) })
-
-    .get('/api/auth/passkeys', async ({ cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
-        const passkeys = user.passkeyIds.map(e => passkeyDB.get(e)).filter((e): e is DBPasskey => e !== undefined).map((pk) => {
-            return {
-                id: pk.id,
-                name: pk.name,
-                transports: pk.transports,
-                lastUsed: pk.lastUsed
-            }
-        });
-
-        return { passkeys };
-    }, { cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/auth/passkeys/delete', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
-        passkeyDB.remove(body.id);
-        userDB.update(user.id, { passkeyIds: user.passkeyIds.filter(i => i !== body.id) });
-
-        return {};
-    }, { body: t.Object({ id: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
     .post('/api/auth/webauthn/register/options', async ({ body, cookie: { session } }) => {
         if (!passkeysConfigured) return status(404);

@@ -25,7 +25,6 @@ import Site from './components/Site'
 
 import APIKeys from './components/user/APIKeys'
 import Invites from './components/user/Invites'
-import Passkeys from './components/user/Passkeys'
 
 import { ShaddProvider } from './lib/shadd'
 
@@ -82,7 +81,6 @@ const App = observer(function App() {
 
             <Route path='/user/apiKeys' element={<Container element={APIKeys} />} />
             <Route path='/user/invites' element={<Container element={Invites} />} />
-            <Route path='/user/passkeys' element={<Container element={Passkeys} />} />
 
             <Route path='/admin/audit' element={<Container element={Audit} />} />
             <Route path='/admin/config' element={<Container element={AdminConfig} />} />

@@ -6,7 +6,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import BookOpen from 'lucide-react/icons/book-open';
 import ClipboardList from 'lucide-react/icons/clipboard-list';
 import Code from 'lucide-react/icons/code';
-import Fingerprint from 'lucide-react/icons/fingerprint-pattern';
 import LogOut from 'lucide-react/icons/log-out';
 import UserCog from 'lucide-react/icons/user-cog';
 import UserPlus from 'lucide-react/icons/user-plus';
@@ -28,14 +27,6 @@ const TopBar = observer(function TopBar() {
                     </TooltipTrigger>
 
                     <TooltipContent>Drain API Keys</TooltipContent>
-                </Tooltip>}
-
-                {authManager.instance.allowPasskeys && <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Fingerprint className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/passkeys')} />
-                    </TooltipTrigger>
-
-                    <TooltipContent>Passkeys</TooltipContent>
                 </Tooltip>}
 
                 {!!authManager.admin && <Tooltip>
