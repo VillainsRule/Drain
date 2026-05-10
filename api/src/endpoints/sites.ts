@@ -91,7 +91,7 @@ const sites = new Elysia({ name: 'sites' })
 
         const balancer = getBalancer(body.domain);
         if (balancer) {
-            if (usersRunningBalancer.includes(user.id)) return status(429, { error: 'you are already running a balancer request. please wait.' });
+            if (usersRunningBalancer.includes(user.id) && !user.admin) return status(429, { error: 'you are already running a balancer request. please wait.' });
             usersRunningBalancer.push(user.id);
 
             const balance = await balancer(body.key);
