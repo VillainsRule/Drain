@@ -4,13 +4,9 @@ import { Elysia, status, t } from 'elysia';
 
 import {
     generateAuthenticationOptions,
-    generateRegistrationOptions,
     verifyAuthenticationResponse,
-    verifyRegistrationResponse,
     type AuthenticationResponseJSON,
-    type RegistrationResponseJSON,
-    type VerifiedAuthenticationResponse,
-    type VerifiedRegistrationResponse
+    type VerifiedAuthenticationResponse
 } from '@simplewebauthn/server';
 
 import auditDB from '../db/impl/AuditDB';
@@ -24,9 +20,9 @@ import Hasher from '../util/hasher';
 
 import { DBAPIKey } from '../../../types';
 
-const currentRegistrations: Record<number, { name: string, value: string, expiry: number }> = {};
-
 const passkeysConfigured = typeof Bun.env.RP_ID === 'string';
+
+const oauthStates = new Map<string, number>();
 
 const auth = new Elysia({ name: 'auth' })
     .guard({ detail: { hide: true } })
@@ -41,7 +37,8 @@ const auth = new Elysia({ name: 'auth' })
             user: {
                 id: user.id,
                 username: user.username,
-                admin: user.admin
+                admin: user.admin,
+                mustMigrate: typeof user.voauthId !== 'number' || user.voauthId < 0
             },
             instance: {
                 allowPasskeys: passkeysConfigured,
@@ -56,6 +53,7 @@ const auth = new Elysia({ name: 'auth' })
         try {
             const user = userDB.getLink('username', body.username);
             if (!user) return status(401, { error: 'user or password not found' });
+            if (!user.password || (typeof user.voauthId === 'number' && user.voauthId > -1)) return status(401, { error: 'use voauth to log in' });
 
             const isValidPassword = Hasher.matches(body.password, user.password);
             if (!isValidPassword) return status(401, { error: 'user or password not found' });
@@ -66,7 +64,7 @@ const auth = new Elysia({ name: 'auth' })
             session.value = newSession;
             session.httpOnly = true;
             session.path = '/';
-            session.sameSite = 'strict';
+            session.sameSite = 'lax';
             session.secure = true;
 
             return { user: { id: user.id, username: user.username, admin: user.admin }, motd: configDB.db.motd };
@@ -76,30 +74,86 @@ const auth = new Elysia({ name: 'auth' })
         }
     }, { body: t.Object({ username: t.String(), password: t.String() }) })
 
-    .post('/api/auth/invites/attempt', async ({ body }) => {
-        try {
-            const user = userDB.getLink('code', body.code);
-            if (!user) return status(401, { error: 'that invite code does not exist or has been claimed' });
+    .post('/api/auth/login/redirect', async ({ body }) => {
+        const redirectUrl = `${Bun.env.VOAUTH_HOST}/oauth/v1?client_id=${Bun.env.VOAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${body.origin}/api/auth/login/complete`)}`;
+        return { redirect: redirectUrl };
+    }, { body: t.Object({ origin: t.Optional(t.String()) }) })
 
-            return status(200, { username: user.username });
+    .get('/api/auth/login/complete', async ({ query: { code }, cookie: { session } }) => {
+        try {
+            if (!code) return status(400, { error: 'missing code' });
+
+            const userReq = await fetch(`${Bun.env.VOAUTH_HOST}/api/v1/oauth/validate`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ appId: Bun.env.VOAUTH_CLIENT_ID, appSecret: Bun.env.VOAUTH_CLIENT_SECRET, code })
+            });
+
+            const userRes = await userReq.json() as { error: string } | { user: { id: number, username: string } };
+            if (!('user' in userRes)) return status(401, { error: userRes.error || 'invalid code' });
+
+            let user = userDB.getLink('voauthId', userRes.user.id);
+            if (!user) return status(401, { error: 'that voauth account has not been used on Drain before, use the invite flow to create an account' });
+
+            const newSession = crypto.randomBytes(32).toString('hex');
+            userDB.update(user.id, { sessions: [...user.sessions, newSession] });
+
+            session.value = newSession;
+            session.httpOnly = true;
+            session.path = '/';
+            session.sameSite = 'lax';
+            session.secure = true;
+
+            return new Response(null, { status: 302, headers: { Location: '/' } });
         } catch (error) {
             console.error(error);
             return status(502, {});
         }
-    }, { body: t.Object({ code: t.String() }) })
+    }, { query: t.Object({ code: t.Optional(t.String()) }) })
 
-    .post('/api/auth/invites/claim', async ({ body, cookie: { session } }) => {
+    .post('/api/auth/invites/start', async ({ body }) => {
         try {
             const user = userDB.getLink('code', body.code);
             if (!user) return status(401, { error: 'that invite code does not exist or has been claimed' });
 
-            if (body.password.length < 4) return status(400, { error: 'password is too short' });
-            if (body.password.length > 24) return status(413, { error: 'password too long' });
+            const state = crypto.randomUUID();
+            oauthStates.set(state, user.id);
+
+            const redirect = `${Bun.env.VOAUTH_HOST}/oauth/v1?client_id=${Bun.env.VOAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${body.origin}/api/auth/invites/complete`)}&state=${state}`;
+
+            return status(200, { username: user.username, redirect });
+        } catch (error) {
+            console.error(error);
+            return status(502, {});
+        }
+    }, { body: t.Object({ code: t.String(), origin: t.String() }) })
+
+    .get('/api/auth/invites/complete', async ({ query: { state, code }, cookie: { session } }) => {
+        try {
+            if (!state || !code) return status(400, { error: 'missing state or code' });
+
+            const userId = oauthStates.get(state);
+            if (!userId) return status(401, { error: 'invalid state' });
+
+            const user = userDB.get(userId);
+            if (!user) return status(401, { error: 'invalid state' });
+
+            const userReq = await fetch(`${Bun.env.VOAUTH_HOST}/api/v1/oauth/validate`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ appId: Bun.env.VOAUTH_CLIENT_ID, appSecret: Bun.env.VOAUTH_CLIENT_SECRET, code })
+            });
+
+            const userRes = await userReq.json() as { error: string } | { user: { id: number, username: string } };
+            if (!('user' in userRes)) return status(401, { error: userRes.error || 'invalid code' });
+
+            const currentVoauth = userDB.getLink('voauthId', userRes.user.id);
+            if (currentVoauth) return status(401, { error: 'that voauth account has already been used on Drain, make a new account to sign in' });
 
             const newSession = crypto.randomBytes(32).toString('hex');
 
             userDB.update(user.id, {
-                password: Hasher.encode(body.password),
+                voauthId: userRes.user.id,
                 sessions: [...user.sessions, newSession],
                 code: undefined
             });
@@ -107,18 +161,58 @@ const auth = new Elysia({ name: 'auth' })
             session.value = newSession;
             session.httpOnly = true;
             session.path = '/';
-            session.sameSite = 'strict';
+            session.sameSite = 'lax';
             session.secure = true;
 
             const inviter = userDB.get(user.invitedBy);
             auditDB.log('claimInvite', user.id, `claimed an invite created by @${inviter?.username || 'unknown user'}`);
 
-            return { user: { id: user.id, username: user.username, admin: user.admin } };
+            return new Response(null, { status: 302, headers: { Location: '/' } });
         } catch (error) {
             console.error(error);
             return status(502, {});
         }
-    }, { body: t.Object({ code: t.String(), password: t.String() }) })
+    }, { query: t.Object({ state: t.Optional(t.String()), code: t.Optional(t.String()) }) })
+
+    .post('/api/auth/migr/redirect', async ({ body, cookie: { session } }) => {
+        if (!session.value) return status(401, { error: 'not logged in' });
+
+        const user = userDB.getLink('sessions', session.value);
+        if (!user) return status(401, { error: 'not logged in' });
+
+        const redirectUrl = `${Bun.env.VOAUTH_HOST}/oauth/v1?client_id=${Bun.env.VOAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${body.origin}/api/auth/migr/complete`)}`;
+        return { redirect: redirectUrl };
+    }, { body: t.Object({ origin: t.String() }), cookie: t.Object({ session: t.String() }) })
+
+    .get('/api/auth/migr/complete', async ({ query: { code }, cookie: { session } }) => {
+        try {
+            if (!session.value) return status(401, { error: 'not logged in' });
+
+            const user = userDB.getLink('sessions', session.value);
+            if (!user) return status(401, { error: 'not logged in' });
+
+            if (!code) return status(400, { error: 'missing code' });
+
+            const userReq = await fetch(`${Bun.env.VOAUTH_HOST}/api/v1/oauth/validate`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ appId: Bun.env.VOAUTH_CLIENT_ID, appSecret: Bun.env.VOAUTH_CLIENT_SECRET, code })
+            });
+
+            const userRes = await userReq.json() as { error: string } | { user: { id: number, username: string } };
+            if (!('user' in userRes)) return status(401, { error: userRes.error || 'invalid code' });
+
+            let existingLink = userDB.getLink('voauthId', userRes.user.id);
+            if (existingLink) return status(403, { error: 'that voauth account is being used on another drain account' });
+
+            userDB.update(user.id, { voauthId: userRes.user.id, password: '', code: undefined });
+
+            return new Response(null, { status: 302, headers: { Location: '/' } });
+        } catch (error) {
+            console.error(error);
+            return status(502, {});
+        }
+    }, { query: t.Object({ code: t.Optional(t.String()) }), cookie: t.Cookie({ session: t.Optional(t.String()) }) })
 
     .post('/api/auth/logout', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
@@ -130,140 +224,12 @@ const auth = new Elysia({ name: 'auth' })
         session.value = '';
         session.httpOnly = true;
         session.path = '/';
-        session.sameSite = 'strict';
+        session.sameSite = 'lax';
         session.maxAge = 0;
         session.secure = true;
 
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/auth/webauthn/register/options', async ({ body, cookie: { session } }) => {
-        if (!passkeysConfigured) return status(404);
-
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
-        if (body.name.length > 24) return status(413, { error: 'name too long' });
-
-        if (currentRegistrations[user.id] && currentRegistrations[user.id].expiry > Date.now())
-            return status(400, { error: 'you have an ongoing registration, please complete or wait for it to expire' });
-
-        const existingPasskeys = user.passkeyIds.map(e => passkeyDB.get(e)).filter(Boolean);
-        if (existingPasskeys.some((pk) => pk && pk.name === body.name))
-            return status(400, { error: 'you already have a passkey with that name' });
-
-        if (user.passkeyIds.length >= 10)
-            return status(400, { error: 'you have reached the maximum number of passkeys (10)' });
-
-        const opts = await generateRegistrationOptions({
-            rpName: 'Drain',
-            rpID: Bun.env.RP_ID!,
-            userName: user.username,
-            userID: Buffer.from(user.id.toString()),
-            attestationType: 'none',
-            excludeCredentials: user.passkeyIds.map(e => ({ id: e })),
-            authenticatorSelection: {
-                residentKey: 'preferred',
-                userVerification: 'preferred'
-            }
-        });
-
-        currentRegistrations[user.id] = {
-            name: body.name,
-            value: opts.challenge,
-            expiry: Date.now() + (2 * 60 * 1000)
-        };
-
-        return opts;
-    }, { body: t.Object({ name: t.String() }), cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/auth/webauthn/register/verify', async ({ body, headers: { origin }, cookie: { session } }) => {
-        if (!passkeysConfigured) return status(404);
-        if (!origin) return status(404);
-
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
-        const currentChallenge = currentRegistrations[user.id];
-        if (!currentChallenge || currentChallenge.expiry < Date.now())
-            return status(400, { error: 'challenge has expired, please try registering again' });
-
-        const passableBody = { ...body } as { name?: string } & RegistrationResponseJSON;
-        delete passableBody.name;
-
-        let verification: VerifiedRegistrationResponse;
-
-        try {
-            verification = await verifyRegistrationResponse({
-                response: passableBody,
-                expectedChallenge: currentChallenge.value,
-                expectedOrigin: origin,
-                expectedRPID: Bun.env.RP_ID!
-            });
-        } catch (error) {
-            console.error(error);
-            return status(400, { error: (error as Error).message });
-        }
-
-        if (!verification.verified || !verification.registrationInfo) {
-            return status(400, { error: 'could not verify registration' });
-        }
-
-        passkeyDB.add({
-            userId: user.id,
-            webAuthnUserID: Buffer.from(user.id.toString()).toString('base64'),
-            id: verification.registrationInfo.credential.id,
-            publicKey: Buffer.from(verification.registrationInfo.credential.publicKey).toString('base64'),
-            counter: verification.registrationInfo.credential.counter,
-            transports: verification.registrationInfo.credential.transports || [],
-            deviceType: verification.registrationInfo.credentialDeviceType || 'unknown',
-            backedUp: verification.registrationInfo.credentialBackedUp || false,
-            lastUsed: 0,
-            name: currentChallenge.name
-        });
-
-        const passkeyIds = user.passkeyIds;
-        passkeyIds.push(verification.registrationInfo.credential.id);
-        userDB.update(user.id, { passkeyIds });
-
-        delete currentRegistrations[user.id];
-
-        return { verified: true };
-    }, {
-        body: t.Object({
-            id: t.String(),
-            rawId: t.String(),
-            response: t.Object({
-                clientDataJSON: t.String(),
-                attestationObject: t.String(),
-                authenticatorData: t.Optional(t.String()),
-                transports: t.Optional(
-                    t.Array(
-                        t.Union([
-                            t.Literal('ble'),
-                            t.Literal('cable'),
-                            t.Literal('hybrid'),
-                            t.Literal('internal'),
-                            t.Literal('nfc'),
-                            t.Literal('smart-card'),
-                            t.Literal('usb')
-                        ])
-                    )
-                ),
-                publicKeyAlgorithm: t.Optional(t.Number()),
-                publicKey: t.Optional(t.String())
-            }),
-            authenticatorAttachment: t.Optional(t.String()),
-            clientExtensionResults: t.Object({
-                appid: t.Optional(t.Boolean()),
-                hmacCreateSecret: t.Optional(t.Boolean()),
-                credProps: t.Optional(t.Object({ rk: t.Optional(t.Boolean()) }))
-            }),
-            type: t.Literal('public-key')
-        }),
-        headers: t.Object({ origin: t.Optional(t.String()) }),
-        cookie: t.Cookie({ session: t.String() })
-    })
 
     .post('/api/auth/webauthn/login/options', async ({ cookie: { webauthn } }) => {
         if (!passkeysConfigured) return status(404);
@@ -276,7 +242,7 @@ const auth = new Elysia({ name: 'auth' })
         webauthn.value = options.challenge;
         webauthn.httpOnly = true;
         webauthn.path = '/';
-        webauthn.sameSite = 'strict';
+        webauthn.sameSite = 'lax';
         webauthn.secure = true;
 
         return options;
@@ -332,17 +298,17 @@ const auth = new Elysia({ name: 'auth' })
         session.value = newSession;
         session.httpOnly = true;
         session.path = '/';
-        session.sameSite = 'strict';
+        session.sameSite = 'lax';
         session.secure = true;
 
         webauthn.value = '';
         webauthn.httpOnly = true;
         webauthn.path = '/';
-        webauthn.sameSite = 'strict';
+        webauthn.sameSite = 'lax';
         webauthn.maxAge = 0;
         webauthn.secure = true;
 
-        return { user: { id: user.id, username: user.username, admin: user.admin } };
+        return { user: { id: user.id, username: user.username, admin: user.admin }, motd: configDB.db.motd };
     }, {
         body: t.Object({
             id: t.String(),
@@ -454,22 +420,21 @@ const auth = new Elysia({ name: 'auth' })
 
         const inviteCode = [...Array(9)].map((_, i) => i == 4 ? '-' : String.fromCharCode(97 + Math.random() * 26)).join('').toUpperCase();
 
+        const newID = userDB.nextId();
+
         userDB.add({
-            id: configDB.db.nextUserId,
+            id: newID,
+            voauthId: -1,
             username: body.username,
-            password: Hasher.encode(crypto.randomUUID()),
             code: inviteCode,
             invitedBy: user.id,
             admin: 0,
             sites: [],
             sessions: [],
-            passkeyIds: [],
             apiKeys: []
         });
 
         auditDB.log('createInvite', user.id, `created an invite for @${body.username}`);
-
-        configDB.updateConfig({ nextUserId: configDB.db.nextUserId + 1 });
 
         return { inviteCode };
     }, { body: t.Object({ username: t.String() }), cookie: t.Cookie({ session: t.String() }) })

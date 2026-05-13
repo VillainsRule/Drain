@@ -3,7 +3,7 @@
     "scripts": {
         "start": "cd api && bun src/main.ts",
         "prep": "bun install && cd app && bunx --bun vite build",
-        "initpk": "cd api && cp .env.example .env && nano .env",
+        "editenv": "cd api && cp .env.example .env && nano .env",
         "pull": "git pull && bun prep && systemctl restart drain && quik purge drain.villainsrule.xyz",
         "apidev": "cd api && DD=1 bun --watch src/main.ts",
         "appdev": "cd app && bunx --bun vite build --watch"

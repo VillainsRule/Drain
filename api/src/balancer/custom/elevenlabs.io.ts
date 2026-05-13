@@ -1,7 +1,7 @@
 import fetchWithProxy from '../getProxy';
 
-export default async function elevenlabsBalancer(token: string): Promise<string> {
-    const req = await fetchWithProxy('https://api.elevenlabs.io/v1/user/subscription', {
+export default async function elevenlabsBalancer(token: string, useProxy: boolean): Promise<string> {
+    const req = await (useProxy ? fetchWithProxy : fetch)('https://api.elevenlabs.io/v1/user/subscription', {
         headers: {
             Accept: 'application/json',
             'xi-api-key': token

@@ -5,7 +5,9 @@ import { observer } from 'mobx-react-lite'
 
 import authManager from './managers/AuthManager'
 
-import Auth from './components/Auth'
+import Auth from './components/Auth.tsx'
+import LegacyAuth from './components/LegacyAuth'
+import Migrate from './components/Migrate.tsx'
 
 import Hub from './components/Hub'
 
@@ -71,6 +73,9 @@ const App = observer(function App() {
     return authManager.hasInit ? <BrowserRouter>
         <Routes>
             <Route path='/auth' element={<Auth />} />
+            <Route path='/auth/legacy' element={<LegacyAuth />} />
+
+            <Route path='/migrate' element={<Migrate />} />
 
             <Route path='/' element={<Container element={Hub} />} />
 

@@ -16,13 +16,6 @@ export interface DBPasskey {
     backedUp: boolean; // from step 2
 }
 
-export interface PublicPasskey {
-    id: string;
-    name: string;
-    lastUsed: string;
-    transports: string[];
-}
-
 export interface DBAPIKey {
     id: string;
     key: string;
@@ -41,13 +34,13 @@ export interface PublicAPIKey {
 
 export interface DBUser {
     id: number;
+    voauthId: number;
     username: string;
     admin: 0 | 1;
-    password: string;
+    password?: string;
     code?: string | undefined;
     invitedBy: number;
     sessions: string[];
-    passkeyIds: string[];
     sites: string[];
     apiKeys: string[];
 }
@@ -56,6 +49,7 @@ export interface PublicUser {
     id: number;
     username: string;
     admin: 0 | 1;
+    mustMigrate?: boolean;
 }
 
 export interface PublicAdminUser extends PublicUser {
@@ -83,7 +77,6 @@ export interface DBConfig {
     balancerProxy: string;
     motd: string;
     allowAPIKeys: boolean;
-    nextUserId: number;
 }
 
 export interface PublicConfig {

@@ -1,7 +1,7 @@
 import fetchWithProxy from '../getProxy';
 
-export default async function ipinfoBalancer(token: string): Promise<string> {
-    const req = await fetchWithProxy('https://ipinfo.io/8.8.8.8', {
+export default async function ipinfoBalancer(token: string, useProxy: boolean): Promise<string> {
+    const req = await (useProxy ? fetchWithProxy : fetch)('https://ipinfo.io/8.8.8.8', {
         headers: {
             Authorization: `Bearer ${token}`
         }

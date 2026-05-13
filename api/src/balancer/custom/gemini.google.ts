@@ -1,7 +1,7 @@
 import fetchWithProxy from '../getProxy';
 
-export default async function geminiBalancer(token: string): Promise<string> {
-    const fetchPromise = fetchWithProxy(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${token}`, {
+export default async function geminiBalancer(token: string, useProxy: boolean): Promise<string> {
+    const fetchPromise = (useProxy ? fetchWithProxy : fetch)(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'tell me a 2 sentence story.' }] }] })

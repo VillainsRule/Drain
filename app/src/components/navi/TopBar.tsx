@@ -37,7 +37,7 @@ const TopBar = observer(function TopBar() {
                     <TooltipContent>Requests</TooltipContent>
                 </Tooltip>}
 
-                {!!authManager.admin && <Tooltip>
+                {authManager.id === 1 && <Tooltip>
                     <TooltipTrigger asChild>
                         <ClipboardList className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/audit')} />
                     </TooltipTrigger>

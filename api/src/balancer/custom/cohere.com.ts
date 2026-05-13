@@ -1,7 +1,7 @@
 import fetchWithProxy from '../getProxy';
 
-export default async function cohereBalancer(token: string): Promise<string> {
-    const req = await fetchWithProxy('https://api.cohere.com/v2/rerank', {
+export default async function cohereBalancer(token: string, useProxy: boolean): Promise<string> {
+    const req = await (useProxy ? fetchWithProxy : fetch)('https://api.cohere.com/v2/rerank', {
         headers: { Authorization: `Bearer ${token}` }
     });
 

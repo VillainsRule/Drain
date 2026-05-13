@@ -1,14 +1,14 @@
 import fetchWithProxy from '../getProxy';
 
-export default async function deepgramBalancer(token: string): Promise<string> {
-    const req = await fetchWithProxy('https://api.deepgram.com/v1/projects', {
+export default async function deepgramBalancer(token: string, useProxy: boolean): Promise<string> {
+    const req = await (useProxy ? fetchWithProxy : fetch)('https://api.deepgram.com/v1/projects', {
         headers: { Authorization: `Token ${token}` }
     });
 
     const body = await req.json() as any;
     if (req.status === 401) return 'invalid_key';
 
-    const billingReq = await fetchWithProxy(`https://api.deepgram.com/v1/projects/${body.projects[0].project_id}/balances`, {
+    const billingReq = await (useProxy ? fetchWithProxy : fetch)(`https://api.deepgram.com/v1/projects/${body.projects[0].project_id}/balances`, {
         headers: { Authorization: `Token ${token}` }
     });
 

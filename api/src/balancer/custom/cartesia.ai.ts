@@ -1,7 +1,7 @@
 import fetchWithProxy from '../getProxy';
 
-export default async function cartesiaBalancer(token: string): Promise<string> {
-    const req = await fetchWithProxy('https://api.cartesia.ai/voices/clone', {
+export default async function cartesiaBalancer(token: string, useProxy: boolean): Promise<string> {
+    const req = await (useProxy ? fetchWithProxy : fetch)('https://api.cartesia.ai/voices/clone', {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${token}`,

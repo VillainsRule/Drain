@@ -244,4 +244,28 @@ if (fs.existsSync(dbRootPath)) {
             } else if (fs.existsSync(v5Path)) fs.cpSync(v5Path, v6Path);
         });
     }
+
+    // v6 -> v7 (haha 67)
+    // 5/13 - the first step of voauth migration process
+    const v7Dir = path.join(dbRootPath, 'v7');
+    if (!fs.existsSync(v7Dir)) {
+        fs.mkdirSync(v7Dir);
+
+        v4Files.forEach((filename) => {
+            const v6Path = path.join(dbRootPath, 'v6', filename);
+            const v7Path = path.join(v7Dir, filename);
+            
+            if (filename === 'users.db') {
+                const v6File = JSON.parse(fs.readFileSync(v6Path, 'utf8'));
+                Object.values(v6File.target).forEach((user: any) => {
+                    delete user.passkeyIds;
+                });
+                fs.writeFileSync(v7Path, JSON.stringify(v6File));
+            } else if (filename === 'config.db') {
+                const v6File = JSON.parse(fs.readFileSync(v6Path, 'utf8'));
+                delete v6File.nextUserId;
+                fs.writeFileSync(v7Path, JSON.stringify(v6File));
+            } else if (fs.existsSync(v6Path)) fs.cpSync(v6Path, v7Path);
+        })
+    }
 }

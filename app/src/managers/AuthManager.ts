@@ -30,6 +30,8 @@ class AuthManager {
     }
 
     setAuth(user: PublicUser) {
+        if (user.mustMigrate && !location.pathname.includes('migrate')) location.href = '/migrate';
+
         this.id = user.id;
         this.username = user.username;
         this.admin = user.admin;

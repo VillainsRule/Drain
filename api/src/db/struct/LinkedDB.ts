@@ -11,6 +11,7 @@ export type LinkedDBTarget<T> = { [id: DBId]: T };
 
 interface LinkedDBStructure<T extends { id: DBId }> {
     target: LinkedDBTarget<T>;
+    meta?: Record<string, unknown>;
 }
 
 type LinkedDBLinks<T extends { id: DBId }> = {
@@ -21,7 +22,7 @@ type LinkedDBLinks<T extends { id: DBId }> = {
 
 export type LinkedKeyDescriptor = {
     prop: string;
-    type: 'string' | 'array';
+    type: 'string' | 'array' | 'number';
 };
 
 type LinkedKeyProps<Keys extends readonly LinkedKeyDescriptor[]> = Keys[number]['prop'];
@@ -132,12 +133,12 @@ class LinkedDB<
     }
 
     getLink<K extends LinkedKeyProps<Keys>>(linkKey: K, linkValue: string | number): T | undefined {
-        const id = this.links[linkKey as string]?.[linkValue] as T['id'] | undefined;
+        const id = this.links[linkKey as string]?.[String(linkValue)] as T['id'] | undefined;
         return id === undefined ? undefined : this.get(id);
     }
 
     getLinks<K extends LinkedKeyProps<Keys>>(linkKey: K, linkValue: string | number): T[] {
-        const ids = this.links[linkKey as string]?.[linkValue] as T['id'][] | undefined;
+        const ids = this.links[linkKey as string]?.[String(linkValue)] as T['id'][] | undefined;
         return ids === undefined ? [] : ids.map(id => this.get(id)!);
     }
 

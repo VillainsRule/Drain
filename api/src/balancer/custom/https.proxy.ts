@@ -1,4 +1,4 @@
-export default async function httpsProxy(proxy: string): Promise<string> {
+export default async function httpsProxy(proxy: string, _useProxy: boolean): Promise<string> {
     try {
         if (typeof proxy !== 'string') return 'invalid_key';
 

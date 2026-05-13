@@ -20,7 +20,7 @@ const Audit = observer(function Audit() {
     const [logs, setLogs] = useState<DBAuditEntry[]>([]);
 
     useEffect(() => {
-        if (!authManager.admin) navigate('/');
+        if (authManager.id !== 1) navigate('/');
         else api.admin.audit.get().then((res) => {
             if (res.data) setLogs(res.data.sort((a, b) => b.timestamp - a.timestamp));
             else shadd.setError(errorFrom(res));

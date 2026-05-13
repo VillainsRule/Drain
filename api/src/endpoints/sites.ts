@@ -94,7 +94,7 @@ const sites = new Elysia({ name: 'sites' })
             if (usersRunningBalancer.includes(user.id) && !user.admin) return status(429, { error: 'you are already running a balancer request. please wait.' });
             usersRunningBalancer.push(user.id);
 
-            const balance = await balancer(body.key);
+            const balance = await balancer(body.key, site.useProxy);
 
             usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
 
@@ -123,7 +123,7 @@ const sites = new Elysia({ name: 'sites' })
         if (usersRunningBalancer.includes(user.id)) return status(429, { error: 'you are already running a balancer request. please wait.' });
         usersRunningBalancer.push(user.id);
 
-        const balance = await balancer(body.key);
+        const balance = await balancer(body.key, site.useProxy);
 
         usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
 

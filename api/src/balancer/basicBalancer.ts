@@ -10,8 +10,8 @@ interface X {
     customText?: string;
 }
 
-const createBasicBalancer = (url: string, x: X = {}) => async (token: string): Promise<string> => {
-    const response = await fetchWithProxy(url, {
+const createBasicBalancer = (url: string, x: X = {}) => async (token: string, useProxy: boolean): Promise<string> => {
+    const response = await (useProxy ? fetchWithProxy : fetch)(url, {
         method: x.method || 'GET',
         headers: {
             ...(x.tokenHeader ? { [x.tokenHeader]: token } : { 'Authorization': `Bearer ${token}` }),

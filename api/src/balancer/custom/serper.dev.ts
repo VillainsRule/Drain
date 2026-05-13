@@ -1,7 +1,7 @@
 import fetchWithProxy from '../getProxy';
 
-export default async function serperBalancer(token: string): Promise<string> {
-    const req = await fetchWithProxy('https://google.serper.dev/search', {
+export default async function serperBalancer(token: string, useProxy: boolean): Promise<string> {
+    const req = await (useProxy ? fetchWithProxy : fetch)('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'x-api-key': token }
     });

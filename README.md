@@ -21,33 +21,20 @@
 
 1. Install [Bun](https://bun.sh)
 2. Clone the repo: `git clone https://github.com/VillainsRule/Drain && cd Drain`
-3. Prepare for production: `bun prep`
-4. Start the production server: `bun start`
+3. Add voauth information: `bun editenv`
+4. Prepare for production: `bun prep`
+5. Start the production server: `bun start`
 
 > [!NOTE]
-> Bun is required, thanks to the fast file streaming APIs and built-in proxy support.
+> Bun is required, thanks to the built-in mime type list (i'm lazy) and built-in proxy support.
 
-To enable passkeys, you can additionally run `bun initpk` and edit the file onscreen.
+<br><h2 align='center'>Useful Notes for Deployment</h2>
 
-<br><h2 align='center'>Useful Information</h2>
+All Drain logins are now processed through voauth. If you own a Drain instance (I don't believe anyone does, but who knows?), users will be able to migrate upon login. If you don't like this, you're welcome to freeze Drain at the commit `f251d3f` and ignore all commits after that. You can also [self-host voauth](https://github.com/VillainsRule/voauth).
 
-The core administrator account is named "admin" with the user ID "1". admin has access to all sites and all users. admin cannot be demoted or deleted. Only admin can change the admin account password. admin has access to all sites, forever. It is worth nothing that admin's access derives from its user ID (1) as opposed to the username, which can be changed with `bun cli/tools/renameAdmin`.
-
-admin's default password is "admin". Change it immediately after your first login in the users button at the top right. If you accidentally forget the "admin" password, run `bun cli/tools/resetAdmin` to reset it back to "admin".
+The core administrator account is named "admin" with the user ID "1". admin has access to all sites and all users. admin cannot be demoted or deleted. admin has access to all sites, forever. When you start up the drain instance for the first time, to login and link a voauth account, use the invite code `admin`.
 
 If you manually change any database files while Drain is running, Drain will automatically overwrite your changes. Turn off Drain to do any manual database changes.
-
-There are two main concepts in Drain: users and sites. Users are people who can log into the Drain instance. Sites are collections of API keys with specific permissions.
-
-Users are manually assigned to individual sites by site admins. Users start with no site access.
-
-Users can have 3 levels of access to Drain:
-
-- normal - their access to sites is managed per-site by admins
-- site admin - they can see all sites and manage user access on all sites, as well as create users, change their passwords, delete them, and change their site access level. (admins can only change their own passwords or delete themselves)
-- "admin" user - they are immune to the above management by "site admins", and have full access to everything. they are the ONLY admin that cannot be demoted by other admins or have its password changed by other admins.
-
-This implementation is amazing for those with trust issues.
 
 <br><br>
 <h5 align='center'>made with ❤️ by <b>VillainsRule</b></h5>
