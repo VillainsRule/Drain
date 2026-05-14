@@ -56,6 +56,7 @@ export interface PublicAdminUser extends PublicUser {
     pendingLogin: boolean;
     invitedBy: number;
     sites: string[];
+    voauthed: boolean;
 }
 
 export interface DBSite {

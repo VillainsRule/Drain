@@ -23,7 +23,7 @@ const admin = new Elysia({ name: 'admin' })
         const user = userDB.getLink('sessions', session.value);
         if (!user || !user.admin) return status(401, { error: 'not logged in' });
 
-        const users = userDB.getAll().map((u) => ({ id: u.id, username: u.username, admin: u.admin, pendingLogin: !!u.code, invitedBy: u.invitedBy, sites: u.sites }));
+        const users = userDB.getAll().map((u) => ({ id: u.id, username: u.username, admin: u.admin, pendingLogin: !!u.code, invitedBy: u.invitedBy, sites: u.sites, voauthed: typeof u.voauthId === 'number' && u.voauthId > -1 }));
         return { users };
     }, { cookie: t.Cookie({ session: t.String() }) })
 

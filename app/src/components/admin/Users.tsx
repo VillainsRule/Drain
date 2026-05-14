@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
 
+import Check from 'lucide-react/icons/check';
 import Clock from 'lucide-react/icons/clock';
 import Crown from 'lucide-react/icons/crown';
 import KeyRound from 'lucide-react/icons/key-round';
@@ -54,6 +55,16 @@ const Users = observer(function Users() {
                                     {user.id === 1 ? 'created with drain' : `invited by @${adminStore.users.find(u => u.id === user.invitedBy)?.username || 'unknown'}`}
                                 </TooltipContent>}
                             </Tooltip>
+
+                            {user.voauthed && <Tooltip>
+                                <TooltipTrigger>
+                                    <Check className='h-3 w-3' />
+                                </TooltipTrigger>
+
+                                <TooltipContent>
+                                    this user has linked voauth.
+                                </TooltipContent>
+                            </Tooltip>}
 
                             {user.id === 1 && (<Badge variant='secondary' className='gap-1 shrink-0'>
                                 <Crown className='h-3 w-3' />
