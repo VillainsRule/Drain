@@ -19,8 +19,8 @@ import ShieldMinus from 'lucide-react/icons/shield-minus';
 import Trash2 from 'lucide-react/icons/trash-2';
 import UserPlus from 'lucide-react/icons/user-plus';
 
-import adminManager from '@/managers/AdminManager';
-import authManager from '@/managers/AuthManager';
+import adminStore from '@/store/AdminStore';
+import authStore from '@/store/AuthStore';
 
 const Users = observer(function Users() {
     const navigate = useNavigate();
@@ -28,7 +28,7 @@ const Users = observer(function Users() {
     const [sitePopupTarget, setSitePopupTarget] = useState(0);
 
     useEffect(() => {
-        if (!authManager.admin) navigate('/');
+        if (!authStore.admin) navigate('/');
     }, []);
 
     return (
@@ -42,7 +42,7 @@ const Users = observer(function Users() {
             </div>
 
             <div className='flex flex-col gap-2 w-full'>
-                {adminManager.users.map((user) => (
+                {adminStore.users.map((user) => (
                     <div key={user.id} className='flex items-center justify-between w-full py-3 px-4 border rounded-md gap-4'>
                         <div className='flex items-center gap-2 min-w-0'>
                             <Tooltip>
@@ -51,7 +51,7 @@ const Users = observer(function Users() {
                                 </TooltipTrigger>
 
                                 {!!user.invitedBy && <TooltipContent>
-                                    {user.id === 1 ? 'created with drain' : `invited by @${adminManager.users.find(u => u.id === user.invitedBy)?.username || 'unknown'}`}
+                                    {user.id === 1 ? 'created with drain' : `invited by @${adminStore.users.find(u => u.id === user.invitedBy)?.username || 'unknown'}`}
                                 </TooltipContent>}
                             </Tooltip>
 
@@ -74,14 +74,14 @@ const Users = observer(function Users() {
                         <div className='flex items-center gap-1 shrink-0'>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button size='sm' variant='ghost' disabled={user.pendingLogin || !!(user.admin && authManager.id !== 1)} onClick={() => shadd.prompt(
+                                    <Button size='sm' variant='ghost' disabled={user.pendingLogin || !!(user.admin && authStore.id !== 1)} onClick={() => shadd.prompt(
                                         'change the password',
                                         `enter a new password for @${user.username}.`,
                                         { placeholder: 'new password', maxLength: 64, minLength: 3 },
                                         async (value: string) => {
                                             const options = await api.admin.users.setPassword.post({ userId: user.id, newPassword: value });
                                             if (options.data) {
-                                                if (user.id === authManager.id) location.reload();
+                                                if (user.id === authStore.id) location.reload();
                                                 else shadd.close();
                                             } else shadd.setError(errorFrom(options));
                                         }
@@ -92,7 +92,7 @@ const Users = observer(function Users() {
                                 </TooltipTrigger>
 
                                 <TooltipContent>
-                                    {user.pendingLogin ? 'user has not logged in yet' : (user.admin && authManager.id !== 1) ? 'cannot change another admin\'s password' : 'change password'}
+                                    {user.pendingLogin ? 'user has not logged in yet' : (user.admin && authStore.id !== 1) ? 'cannot change another admin\'s password' : 'change password'}
                                 </TooltipContent>
                             </Tooltip>
 
@@ -114,7 +114,7 @@ const Users = observer(function Users() {
                                     <Button size='sm' variant='ghost' disabled={user.id === 1} className='hidden lg:flex' onClick={() =>
                                         api.admin.users.setRole
                                             .post({ userId: user.id, isAdmin: !user.admin })
-                                            .then(() => adminManager.fetchAllUsers())
+                                            .then(() => adminStore.fetchAllUsers())
                                     }>
                                         {user.admin
                                             ? <><ShieldMinus className='h-4 w-4' /><span className='ml-1.5'>demote</span></>
@@ -139,7 +139,7 @@ const Users = observer(function Users() {
                                             'delete user',
                                             `are you sure you want to delete @${user.username}? this action cannot be undone.`,
                                             () => api.admin.users.delete.post({ userId: user.id }).then(() => {
-                                                adminManager.fetchAllUsers();
+                                                adminStore.fetchAllUsers();
                                                 shadd.close();
                                             })
                                         )}
@@ -161,11 +161,11 @@ const Users = observer(function Users() {
                 <DialogContent className='max-h-3/4 overflow-y-auto overflow-x-hidden'>
                     <DialogHeader>
                         <DialogTitle>site access</DialogTitle>
-                        <DialogDescription>@{adminManager.getUser(sitePopupTarget)?.username}'s permitted domains</DialogDescription>
+                        <DialogDescription>@{adminStore.getUser(sitePopupTarget)?.username}'s permitted domains</DialogDescription>
                     </DialogHeader>
 
                     <div className='flex flex-col w-full gap-2'>
-                        {sitePopupTarget && adminManager.getUser(sitePopupTarget).sites.length > 1 ? adminManager.getUser(sitePopupTarget).sites.map((domain) => (
+                        {sitePopupTarget && adminStore.getUser(sitePopupTarget).sites.length > 1 ? adminStore.getUser(sitePopupTarget).sites.map((domain) => (
                             <div className='flex justify-between items-center gap-3 w-full py-2 px-4 border rounded-md' key={domain}>
                                 <span className='font-mono text-sm'>{domain}</span>
 
@@ -175,7 +175,7 @@ const Users = observer(function Users() {
                                     className='text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0'
                                     onClick={() => {
                                         api.v1.sites.access.remove.post({ domain, userId: sitePopupTarget }).then((res) => {
-                                            if (res.data) adminManager.fetchAllUsers();
+                                            if (res.data) adminStore.fetchAllUsers();
                                             else alert(errorFrom(res));
                                         });
                                     }}

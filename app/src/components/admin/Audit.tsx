@@ -9,8 +9,8 @@ import { shadd } from '@/lib/shadd';
 
 import Trash2 from 'lucide-react/icons/trash-2';
 
-import adminManager from '@/managers/AdminManager';
-import authManager from '@/managers/AuthManager';
+import adminStore from '@/store/AdminStore';
+import authStore from '@/store/AuthStore';
 
 import type { DBAuditEntry } from '@/types';
 
@@ -20,7 +20,7 @@ const Audit = observer(function Audit() {
     const [logs, setLogs] = useState<DBAuditEntry[]>([]);
 
     useEffect(() => {
-        if (authManager.id !== 1) navigate('/');
+        if (authStore.id !== 1) navigate('/');
         else api.admin.audit.get().then((res) => {
             if (res.data) setLogs(res.data.sort((a, b) => b.timestamp - a.timestamp));
             else shadd.setError(errorFrom(res));
@@ -33,7 +33,7 @@ const Audit = observer(function Audit() {
 
             <div className='flex flex-col gap-2 w-full'>
                 {logs.sort((a, b) => b.timestamp - a.timestamp).map((entry) => {
-                    const u = adminManager.getUser(entry.user);
+                    const u = adminStore.getUser(entry.user);
 
                     return (
                         <div key={entry.id} className='flex items-center justify-between w-full py-3 px-4 border rounded-md gap-4'>
@@ -56,7 +56,7 @@ const Audit = observer(function Audit() {
                                         'delete user',
                                         `are you sure you want to delete @${u.username}? this action cannot be undone.`,
                                         () => api.admin.users.delete.post({ userId: entry.user }).then(() => {
-                                            adminManager.fetchAllUsers();
+                                            adminStore.fetchAllUsers();
                                             shadd.close();
                                         })
                                     )}

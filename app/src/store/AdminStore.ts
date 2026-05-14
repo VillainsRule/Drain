@@ -4,7 +4,7 @@ import api, { errorFrom } from '@/lib/eden';
 
 import type { PublicAdminUser } from '@/types';
 
-class AdminManager {
+class AdminStore {
     users: PublicAdminUser[] = [];
 
     constructor() {
@@ -23,5 +23,5 @@ class AdminManager {
     }
 }
 
-const adminManager = new AdminManager();
-export default adminManager;
+const adminStore = new AdminStore();
+export default adminStore;

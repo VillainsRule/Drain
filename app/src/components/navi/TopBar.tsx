@@ -11,17 +11,17 @@ import UserCog from 'lucide-react/icons/user-cog';
 import UserPlus from 'lucide-react/icons/user-plus';
 import Wrench from 'lucide-react/icons/wrench';
 
-import authManager from '@/managers/AuthManager';
+import authStore from '@/store/AuthStore';
 
 const TopBar = observer(function TopBar() {
     const navigate = useNavigate();
 
     return (
         <div className='hidden md:flex w-full justify-between items-center pt-6 pb-2 pl-4 z-30'>
-            <h1 className='font-semibold text-lg'>welcome, {authManager.username}!</h1>
+            <h1 className='font-semibold text-lg'>welcome, {authStore.username}!</h1>
 
             <div className='flex items-center gap-6 min-h-full'>
-                {authManager.instance.allowAPIKeys && <Tooltip>
+                {authStore.instance.allowAPIKeys && <Tooltip>
                     <TooltipTrigger asChild>
                         <Code className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/user/apiKeys')} />
                     </TooltipTrigger>
@@ -29,7 +29,7 @@ const TopBar = observer(function TopBar() {
                     <TooltipContent>Drain API Keys</TooltipContent>
                 </Tooltip>}
 
-                {!!authManager.admin && <Tooltip>
+                {!!authStore.admin && <Tooltip>
                     <TooltipTrigger asChild>
                         <BookOpen className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/discovery/requests')} />
                     </TooltipTrigger>
@@ -37,7 +37,7 @@ const TopBar = observer(function TopBar() {
                     <TooltipContent>Requests</TooltipContent>
                 </Tooltip>}
 
-                {authManager.id === 1 && <Tooltip>
+                {authStore.id === 1 && <Tooltip>
                     <TooltipTrigger asChild>
                         <ClipboardList className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/audit')} />
                     </TooltipTrigger>
@@ -53,7 +53,7 @@ const TopBar = observer(function TopBar() {
                     <TooltipContent>Invite Users</TooltipContent>
                 </Tooltip>
 
-                {!!authManager.admin && <Tooltip>
+                {!!authStore.admin && <Tooltip>
                     <TooltipTrigger asChild>
                         <UserCog className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/users')} />
                     </TooltipTrigger>
@@ -61,7 +61,7 @@ const TopBar = observer(function TopBar() {
                     <TooltipContent>Manage Users</TooltipContent>
                 </Tooltip>}
 
-                {authManager.id === 1 && <Tooltip>
+                {authStore.id === 1 && <Tooltip>
                     <TooltipTrigger asChild>
                         <Wrench className='w-6 h-6 cursor-pointer text-accent-foreground' onClick={() => navigate('/admin/config')} />
                     </TooltipTrigger>
@@ -71,7 +71,7 @@ const TopBar = observer(function TopBar() {
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => authManager.logout()} />
+                        <LogOut className='w-6 h-6 cursor-pointer text-red-500' onClick={() => authStore.logout()} />
                     </TooltipTrigger>
 
                     <TooltipContent>Log Out</TooltipContent>

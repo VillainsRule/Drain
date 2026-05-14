@@ -11,8 +11,8 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
 
-import authManager from '@/managers/AuthManager';
-import siteManager from '@/managers/SiteManager';
+import authStore from '@/store/AuthStore';
+import siteStore from '@/store/SiteStore';
 
 const SideBar = observer(function SideBar() {
     const { pathname } = useLocation();
@@ -31,13 +31,13 @@ const SideBar = observer(function SideBar() {
 
     useEffect(() => {
         handleScroll();
-    }, [siteManager.siteList]);
+    }, [siteStore.siteList]);
 
     return (
         <div className='border-neutral-200 min-w-72 max-w-72 h-full hidden md:flex flex-col items-center p-6 pr-4 z-20'>
             <h1 className='text-center mb-4 text-4xl font-extrabold tracking-tight text-primary drop-shadow-sm cursor-pointer' onClick={() => navigate('/')}>drain!</h1>
 
-            {siteManager.siteList.length < 1 && <div className='flex flex-col items-center mt-3'>
+            {siteStore.siteList.length < 1 && <div className='flex flex-col items-center mt-3'>
                 <span className='text-accent-foreground'>you have no sites</span>
                 <span className='text-accent-foreground'>contact an admin</span>
                 <span className='text-accent-foreground'>and pray for some</span>
@@ -49,12 +49,12 @@ const SideBar = observer(function SideBar() {
                     className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2 h-full'
                     onScroll={handleScroll}
                 >
-                    {siteManager.siteList.map((site, i) => (
+                    {siteStore.siteList.map((site, i) => (
                         <ContextMenu key={i}>
                             <ContextMenuTrigger asChild>
-                                <span className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer hover:translate-x-1 text-lg ${pathname.startsWith('/domain/') && siteManager.site?.id === site && 'font-semibold tracking-tight'}`} onClick={(e) => {
+                                <span className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer hover:translate-x-1 text-lg ${pathname.startsWith('/domain/') && siteStore.site?.id === site && 'font-semibold tracking-tight'}`} onClick={(e) => {
                                     if (!(e.target as HTMLElement).classList.contains('no-click')) {
-                                        siteManager.select(site);
+                                        siteStore.select(site);
                                         navigate(`/domain/${site}`);
                                     }
                                 }}>{site}</span>
@@ -66,11 +66,11 @@ const SideBar = observer(function SideBar() {
                                     onClick={() => navigator.clipboard.writeText(`${location.origin}/domain/${site}`)}
                                 >Copy URL</ContextMenuItem>
 
-                                {!!authManager.admin && <ContextMenuItem className='text-red-500 no-click' onClick={() => {
+                                {!!authStore.admin && <ContextMenuItem className='text-red-500 no-click' onClick={() => {
                                     api.v1.sites.delete.post({ domain: site }).then((res) => {
                                         if (res.data) {
-                                            siteManager.getList();
-                                            siteManager.select('');
+                                            siteStore.getList();
+                                            siteStore.select('');
                                             navigate('/');
                                         } else alert(errorFrom(res));
                                     });
@@ -83,7 +83,7 @@ const SideBar = observer(function SideBar() {
                 {showGradient && <div className='absolute bottom-0 left-0 right-0 h-20 bg-linear-to-t from-white dark:from-gray-950 to-transparent pointer-events-none' />}
             </div>
 
-            {!!authManager.admin && (
+            {!!authStore.admin && (
                 <Button variant='outline' className='w-full' onClick={() => shadd.prompt(
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',
@@ -92,7 +92,7 @@ const SideBar = observer(function SideBar() {
                         const options = await api.v1.sites.create.post({ url: value });
 
                         if (options.data) {
-                            siteManager.getList();
+                            siteStore.getList();
                             shadd.close();
                         } else shadd.setError(errorFrom(options));
                     }

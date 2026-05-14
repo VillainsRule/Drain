@@ -9,8 +9,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import Trash2 from 'lucide-react/icons/trash-2';
 import UserPlus from 'lucide-react/icons/user-plus';
 
-import adminManager from '@/managers/AdminManager';
-import authManager from '@/managers/AuthManager';
+import adminStore from '@/store/AdminStore';
+import authStore from '@/store/AuthStore';
 
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
@@ -28,7 +28,7 @@ const Invites = observer(function Invites() {
 
     const createInvite = () => shadd.prompt(
         'create a new user',
-        `enter a username for the new user. they will be able to set their password and site access after the account is created. ${!authManager.admin ? 'you can only invite 3 users at once.' : ''}`,
+        `enter a username for the new user. they will be able to set their password and site access after the account is created. ${!authStore.admin ? 'you can only invite 3 users at once.' : ''}`,
         { placeholder: 'username', maxLength: 16, minLength: 1 },
         (value: string) => {
             api.auth.invites.create.post({ username: value }).then((res) => {
@@ -41,7 +41,7 @@ const Invites = observer(function Invites() {
                         res.data.inviteCode
                     );
 
-                    if (authManager.admin) adminManager.fetchAllUsers();
+                    if (authStore.admin) adminStore.fetchAllUsers();
                 } else shadd.setError(errorFrom(res));
             });
         }

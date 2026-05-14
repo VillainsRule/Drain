@@ -11,7 +11,7 @@ import CircleDollarSign from 'lucide-react/icons/circle-dollar-sign';
 import KeyRound from 'lucide-react/icons/key-round';
 import Search from 'lucide-react/icons/search';
 
-import siteManager from '@/managers/SiteManager';
+import siteStore from '@/store/SiteStore';
 
 import { displayMoney } from '@/lib/utils';
 
@@ -92,7 +92,7 @@ const Discovery = observer(function Discovery() {
     });
 
     const handleJoin = (domain: string) => api.v1.discovery.join.post({ domain }).then((res) => {
-        if (res.data) siteManager.getList();
+        if (res.data) siteStore.getList();
         else alert(errorFrom(res));
     });
 
@@ -130,7 +130,7 @@ const Discovery = observer(function Discovery() {
             ) : (
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-3 w-full pb-6'>
                     {filtered.map((site) => {
-                        const hasAccess = siteManager.siteList.includes(site.domain);
+                        const hasAccess = siteStore.siteList.includes(site.domain);
                         const primaryColor = iconColors[site.domain];
 
                         const iconBg = primaryColor ? `color-mix(in srgb, ${primaryColor} 18%, transparent)` : 'hsl(var(--muted))';
@@ -186,7 +186,7 @@ const Discovery = observer(function Discovery() {
                                             variant='outline'
                                             className='gap-1.5 text-green-600 border-green-500/40 px-3 py-1.5 cursor-pointer hover:bg-green-500/10 transition-colors'
                                             onClick={() => {
-                                                siteManager.select(site.domain);
+                                                siteStore.select(site.domain);
                                                 navigate('/domain/' + site.domain);
                                             }}
                                         >

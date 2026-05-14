@@ -10,8 +10,8 @@ import XCircle from 'lucide-react/icons/x-circle';
 import Clock from 'lucide-react/icons/clock';
 import Users from 'lucide-react/icons/users';
 
-import adminManager from '@/managers/AdminManager';
-import authManager from '@/managers/AuthManager';
+import adminStore from '@/store/AdminStore';
+import authStore from '@/store/AuthStore';
 
 import { getRelativeTime } from '@/lib/utils';
 
@@ -29,9 +29,9 @@ const Requests = observer(function Requests() {
         if (res.data) {
             const enriched = res.data.requests.map((r) => ({
                 ...r,
-                username: adminManager.users.find(u => u.id === r.user)?.username ?? `user#${r.user}`
+                username: adminStore.users.find(u => u.id === r.user)?.username ?? `user#${r.user}`
             }));
-            authManager.instance.numRequests = enriched.length;
+            authStore.instance.numRequests = enriched.length;
             setRequests(enriched.sort((a: EnrichedRequest, b: EnrichedRequest) => b.timestamp - a.timestamp));
         }
         setLoading(false);

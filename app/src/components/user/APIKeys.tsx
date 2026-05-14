@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-import authManager from '@/managers/AuthManager';
+import authStore from '@/store/AuthStore';
 
 import RefreshCw from 'lucide-react/icons/refresh-cw';
 import Trash2 from 'lucide-react/icons/trash-2';
@@ -54,14 +54,14 @@ const APIKeys = observer(function APIKeys() {
     return (
         <div className='flex flex-col items-center w-full h-full md:w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <div className='flex justify-between items-center gap-3 md:gap-0 w-full flex-col md:flex-row'>
-                <h2 className='text-2xl font-bold'>API key manager</h2>
+                <h2 className='text-2xl font-bold'>API keys</h2>
                 <Button className='flex items-center gap-2 w-56 py-2 rounded-md transition-colors duration-150' onClick={createKey}>
                     <KeyRound className='h-4 w-4' />
                     create API key
                 </Button>
             </div>
 
-            {!authManager.instance.allowAPIKeys && (
+            {!authStore.instance.allowAPIKeys && (
                 <div className='flex flex-col items-center'>
                     <span className='text-red-500 underline font-bold'>API keys are currently disabled on the instance</span>
                     <span className='text-red-500 underline'>you can create & manage them, but access attempts will be blocked</span>

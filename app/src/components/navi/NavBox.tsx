@@ -9,8 +9,8 @@ import Plus from 'lucide-react/icons/plus';
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
 
-import authManager from '@/managers/AuthManager';
-import siteManager from '@/managers/SiteManager';
+import authStore from '@/store/AuthStore';
+import siteStore from '@/store/SiteStore';
 
 const NavBox = observer(function NavBox() {
     const { pathname } = useLocation();
@@ -19,13 +19,13 @@ const NavBox = observer(function NavBox() {
     return (
         <div className='w-full h-[calc(100%-5rem)] flex flex-col items-center px-6 pt-8 pb-3 gap-4 fixed left-0 top-0 bottom-0 z-20'>
             <div className='flex flex-col items-center w-full gap-1 overflow-auto drain-scrollbar pr-2'>
-                {siteManager.siteList.map((site, i) => <ContextMenu key={i}>
+                {siteStore.siteList.map((site, i) => <ContextMenu key={i}>
                     <ContextMenuTrigger asChild>
                         <span
-                            className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer text-lg ${pathname.startsWith('/domain/') && siteManager.site?.id === site && 'font-semibold tracking-tight'}`}
+                            className={`w-full rounded-lg px-7 py-2 transition-all duration-150 cursor-pointer text-lg ${pathname.startsWith('/domain/') && siteStore.site?.id === site && 'font-semibold tracking-tight'}`}
                             onClick={(e) => {
                                 if (!(e.target as HTMLElement).classList.contains('no-click')) {
-                                    siteManager.select(site);
+                                    siteStore.select(site);
                                     navigate(`/domain/${site}`);
                                 }
                             }}
@@ -40,11 +40,11 @@ const NavBox = observer(function NavBox() {
                             Copy URL
                         </ContextMenuItem>
 
-                        {!!authManager.admin && (<ContextMenuItem className='text-red-500 no-click' onClick={() => {
+                        {!!authStore.admin && (<ContextMenuItem className='text-red-500 no-click' onClick={() => {
                             api.v1.sites.delete.post({ domain: site }).then((res) => {
                                 if (res.data) {
-                                    siteManager.getList();
-                                    siteManager.select('');
+                                    siteStore.getList();
+                                    siteStore.select('');
                                     navigate('/');
                                 } else alert(errorFrom(res));
                             });
@@ -53,7 +53,7 @@ const NavBox = observer(function NavBox() {
                 </ContextMenu>)}
             </div>
 
-            {!!authManager.admin && (
+            {!!authStore.admin && (
                 <Button variant='outline' className='flex items-center justify-center gap-2 w-full py-2 shadow-sm font-semibold text-lg' onClick={() => shadd.prompt(
                     'add a new site',
                     'enter the domain of the site you want to add. for example, "my-cool-app.com".',
@@ -62,7 +62,7 @@ const NavBox = observer(function NavBox() {
                         const options = await api.v1.sites.create.post({ url: value });
 
                         if (options.data) {
-                            siteManager.getList();
+                            siteStore.getList();
                             shadd.close();
                         } else shadd.setError(errorFrom(options));
                     }

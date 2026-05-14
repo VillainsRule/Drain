@@ -15,7 +15,7 @@ import { Card } from './ui/card';
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
 
-import authManager from '@/managers/AuthManager';
+import authStore from '@/store/AuthStore';
 
 import Iconic from '@/assets/notSoSecretAnymorePublicImage.png';
 
@@ -28,7 +28,7 @@ const Hub = observer(function Hub() {
                 <img className='hidden md:flex h-24 w-48' src={Iconic} />
 
                 <div className='flex flex-col gap-2.5'>
-                    <h1 className='text-5xl font-bold'>hi, @{authManager.username}</h1>
+                    <h1 className='text-5xl font-bold'>hi, @{authStore.username}</h1>
                     <h2 className='text-3xl font-medium'>welcome to drain!</h2>
                 </div>
             </div>
@@ -37,33 +37,33 @@ const Hub = observer(function Hub() {
                 <div className='flex items-center gap-2'>
                     <span className='text-xs text-muted-foreground'>MOTD</span>
 
-                    {authManager.id === 1 && <Pencil className='w-3.5 h-3.5 text-muted-foreground ml-auto cursor-pointer hover:text-foreground transition-colors' onClick={() => shadd.prompt(
+                    {authStore.id === 1 && <Pencil className='w-3.5 h-3.5 text-muted-foreground ml-auto cursor-pointer hover:text-foreground transition-colors' onClick={() => shadd.prompt(
                         'edit MOTD',
                         'all users will see this when they log in. make it funny.',
-                        { placeholder: 'welcome to my drain instance!', defaultValue: authManager.instance.motd, textarea: true },
+                        { placeholder: 'welcome to my drain instance!', defaultValue: authStore.instance.motd, textarea: true },
                         async (value: string) => {
                             const req = await api.admin.instance.post({ config: { motd: value } });
                             if (req.data) {
-                                authManager.checkAuth();
+                                authStore.checkAuth();
                                 shadd.close();
                             } else shadd.setError(errorFrom(req));
                         }
                     )} />}
                 </div>
 
-                <span className='text-sm whitespace-pre-wrap'>{authManager.instance.motd.replaceAll('\\n', '\n')}</span>
+                <span className='text-sm whitespace-pre-wrap'>{authStore.instance.motd.replaceAll('\\n', '\n')}</span>
             </Card>
 
-            {authManager.instance.numRequests > 0 && <Badge variant='outline' className='mt-4 px-3 py-1 cursor-pointer' onClick={() => navigate('/discovery/requests')}>
+            {authStore.instance.numRequests > 0 && <Badge variant='outline' className='mt-4 px-3 py-1 cursor-pointer' onClick={() => navigate('/discovery/requests')}>
                 <Link className='w-3.5 h-3.5 text-muted-foreground mr-1' />
-                <span>{authManager.instance.numRequests} pending request{authManager.instance.numRequests > 1 && 's'}</span>
+                <span>{authStore.instance.numRequests} pending request{authStore.instance.numRequests > 1 && 's'}</span>
             </Badge>}
 
             <div className='flex md:hidden justify-center gap-2 mt-4 flex-wrap max-w-3/5'>
-                {authManager.instance.allowAPIKeys && <Button variant='outline' size='sm' onClick={() => navigate('/user/apiKeys')}><Code className='w-4 h-4 mr-2' />API Keys</Button>}
-                {!!authManager.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/config')}><Wrench className='w-4 h-4 mr-2' />Config</Button>}
-                {!!authManager.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/users')}><UserCog className='w-4 h-4 mr-2' />Users</Button>}
-                <Button variant='destructive' size='sm' onClick={() => authManager.logout()}><LogOut className='w-4 h-4 mr-2' />Logout</Button>
+                {authStore.instance.allowAPIKeys && <Button variant='outline' size='sm' onClick={() => navigate('/user/apiKeys')}><Code className='w-4 h-4 mr-2' />API Keys</Button>}
+                {!!authStore.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/config')}><Wrench className='w-4 h-4 mr-2' />Config</Button>}
+                {!!authStore.admin && <Button variant='outline' size='sm' onClick={() => navigate('/admin/users')}><UserCog className='w-4 h-4 mr-2' />Users</Button>}
+                <Button variant='destructive' size='sm' onClick={() => authStore.logout()}><LogOut className='w-4 h-4 mr-2' />Logout</Button>
             </div>
         </div>
     )

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 
 import api, { errorFrom } from '@/lib/eden'
 
-import authManager from '@/managers/AuthManager'
+import authStore from '@/store/AuthStore'
 
 const LegacyAuth = observer(function LegacyAuth() {
     const navigate = useNavigate();
@@ -22,12 +22,12 @@ const LegacyAuth = observer(function LegacyAuth() {
     const [passwordInput, setPasswordInput] = useState<string>('');
 
     useEffect(() => {
-        if (authManager.id) navigate('/');
+        if (authStore.id) navigate('/');
     }, []);
 
     const onLogin = async (data: ({ user: { id: number, username: string, admin: 0 | 1 }, motd: string })) => {
-        authManager.instance.motd = data.motd;
-        authManager.setAuth(data.user);
+        authStore.instance.motd = data.motd;
+        authStore.setAuth(data.user);
         navigate('/migrate');
     }
 
@@ -91,7 +91,7 @@ const LegacyAuth = observer(function LegacyAuth() {
                         <Button type='submit' className='w-full cursor-pointer'>Log In</Button>
                     </form>
 
-                    {authManager.instance.allowPasskeys && <Button variant='outline' className='w-full cursor-pointer' onClick={doWebAuthn}>use a passkey</Button>}
+                    {authStore.instance.allowPasskeys && <Button variant='outline' className='w-full cursor-pointer' onClick={doWebAuthn}>use a passkey</Button>}
                 </CardContent>
             </Card>
         </div>

@@ -6,7 +6,7 @@ import type { PublicSite } from '@/types';
 
 const SORTABLE_KEYWORDS = ['paid', 'premium', 'prod', 'trial', 'tier', 'free', '$', 'valid', 'empty'];
 
-class SiteManager {
+class SiteStore {
     siteList: string[] = [];
     site: PublicSite | null = null;
 
@@ -42,5 +42,5 @@ class SiteManager {
     }
 }
 
-const siteManager = new SiteManager();
-export default siteManager;
+const siteStore = new SiteStore();
+export default siteStore;

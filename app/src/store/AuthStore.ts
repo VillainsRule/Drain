@@ -2,14 +2,14 @@ import { configure, makeAutoObservable } from 'mobx';
 
 import api from '@/lib/eden';
 
-import adminManager from './AdminManager';
-import siteManager from './SiteManager';
+import adminStore from './AdminStore';
+import siteStore from './SiteStore';
 
 import type { PublicUser } from '@/types';
 
 configure({ enforceActions: 'never' });
 
-class AuthManager {
+class AuthStore {
     hasInit = false;
 
     id = 0;
@@ -36,12 +36,12 @@ class AuthManager {
         this.username = user.username;
         this.admin = user.admin;
 
-        siteManager.getList();
+        siteStore.getList();
 
         const urlParts = location.pathname.split('/');
-        if (urlParts[1] === 'domain' && urlParts[2].includes('.')) siteManager.select(urlParts[2]);
+        if (urlParts[1] === 'domain' && urlParts[2].includes('.')) siteStore.select(urlParts[2]);
 
-        if (this.admin) adminManager.fetchAllUsers();
+        if (this.admin) adminStore.fetchAllUsers();
     }
 
     async checkAuth() {
@@ -69,5 +69,5 @@ class AuthManager {
     }
 }
 
-const authManager = new AuthManager();
-export default authManager;
+const authStore = new AuthStore();
+export default authStore;

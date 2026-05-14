@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 
 import api from '@/lib/eden';
 
-import adminManager from '@/managers/AdminManager';
-import authManager from '@/managers/AuthManager';
-import siteManager from '@/managers/SiteManager';
+import adminStore from '@/store/AdminStore';
+import authStore from '@/store/AuthStore';
+import siteStore from '@/store/SiteStore';
 
 import type { PublicConfig } from '@/types';
 
@@ -26,7 +26,7 @@ const AdminConfig = observer(function AdminConfig() {
     }
 
     useEffect(() => {
-        if (authManager.id > 1) navigate('/');
+        if (authStore.id > 1) navigate('/');
         else fetchInstanceInfo();
     }, []);
 
@@ -41,7 +41,7 @@ const AdminConfig = observer(function AdminConfig() {
             <div className='grid grid-cols-2 gap-6 items-start'>
                 <div className='flex flex-col gap-1 text-sm'>
                     <p className='text-xs uppercase tracking-widest font-medium text-muted-foreground/80 mb-2'>information</p>
-                    <span>{adminManager.users.length || 0} users &middot; {siteManager.siteList.length || 0} sites</span>
+                    <span>{adminStore.users.length || 0} users &middot; {siteStore.siteList.length || 0} sites</span>
                     <span>commit <a className='font-mono underline text-blue-500' href={`https://github.com/VillainsRule/Drain/commit/${info.commit}`} target='_blank'>{info.commit || '—'}</a></span>
                     <span>{info.commitsBehind} commits behind</span>
                     <span>local changes: {info.localChanges.toString() ?? 'false'}</span>

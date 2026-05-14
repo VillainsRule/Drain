@@ -21,9 +21,9 @@ import UserCog from 'lucide-react/icons/user-cog';
 import api, { errorFrom } from '@/lib/eden';
 import { shadd } from '@/lib/shadd';
 
-import authManager from '@/managers/AuthManager';
-import siteManager from '@/managers/SiteManager';
-import adminManager from '@/managers/AdminManager';
+import authStore from '@/store/AuthStore';
+import siteStore from '@/store/SiteStore';
+import adminStore from '@/store/AdminStore';
 
 import { displayMoney } from '@/lib/utils';
 
@@ -46,7 +46,7 @@ const SiteKeys = observer(function SiteKeys() {
     const [validKeys, setValidKeys] = useState<string[]>([]);
     const [invalidKeys, setInvalidKeys] = useState<string[]>([]);
 
-    const site = siteManager.site;
+    const site = siteStore.site;
     if (!site) return <div className='flex justify-center items-center w-full mt-10 text-muted-foreground text-lg'>fetching site...</div>
 
     return (
@@ -67,7 +67,7 @@ const SiteKeys = observer(function SiteKeys() {
                                         key: value
                                     }).then((res) => {
                                         if (res.data) {
-                                            siteManager.refreshCurrent();
+                                            siteStore.refreshCurrent();
                                             shadd.close();
                                         } else shadd.setError(errorFrom(res));
                                     });
@@ -90,7 +90,7 @@ const SiteKeys = observer(function SiteKeys() {
                         <TooltipTrigger asChild>
                             <Button variant='outline' onClick={() => {
                                 api.v1.sites.keys.sort.post({ domain: site.id }).then((res) => {
-                                    if (res.data) siteManager.refreshCurrent();
+                                    if (res.data) siteStore.refreshCurrent();
                                     else alert(errorFrom(res));
                                 });
                             }}><ArrowDownWideNarrow /></Button>
@@ -99,7 +99,7 @@ const SiteKeys = observer(function SiteKeys() {
                         <TooltipContent>sort by $$</TooltipContent>
                     </Tooltip>}
 
-                    {!!authManager.admin && site.supportsBalancer && <Tooltip>
+                    {!!authStore.admin && site.supportsBalancer && <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant='outline' onClick={async () => {
                                 const keys = Object.keys(site.keys);
@@ -109,7 +109,7 @@ const SiteKeys = observer(function SiteKeys() {
                                 for (const key of keys) await new Promise((r) => {
                                     api.v1.sites.keys.recheck.post({ domain: site.id, key }).then((res) => {
                                         if (res.data) {
-                                            siteManager.refreshCurrent();
+                                            siteStore.refreshCurrent();
                                             setInvalidKeys(prev => prev.filter(k => k !== key));
                                             setValidKeys(prev => prev.includes(key) ? prev : [...prev, key]);
                                         } else {
@@ -137,7 +137,7 @@ const SiteKeys = observer(function SiteKeys() {
                         <TooltipContent>copy all keys</TooltipContent>
                     </Tooltip>
 
-                    {!!authManager.admin && <Tooltip>
+                    {!!authStore.admin && <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant='outline' onClick={() => setAccessDialogOpen(true)}><UserCog className='w-4 h-4' /></Button>
                         </TooltipTrigger>
@@ -145,7 +145,7 @@ const SiteKeys = observer(function SiteKeys() {
                         <TooltipContent>manage access</TooltipContent>
                     </Tooltip>}
 
-                    {!!authManager.admin && <Dialog>
+                    {!!authStore.admin && <Dialog>
                         <DialogTrigger>
                             <Tooltip>
                                 <TooltipTrigger>
@@ -166,7 +166,7 @@ const SiteKeys = observer(function SiteKeys() {
                                 <label className='flex items-center gap-2'>
                                     <Checkbox checked={site.public} onCheckedChange={(e) => {
                                         api.v1.sites.settings.public.post({ domain: site.id, public: !!e.valueOf() }).then((res) => {
-                                            if (res.data) siteManager.refreshCurrent();
+                                            if (res.data) siteStore.refreshCurrent();
                                             else alert(errorFrom(res));
                                         });
                                     }} />
@@ -176,7 +176,7 @@ const SiteKeys = observer(function SiteKeys() {
                                 <label className='flex items-center gap-2'>
                                     <Checkbox checked={site.useProxy} onCheckedChange={(e) => {
                                         api.v1.sites.settings.useProxy.post({ domain: site.id, useProxy: !!e.valueOf() }).then((res) => {
-                                            if (res.data) siteManager.refreshCurrent();
+                                            if (res.data) siteStore.refreshCurrent();
                                             else alert(errorFrom(res));
                                         });
                                     }} />
@@ -187,7 +187,7 @@ const SiteKeys = observer(function SiteKeys() {
                                     <span>description</span>
                                     <Input defaultValue={site.description} onChange={(e) => {
                                         api.v1.sites.settings.description.post({ domain: site.id, description: e.target.value }).then((res) => {
-                                            if (res.data) siteManager.refreshCurrent();
+                                            if (res.data) siteStore.refreshCurrent();
                                             else alert(errorFrom(res));
                                         });
                                     }} />
@@ -218,7 +218,7 @@ const SiteKeys = observer(function SiteKeys() {
                             {Boolean(site.supportsBalancer && site.users) && <Button variant='ghost' size='sm' onClick={() => {
                                 api.v1.sites.keys.recheck.post({ domain: site.id, key: key }).then((res) => {
                                     if (res.data) {
-                                        siteManager.refreshCurrent();
+                                        siteStore.refreshCurrent();
                                         setInvalidKeys(prev => prev.filter(k => k !== key));
                                         setValidKeys(prev => prev.includes(key) ? prev : [...prev, key]);
                                     } else {
@@ -231,9 +231,9 @@ const SiteKeys = observer(function SiteKeys() {
                                 <RefreshCw className='h-4 w-4' />
                             </Button>}
 
-                            {!!authManager.admin && <Button variant='ghost' size='sm' className='hidden md:flex' onClick={() => {
+                            {!!authStore.admin && <Button variant='ghost' size='sm' className='hidden md:flex' onClick={() => {
                                 api.v1.sites.keys.delete.post({ domain: site.id, key }).then((res) => {
-                                    if (res.data) siteManager.refreshCurrent();
+                                    if (res.data) siteStore.refreshCurrent();
                                     else alert(errorFrom(res));
                                 });
                             }}>
@@ -311,7 +311,7 @@ const SiteKeys = observer(function SiteKeys() {
                                     const res = await api.v1.sites.keys.create.post({ domain: site.id, key });
 
                                     if (res.data) {
-                                        siteManager.refreshCurrent();
+                                        siteStore.refreshCurrent();
                                         setBulkQueue(prev => prev.map(k => k.key === key ? { ...k, status: 'ok' } : k));
                                     } else {
                                         setBulkQueue(prev => prev.map(k => k.key === key ? { ...k, status: 'err', error: errorFrom(res) } : k));
@@ -368,10 +368,10 @@ const SiteKeys = observer(function SiteKeys() {
                     <div className='flex flex-col gap-3'>
                         {site.users.map((userId) => (
                             <div key={userId} className='flex items-center justify-between rounded-md px-2 py-1 hover:bg-accent transition-colors duration-125'>
-                                <span>@{adminManager.users.find(e => e.id === userId)?.username || '?'}</span>
+                                <span>@{adminStore.users.find(e => e.id === userId)?.username || '?'}</span>
                                 <Button variant='outline' size='sm' onClick={() => {
                                     api.v1.sites.access.remove.post({ domain: site.id, userId }).then((res) => {
-                                        if (res.data) siteManager.refreshCurrent();
+                                        if (res.data) siteStore.refreshCurrent();
                                         else alert(errorFrom(res));
                                     });
                                 }}>revoke access</Button>
@@ -396,7 +396,7 @@ const SiteKeys = observer(function SiteKeys() {
 
                     <div className='flex flex-col gap-3'>
                         <AutoComplete
-                            options={adminManager.users
+                            options={adminStore.users
                                 .filter(e => !e.admin && !site.users.includes(e.id))
                                 .map(e => ({ value: e.id.toString(), label: '@' + e.username }))}
                             onValueChange={(e) => setAddUserSelectedId(Number(e.value))}
@@ -410,7 +410,7 @@ const SiteKeys = observer(function SiteKeys() {
                             onClick={() => {
                                 if (addUserSelectedId) api.v1.sites.access.add.post({ domain: site.id, userId: addUserSelectedId }).then((res) => {
                                     if (res.data) {
-                                        siteManager.refreshCurrent();
+                                        siteStore.refreshCurrent();
                                         setAddUserDialogOpen(false);
                                     } else setAddUserError(errorFrom(res));
                                 });

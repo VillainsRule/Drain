@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import api, { errorFrom } from '@/lib/eden.ts'
 import { shadd } from '@/lib/shadd.tsx'
 
-import authManager from '@/managers/AuthManager'
+import authStore from '@/store/AuthStore'
 
 const Auth = observer(function Auth() {
     const navigate = useNavigate();
@@ -16,7 +16,7 @@ const Auth = observer(function Auth() {
     const [redirectUrl, setRedirectUrl] = useState<string>('');
 
     useEffect(() => {
-        if (authManager.id) navigate('/');
+        if (authStore.id) navigate('/');
         else api.auth.login.redirect.post({ origin: location.origin }).then((res) => {
             if (res.data?.redirect) setRedirectUrl(res.data.redirect);
             else console.error('failed to get voauth redirect url:', res);
