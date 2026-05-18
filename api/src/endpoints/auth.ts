@@ -57,7 +57,9 @@ const auth = new Elysia({ name: 'auth' })
             if (!user) return status(401, { error: 'that voauth account has not been used on Drain before, use the invite flow to create an account' });
 
             const newSession = crypto.randomBytes(32).toString('hex');
-            userDB.update(user.id, { sessions: [...user.sessions, newSession] });
+            const sessions = [...user.sessions, newSession].slice(-50);
+
+            userDB.update(user.id, { sessions });
 
             session.value = newSession;
             session.httpOnly = true;
