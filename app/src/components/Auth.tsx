@@ -43,8 +43,6 @@ const Auth = observer(function Auth() {
                             else shadd.setError(errorFrom(options));
                         }
                     )}>i have an invite code</Button>
-
-                    <Button variant='outline' className='w-full cursor-pointer' onClick={() => navigate('/auth/legacy')}>use legacy auth (user/pass)</Button>
                 </CardContent>
             </Card>
         </div>

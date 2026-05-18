@@ -2,25 +2,13 @@ import crypto from 'node:crypto';
 
 import { Elysia, status, t } from 'elysia';
 
-import {
-    generateAuthenticationOptions,
-    verifyAuthenticationResponse,
-    type AuthenticationResponseJSON,
-    type VerifiedAuthenticationResponse
-} from '@simplewebauthn/server';
-
 import auditDB from '../db/impl/AuditDB';
 import apiKeyDB from '../db/impl/APIKeyDB';
 import configDB from '../db/impl/ConfigDB';
-import passkeyDB from '../db/impl/PasskeyDB';
 import requestDB from '../db/impl/RequestDB';
 import userDB from '../db/impl/UserDB';
 
-import Hasher from '../util/hasher';
-
 import { DBAPIKey } from '../../../types';
-
-const passkeysConfigured = typeof Bun.env.RP_ID === 'string';
 
 const oauthStates = new Map<string, number>();
 
@@ -28,51 +16,24 @@ const auth = new Elysia({ name: 'auth' })
     .guard({ detail: { hide: true } })
 
     .get('/api/auth/account', async ({ cookie: { session } }) => {
-        if (typeof session.value !== 'string') return { instance: { allowPasskeys: passkeysConfigured } };
+        if (typeof session.value !== 'string') return {};
 
         const user = userDB.getLink('sessions', session.value);
-        if (!user) return { instance: { allowPasskeys: passkeysConfigured } };
+        if (!user) return {};
 
         return {
             user: {
                 id: user.id,
                 username: user.username,
-                admin: user.admin,
-                mustMigrate: typeof user.voauthId !== 'number' || user.voauthId < 0
+                admin: user.admin
             },
             instance: {
-                allowPasskeys: passkeysConfigured,
                 allowAPIKeys: configDB.db.allowAPIKeys,
                 motd: configDB.db.motd,
                 numRequests: user.admin && requestDB.getSize()
             }
         };
     })
-
-    .post('/api/auth/account', async ({ body, cookie: { session } }) => {
-        try {
-            const user = userDB.getLink('username', body.username);
-            if (!user) return status(401, { error: 'user or password not found' });
-            if (!user.password || (typeof user.voauthId === 'number' && user.voauthId > -1)) return status(401, { error: 'use voauth to log in' });
-
-            const isValidPassword = Hasher.matches(body.password, user.password);
-            if (!isValidPassword) return status(401, { error: 'user or password not found' });
-
-            const newSession = crypto.randomBytes(32).toString('hex');
-            userDB.update(user.id, { sessions: [...user.sessions, newSession], code: undefined });
-
-            session.value = newSession;
-            session.httpOnly = true;
-            session.path = '/';
-            session.sameSite = 'lax';
-            session.secure = true;
-
-            return { user: { id: user.id, username: user.username, admin: user.admin }, motd: configDB.db.motd };
-        } catch (error) {
-            console.error(error);
-            return status(502, {});
-        }
-    }, { body: t.Object({ username: t.String(), password: t.String() }) })
 
     .post('/api/auth/login/redirect', async ({ body }) => {
         const redirectUrl = `${Bun.env.VOAUTH_HOST}/oauth/v1?client_id=${Bun.env.VOAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${body.origin}/api/auth/login/complete`)}`;
@@ -174,46 +135,6 @@ const auth = new Elysia({ name: 'auth' })
         }
     }, { query: t.Object({ state: t.Optional(t.String()), code: t.Optional(t.String()) }) })
 
-    .post('/api/auth/migr/redirect', async ({ body, cookie: { session } }) => {
-        if (!session.value) return status(401, { error: 'not logged in' });
-
-        const user = userDB.getLink('sessions', session.value);
-        if (!user) return status(401, { error: 'not logged in' });
-
-        const redirectUrl = `${Bun.env.VOAUTH_HOST}/oauth/v1?client_id=${Bun.env.VOAUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(`${body.origin}/api/auth/migr/complete`)}`;
-        return { redirect: redirectUrl };
-    }, { body: t.Object({ origin: t.String() }), cookie: t.Object({ session: t.String() }) })
-
-    .get('/api/auth/migr/complete', async ({ query: { code }, cookie: { session } }) => {
-        try {
-            if (!session.value) return status(401, { error: 'not logged in' });
-
-            const user = userDB.getLink('sessions', session.value);
-            if (!user) return status(401, { error: 'not logged in' });
-
-            if (!code) return status(400, { error: 'missing code' });
-
-            const userReq = await fetch(`${Bun.env.VOAUTH_HOST}/api/v1/oauth/validate`, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ appId: Bun.env.VOAUTH_CLIENT_ID, appSecret: Bun.env.VOAUTH_CLIENT_SECRET, code })
-            });
-
-            const userRes = await userReq.json() as { error: string } | { user: { id: number, username: string } };
-            if (!('user' in userRes)) return status(401, { error: userRes.error || 'invalid code' });
-
-            let existingLink = userDB.getLink('voauthId', userRes.user.id);
-            if (existingLink) return status(403, { error: 'that voauth account is being used on another drain account' });
-
-            userDB.update(user.id, { voauthId: userRes.user.id, password: '', code: undefined });
-
-            return new Response(null, { status: 302, headers: { Location: '/' } });
-        } catch (error) {
-            console.error(error);
-            return status(502, {});
-        }
-    }, { query: t.Object({ code: t.Optional(t.String()) }), cookie: t.Cookie({ session: t.Optional(t.String()) }) })
-
     .post('/api/auth/logout', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);
         if (!user) return {};
@@ -231,103 +152,7 @@ const auth = new Elysia({ name: 'auth' })
         return {};
     }, { cookie: t.Cookie({ session: t.String() }) })
 
-    .post('/api/auth/webauthn/login/options', async ({ cookie: { webauthn } }) => {
-        if (!passkeysConfigured) return status(404);
-
-        const options = await generateAuthenticationOptions({
-            rpID: Bun.env.RP_ID!,
-            userVerification: 'preferred'
-        });
-
-        webauthn.value = options.challenge;
-        webauthn.httpOnly = true;
-        webauthn.path = '/';
-        webauthn.sameSite = 'lax';
-        webauthn.secure = true;
-
-        return options;
-    })
-
-    .post('/api/auth/webauthn/login/verify', async ({ body, headers: { origin }, cookie: { webauthn, session } }) => {
-        if (!passkeysConfigured) return status(404);
-        if (!origin) return status(404);
-
-        const passableBody = body as AuthenticationResponseJSON;
-
-        const passkey = passkeyDB.get(body.id);
-        if (!passkey) return status(401, { error: 'could not find passkey' });
-
-        const user = userDB.get(passkey.userId);
-        if (!user) return status(401, { error: 'could not find passkey' });
-
-        if (body.response.userHandle) {
-            if (Buffer.from(body.response.userHandle, 'base64').toString() !== user.id.toString())
-                return status(401, { error: 'could not find passkey' });
-        }
-
-        let verification: VerifiedAuthenticationResponse;
-
-        try {
-            verification = await verifyAuthenticationResponse({
-                response: passableBody,
-                expectedChallenge: webauthn.value,
-                expectedOrigin: origin,
-                expectedRPID: Bun.env.RP_ID!,
-                credential: {
-                    id: passkey.id,
-                    publicKey: Buffer.from(passkey.publicKey, 'base64'),
-                    counter: passkey.counter,
-                    transports: passkey.transports
-                }
-            });
-        } catch (error) {
-            console.error(error);
-            return status(400, { error: (error as Error).message });
-        }
-
-        if (!verification.verified) return status(400, { error: 'could not verify authentication' });
-
-        passkeyDB.update(verification.authenticationInfo.credentialID, {
-            counter: verification.authenticationInfo.newCounter,
-            lastUsed: Date.now()
-        });
-
-        const newSession = crypto.randomBytes(32).toString('hex');
-        userDB.update(user.id, { sessions: [...user.sessions, newSession] });
-
-        session.value = newSession;
-        session.httpOnly = true;
-        session.path = '/';
-        session.sameSite = 'lax';
-        session.secure = true;
-
-        webauthn.value = '';
-        webauthn.httpOnly = true;
-        webauthn.path = '/';
-        webauthn.sameSite = 'lax';
-        webauthn.maxAge = 0;
-        webauthn.secure = true;
-
-        return { user: { id: user.id, username: user.username, admin: user.admin }, motd: configDB.db.motd };
-    }, {
-        body: t.Object({
-            id: t.String(),
-            rawId: t.String(),
-            response: t.Object({
-                clientDataJSON: t.String(),
-                authenticatorData: t.String(),
-                signature: t.String(),
-                userHandle: t.Optional(t.String())
-            }),
-            type: t.Literal('public-key')
-        }),
-        headers: t.Object({ origin: t.Optional(t.String()) }),
-        cookie: t.Cookie({ webauthn: t.String() })
-    })
-
     .get('/api/auth/api/keys', async ({ cookie: { session } }) => {
-        if (!passkeysConfigured) return status(404);
-
         const user = userDB.getLink('sessions', session.value);
         if (!user) return status(401, { error: 'not logged in' });
 

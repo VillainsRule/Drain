@@ -8,8 +8,6 @@ import configDB from '../db/impl/ConfigDB';
 import siteDB from '../db/impl/SiteDB';
 import userDB from '../db/impl/UserDB';
 
-import Hasher from '../util/hasher';
-
 const drainHome = path.join(import.meta.dirname, '..', '..', '..');
 
 const commit = term.execSync('git rev-parse --short HEAD', { encoding: 'utf8', cwd: drainHome }).toString().trim();
@@ -62,23 +60,6 @@ const admin = new Elysia({ name: 'admin' })
 
         return {};
     }, { body: t.Object({ userId: t.Number(), isAdmin: t.Boolean() }), cookie: t.Cookie({ session: t.String() }) })
-
-    .post('/api/admin/users/setPassword', async ({ body, cookie: { session } }) => {
-        const user = userDB.getLink('sessions', session.value);
-        if (!user || !user.admin) return status(401, { error: 'not logged in' });
-
-        if (body.newPassword.length > 24) return status(413, { error: 'password too long' });
-
-        const target = userDB.get(body.userId);
-        if (!target) return status(404, { error: 'user not found' });
-
-        if (user.id !== 1 && target.admin && target.id !== user.id)
-            return status(403, { error: 'cannot modify other admins' });
-
-        userDB.update(body.userId, { password: Hasher.encode(body.newPassword), sessions: [] });
-
-        return {};
-    }, { body: t.Object({ userId: t.Number(), newPassword: t.String() }), cookie: t.Cookie({ session: t.String() }) })
 
     .get('/api/admin/instance', async ({ cookie: { session } }) => {
         const user = userDB.getLink('sessions', session.value);

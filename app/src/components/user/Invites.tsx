@@ -28,7 +28,7 @@ const Invites = observer(function Invites() {
 
     const createInvite = () => shadd.prompt(
         'create a new user',
-        `enter a username for the new user. they will be able to set their password and site access after the account is created. ${!authStore.admin ? 'you can only invite 3 users at once.' : ''}`,
+        `enter a username for the new user. ${!authStore.admin ? 'you can only invite 3 users at once.' : ''}`,
         { placeholder: 'username', maxLength: 16, minLength: 1 },
         (value: string) => {
             api.auth.invites.create.post({ username: value }).then((res) => {
@@ -36,8 +36,8 @@ const Invites = observer(function Invites() {
                     fetchInvites();
 
                     shadd.copy(
-                        'user created!',
-                        'the user has been created! give them this invite code to set their password and log in:',
+                        'invite code created!',
+                        'the user may enter this code on the login page. they will then link a voauth account and get access to sites.',
                         res.data.inviteCode
                     );
 

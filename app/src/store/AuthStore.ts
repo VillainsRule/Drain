@@ -18,7 +18,6 @@ class AuthStore {
 
     instance = {
         allowAPIKeys: true,
-        allowPasskeys: true,
         numRequests: 0,
         motd: ''
     };
@@ -30,8 +29,6 @@ class AuthStore {
     }
 
     setAuth(user: PublicUser) {
-        if (user.mustMigrate && !location.pathname.includes('migrate')) location.href = '/migrate';
-
         this.id = user.id;
         this.username = user.username;
         this.admin = user.admin;
@@ -51,7 +48,6 @@ class AuthStore {
             if (!data) throw new Error('authentication fetch error');
 
             this.hasInit = true;
-            this.instance.allowPasskeys = data.instance.allowPasskeys;
 
             if (data.user) {
                 this.setAuth(data.user);

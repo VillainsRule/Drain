@@ -96,7 +96,7 @@ const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb
     .use(auth)
     .use(discovery)
     .use(sites)
-    .listen(4422, () => console.log(`drain it up! ${Bun.env.RP_ID !== 'localhost' ? `https://${Bun.env.RP_ID}` : 'http://localhost:4422'}`)); 2
+    .listen(4422, () => console.log('drain it up! http://localhost:4422'));
 
 if (certExists) app.listen({
     port: 4423,

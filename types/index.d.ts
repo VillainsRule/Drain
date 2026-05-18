@@ -2,20 +2,6 @@ import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
 
 export type DBId = string | number;
 
-export interface DBPasskey {
-    userId: number;
-    name: string;
-    lastUsed: number;
-
-    webAuthnUserID: string; // from step 1
-    id: string; // from step 2
-    publicKey: string; // from step 2
-    counter: number; // from step 2
-    transports: AuthenticatorTransportFuture[]; // from step 2
-    deviceType: string; // from step 2
-    backedUp: boolean; // from step 2
-}
-
 export interface DBAPIKey {
     id: string;
     key: string;
@@ -37,7 +23,6 @@ export interface DBUser {
     voauthId: number;
     username: string;
     admin: 0 | 1;
-    password?: string;
     code?: string | undefined;
     invitedBy: number;
     sessions: string[];
@@ -49,7 +34,6 @@ export interface PublicUser {
     id: number;
     username: string;
     admin: 0 | 1;
-    mustMigrate?: boolean;
 }
 
 export interface PublicAdminUser extends PublicUser {
@@ -75,9 +59,9 @@ export interface PublicSite extends DBSite {
 }
 
 export interface DBConfig {
+    allowAPIKeys: boolean;
     balancerProxy: string;
     motd: string;
-    allowAPIKeys: boolean;
 }
 
 export interface PublicConfig {

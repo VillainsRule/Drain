@@ -13,7 +13,6 @@
 - Bulk imported keys
 - Vast per-site permission system
 - Instance-only API Keys
-- Passkey/WebAuthn Login
 - Global admin configuration
 - Simple user management
 
@@ -30,7 +29,7 @@
 
 <br><h2 align='center'>Useful Notes for Deployment</h2>
 
-All Drain logins are now processed through voauth. If you own a Drain instance (I don't believe anyone does, but who knows?), users will be able to migrate upon login. If you don't like this, you're welcome to freeze Drain at the commit `f251d3f` and ignore all commits after that. You can also [self-host voauth](https://github.com/VillainsRule/voauth).
+All Drain logins are now processed through voauth. If you own a Drain instance created before 5/14/26 (I don't believe anyone does, but who knows?), you'll need to revert to commit `b1291c0` to then have all users complete migration (at which point you can fast forward). If you don't want the voauth login flow, you're welcome to pull Drain at the commit `f251d3f` and selectively (manually) apply new commits to Drain. You can also [self-host voauth](https://github.com/VillainsRule/voauth).
 
 The core administrator account is named "admin" with the user ID "1". admin has access to all sites and all users. admin cannot be demoted or deleted. admin has access to all sites, forever. When you start up the drain instance for the first time, to login and link a voauth account, use the invite code `admin`.
 

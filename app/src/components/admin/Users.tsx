@@ -13,7 +13,6 @@ import { shadd } from '@/lib/shadd';
 import Check from 'lucide-react/icons/check';
 import Clock from 'lucide-react/icons/clock';
 import Crown from 'lucide-react/icons/crown';
-import KeyRound from 'lucide-react/icons/key-round';
 import ScanSearch from 'lucide-react/icons/scan-search';
 import ShieldCheck from 'lucide-react/icons/shield-check';
 import ShieldMinus from 'lucide-react/icons/shield-minus';
@@ -83,30 +82,6 @@ const Users = observer(function Users() {
                         </div>
 
                         <div className='flex items-center gap-1 shrink-0'>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button size='sm' variant='ghost' disabled={user.pendingLogin || !!(user.admin && authStore.id !== 1)} onClick={() => shadd.prompt(
-                                        'change the password',
-                                        `enter a new password for @${user.username}.`,
-                                        { placeholder: 'new password', maxLength: 64, minLength: 3 },
-                                        async (value: string) => {
-                                            const options = await api.admin.users.setPassword.post({ userId: user.id, newPassword: value });
-                                            if (options.data) {
-                                                if (user.id === authStore.id) location.reload();
-                                                else shadd.close();
-                                            } else shadd.setError(errorFrom(options));
-                                        }
-                                    )}>
-                                        <KeyRound className='h-4 w-4' />
-                                        <span className='hidden lg:inline ml-1.5'>password</span>
-                                    </Button>
-                                </TooltipTrigger>
-
-                                <TooltipContent>
-                                    {user.pendingLogin ? 'user has not logged in yet' : (user.admin && authStore.id !== 1) ? 'cannot change another admin\'s password' : 'change password'}
-                                </TooltipContent>
-                            </Tooltip>
-
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button size='sm' variant='ghost' disabled={!!user.admin} onClick={() => setSitePopupTarget(user.id)}>

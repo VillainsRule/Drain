@@ -254,7 +254,7 @@ if (fs.existsSync(dbRootPath)) {
         v4Files.forEach((filename) => {
             const v6Path = path.join(dbRootPath, 'v6', filename);
             const v7Path = path.join(v7Dir, filename);
-            
+
             if (filename === 'users.db') {
                 const v6File = JSON.parse(fs.readFileSync(v6Path, 'utf8'));
                 Object.values(v6File.target).forEach((user: any) => {
@@ -266,6 +266,27 @@ if (fs.existsSync(dbRootPath)) {
                 delete v6File.nextUserId;
                 fs.writeFileSync(v7Path, JSON.stringify(v6File));
             } else if (fs.existsSync(v6Path)) fs.cpSync(v6Path, v7Path);
+        })
+    }
+
+    // v7 -> v8
+    // 5/18 - delete old passkey and password stuff
+    const v8Dir = path.join(dbRootPath, 'v8');
+    if (!fs.existsSync(v8Dir)) {
+        fs.mkdirSync(v8Dir);
+
+        v4Files.forEach((filename) => {
+            const v7Path = path.join(dbRootPath, 'v7', filename);
+            const v8Path = path.join(v8Dir, filename);
+
+            if (filename === 'users.db') {
+                const v7File = JSON.parse(fs.readFileSync(v7Path, 'utf8'));
+                Object.values(v7File.target).forEach((user: any) => {
+                    delete user.password;
+                });
+                fs.writeFileSync(v8Path, JSON.stringify(v7File));
+            } else if (filename === 'passkeys.db') { }
+            else if (fs.existsSync(v7Path)) fs.cpSync(v7Path, v8Path);
         })
     }
 }
