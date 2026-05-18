@@ -77,7 +77,7 @@ const APIKeys = observer(function APIKeys() {
 
                             <span className='font-mono text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded hidden sm:block'>{apiKey.key}</span>
 
-                            <div className='flex flex-col items-end sm:items-center sm:flex-row gap-0 sm:gap-4 text-xs text-muted-foreground shrink-0'>
+                            <div className='flex flex-col items-end sm:items-center gap-0 text-xs text-muted-foreground shrink-0'>
                                 <span>created {apiKey.createdAt}</span>
                                 <span>used {apiKey.lastUsed}</span>
                             </div>

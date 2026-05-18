@@ -28,7 +28,7 @@ const Audit = observer(function Audit() {
     }, []);
 
     return (
-        <div className='flex flex-col items-center h-full w-5/6 gap-5 overflow-y-auto drain-scrollbar mt-6'>
+        <div className='flex flex-col items-center h-full w-[calc(100%-5em)] gap-5 overflow-y-auto drain-scrollbar mt-6'>
             <h2 className='text-2xl font-bold text-left'>audit log</h2>
 
             <div className='flex flex-col gap-2 w-full'>
