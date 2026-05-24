@@ -4,7 +4,7 @@ import api, { errorFrom } from '@/lib/eden';
 
 import type { PublicSite } from '@/types';
 
-const SORTABLE_KEYWORDS = ['paid', 'premium', 'prod', 'trial', 'tier', 'free', '$', 'valid', 'empty'];
+const SORTABLE_KEYWORDS = ['paid', 'premium', 'prod', 'trial', 'tier', 'free', '$', 'valid', 'empty', 'credits'];
 
 class SiteStore {
     siteList: string[] = [];

@@ -21,8 +21,9 @@
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
         "noEmitOnError": true,
-        "exactOptionalPropertyTypes": true
+        "exactOptionalPropertyTypes": true,
+        "types": ["bun"]
     },
-    "include": ["tools"],
+    "include": ["**/*.ts"],
     "exclude": ["node_modules"]
 }

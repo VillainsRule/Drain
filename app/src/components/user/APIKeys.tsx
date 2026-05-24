@@ -134,7 +134,7 @@ const APIKeys = observer(function APIKeys() {
                 </DialogTrigger>
 
                 <DialogContent className='min-w-4/5 w-4/5 flex items-center justify-center'>
-                    <iframe src='/docs' className='w-[calc(100% -)] h-[80vh] rounded-md border-none' />
+                    <iframe src='/docs' className='w-[calc(100%_-_20px)] h-[80vh] rounded-md border-none' />
                 </DialogContent>
             </Dialog>
         </div>
