@@ -19,7 +19,7 @@ export default async function httpsProxy(proxy: string, _useProxy: boolean): Pro
 
         for (let i = 0; i < 3; i++) {
             const attempt = await fetch('https://myip.wtf/text', {
-                proxy: url.toString(),
+                proxy,
                 signal: AbortSignal.timeout(10_000),
                 tls: { rejectUnauthorized: false }
             });

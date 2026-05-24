@@ -7,8 +7,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import account from './endpoints/account';
 import admin from './endpoints/admin';
-import auth from './endpoints/auth';
+import apikey from './endpoints/apikey';
 import discovery from './endpoints/discovery';
 import sites from './endpoints/sites';
 
@@ -92,8 +93,9 @@ const app = new Elysia({ serve: { maxRequestBodySize: 1024 * 1024 * 0.05 /* 50kb
     }, { detail: { hide: true } })
     .get('/robots.txt', () => new Response('User-agent: *\nDisallow: /', { headers: { 'Content-Type': 'text/plain' } }), { detail: { hide: true } })
     .use(files)
+    .use(account)
     .use(admin)
-    .use(auth)
+    .use(apikey)
     .use(discovery)
     .use(sites)
     .listen(4422, () => console.log('drain it up! http://localhost:4422'));
