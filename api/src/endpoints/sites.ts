@@ -9,7 +9,7 @@ import o1Optimizer from '../util/O1Optimizer';
 
 import getBalancer from '../balancer';
 
-const usersRunningBalancer: number[] = [];
+const usersRunningBalancer = new Map<number, NodeJS.Timeout>();
 
 const sites = new Elysia({ name: 'sites' })
     .guard({
@@ -91,12 +91,15 @@ const sites = new Elysia({ name: 'sites' })
 
         const balancer = getBalancer(body.domain);
         if (balancer) {
-            if (usersRunningBalancer.includes(user.id) && !user.admin) return status(429, { error: 'you are already running a balancer request. please wait.' });
-            usersRunningBalancer.push(user.id);
+            if (usersRunningBalancer.has(user.id) && !user.admin) return status(429, { error: 'you are already running a balancer request. please wait.' });
+
+            const i = setTimeout(() => usersRunningBalancer.delete(user.id), 5_000);
+            usersRunningBalancer.set(user.id, i);
 
             const balance = await balancer(body.key, site.useProxy);
 
-            usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
+            if (usersRunningBalancer.has(user.id)) clearTimeout(usersRunningBalancer.get(user.id));
+            usersRunningBalancer.delete(user.id);
 
             if (balance === 'invalid_key') return status(424, { error: 'balancer has determined this key is invalid.' });
             if (balance === 'leaked_key') return status(424, { error: 'balancer has determined this key was flagged.' });
@@ -120,12 +123,15 @@ const sites = new Elysia({ name: 'sites' })
         const balancer = getBalancer(body.domain);
         if (!balancer) return status(401, { error: 'no permission' });
 
-        if (usersRunningBalancer.includes(user.id)) return status(429, { error: 'you are already running a balancer request. please wait.' });
-        usersRunningBalancer.push(user.id);
+        if (usersRunningBalancer.has(user.id) && !user.admin) return status(429, { error: 'you are already running a balancer request. please wait.' });
+
+        const i = setTimeout(() => usersRunningBalancer.delete(user.id), 5_000);
+        usersRunningBalancer.set(user.id, i);
 
         const balance = await balancer(body.key, site.useProxy);
 
-        usersRunningBalancer.splice(usersRunningBalancer.indexOf(user.id), 1);
+        if (usersRunningBalancer.has(user.id)) clearTimeout(usersRunningBalancer.get(user.id));
+        usersRunningBalancer.delete(user.id);
 
         if (balance === 'invalid_key') return status(400, { error: 'balancer has determined the key is invalid' });
         if (balance === 'leaked_key') return status(400, { error: 'balancer has determined the key was flagged' });
