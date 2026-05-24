@@ -1,3 +1,4 @@
+import aimlBalancer from './custom/aimlapi.com';
 import cartesiaBalancer from './custom/cartesia.ai';
 import cohereBalancer from './custom/cohere.com';
 import deepgramBalancer from './custom/deepgram.com';
@@ -16,7 +17,6 @@ const corsShBalancer = createBasicBalancer('https://proxy.cors.sh/https://ip.vil
 const mistralBalancer = createBasicBalancer('https://api.mistral.ai/v1/models', { customText: 'Has Credits' });
 const togetherBalancer = createBasicBalancer('https://api.together.xyz/v1/models', { customText: 'Has Credits' });
 
-const aimlBalancer = createBasicBalancer('https://api.aimlapi.com/v1/chat/completions', { validCode: 400, method: 'POST' });
 const groqBalancer = createBasicBalancer('https://api.groq.com/openai/v1/models', { invalidCode: [401, 400] });
 const fireworksBalancer = createBasicBalancer('https://api.fireworks.ai/v1/accounts', { invalidCode: [401, 412] });
 
