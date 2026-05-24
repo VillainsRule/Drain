@@ -42,7 +42,7 @@ const sites = new Elysia({ name: 'sites' })
         return status(401, { error: 'not logged in' });
     })
 
-    .get('/api/v1/sites/list', async ({ user }) => ({ sites: user.sites }), { detail: { description: 'returns a list of site domains the user has access to', tags: ['Sites'] } })
+    .get('/api/v1/sites/list', async ({ user }) => ({ sites: user.admin ? siteDB.keys : user.sites }), { detail: { description: 'returns a list of site domains the user has access to', tags: ['Sites'] } })
 
     .post('/api/v1/sites/info', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
