@@ -216,17 +216,18 @@ const sites = new Elysia({ name: 'sites' })
     }, { body: t.Object({ domain: t.String(), userId: t.Number() }), detail: { description: 'grants a user access to a site', tags: ['Site Access'] } })
 
     .post('/api/v1/sites/access/remove', async ({ body, user }) => {
-        const targetUser = userDB.get(body.userId);
-        if (!targetUser) return status(401, { error: 'no permission' });
-
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
         if (!user.admin) return status(401, { error: 'no permission' });
 
+        const targetUser = userDB.get(body.userId);
+
         siteDB.update(body.domain, { users: site.users.filter(u => u !== body.userId) });
 
-        targetUser.sites = targetUser.sites.filter(s => s !== body.domain);
-        userDB.update(targetUser.id, { sites: targetUser.sites });
+        if (targetUser) {
+            targetUser.sites = targetUser.sites.filter(s => s !== body.domain);
+            userDB.update(targetUser.id, { sites: targetUser.sites });
+        }
 
         return {};
     }, { body: t.Object({ domain: t.String(), userId: t.Number() }), detail: { description: 'revokes a user\'s access to a site', tags: ['Site Access'] } })
