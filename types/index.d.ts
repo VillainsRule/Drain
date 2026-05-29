@@ -1,5 +1,3 @@
-import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
-
 export type DBId = string | number;
 
 export interface DBAPIKey {
