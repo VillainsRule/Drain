@@ -30,6 +30,15 @@ const headers = {
     'Authorization': `Bearer ${githubToken}`
 };
 
+const userReq = await fetch('https://api.github.com/user', { headers });
+const userRes = await userReq.json() as any;
+
+if (userReq.ok) console.log(`Authenticated as GitHub user: ${userRes.login}`);
+else {
+    console.error(`GitHub authentication failed: ${userRes.message}`);
+    process.exit(1);
+}
+
 const searchGitHub = async (query: string, page: string = '1') => {
     const response = await fetch(`https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=100&page=${page}`, { headers });
     if (response.ok) return response.json();
