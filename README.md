@@ -18,7 +18,7 @@
 
 <h2 align='center'>Setup</h2>
 
-1. Install [Bun](https://bun.sh)
+1. Install [Bun](https://bun.sh) (bun required for `proxy` opt)
 2. Clone the repo: `git clone https://github.com/VillainsRule/Drain && cd Drain`
 3. Add voauth information: `bun editenv`
 4. Prepare for production: `bun prep`
