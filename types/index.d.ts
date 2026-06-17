@@ -48,6 +48,7 @@ export interface DBSite {
     users: number[];
     keys: Record<string, string | null>;
     useProxy: boolean;
+    notes: string;
 }
 
 export interface PublicSite extends DBSite {

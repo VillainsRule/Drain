@@ -289,4 +289,26 @@ if (fs.existsSync(dbRootPath)) {
             else if (fs.existsSync(v7Path)) fs.cpSync(v7Path, v8Path);
         })
     }
+
+    // v8 -> v9
+    // 6/17 - add a notes field to each site
+    const v9Dir = path.join(dbRootPath, 'v9');
+    if (!fs.existsSync(v9Dir)) {
+        fs.mkdirSync(v9Dir);
+
+        v4Files.forEach((filename) => {
+            const v8Path = path.join(dbRootPath, 'v8', filename);
+            const v9Path = path.join(dbRootPath, 'v9', filename);
+
+            if (filename === 'sites.db') {
+                const v8File = JSON.parse(fs.readFileSync(v8Path, 'utf8'));
+                Object.values(v8File.target).forEach((site: any) => {
+                    site.notes = '';
+                });
+                fs.writeFileSync(v9Path, JSON.stringify(v8File));
+            } else if (fs.existsSync(v8Path)) fs.cpSync(v8Path, v9Path);
+        })
+    }
 }
+
+// DID YOU BUMP ./version.ts?

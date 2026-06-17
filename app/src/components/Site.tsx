@@ -156,7 +156,7 @@ const SiteKeys = observer(function SiteKeys() {
                             </Tooltip>
                         </DialogTrigger>
 
-                        <DialogContent>
+                        <DialogContent className='md:max-w-xl'>
                             <DialogHeader>
                                 <DialogTitle>site settings</DialogTitle>
                                 <DialogDescription>configure settings for {site.id}</DialogDescription>
@@ -184,9 +184,19 @@ const SiteKeys = observer(function SiteKeys() {
                                 </label>
 
                                 <div className='flex flex-col gap-1'>
-                                    <span>description</span>
+                                    <span>discovery tag</span>
                                     <Input defaultValue={site.description} onChange={(e) => {
                                         api.v1.sites.settings.description.post({ domain: site.id, description: e.target.value }).then((res) => {
+                                            if (res.data) siteStore.refreshCurrent();
+                                            else alert(errorFrom(res));
+                                        });
+                                    }} />
+                                </div>
+
+                                <div className='flex flex-col gap-1'>
+                                    <span>notes</span>
+                                    <Textarea defaultValue={site.notes} onChange={(e) => {
+                                        api.v1.sites.settings.notes.post({ domain: site.id, notes: e.target.value }).then((res) => {
                                             if (res.data) siteStore.refreshCurrent();
                                             else alert(errorFrom(res));
                                         });
