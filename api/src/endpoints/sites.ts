@@ -5,8 +5,6 @@ import configDB from '../db/impl/ConfigDB';
 import siteDB from '../db/impl/SiteDB';
 import userDB from '../db/impl/UserDB';
 
-import o1Optimizer from '../util/TimedCalculator';
-
 import getBalancer from '../balancer';
 
 const usersRunningBalancer = new Map<number, NodeJS.Timeout>();
@@ -51,7 +49,6 @@ const sites = new Elysia({ name: 'sites' })
             keys: site.keys,
             users: user.admin ? site.users : [user.id],
             supportsBalancer: !!getBalancer(site.id),
-            totalBalance: o1Optimizer.getBalance(site.id),
             description: site.description,
             public: site.public,
             useProxy: site.useProxy,

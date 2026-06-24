@@ -31,6 +31,14 @@ class SiteStore {
                 this.site = {
                     ...res.data,
                     supportsBalancer: !!res.data.supportsBalancer,
+                    totalBalance: Object.values(res.data.keys).reduce((sum, val) => {
+                        if (val && val.startsWith('$')) {
+                            const num = parseFloat(val.slice(1));
+                            return sum + (isNaN(num) ? 0 : num);
+                        }
+
+                        return sum;
+                    }, 0),
                     sortable: (firstKey && SORTABLE_KEYWORDS.some(k => firstKey.toLowerCase().includes(k))) || false
                 };
             } else alert(errorFrom(res));
