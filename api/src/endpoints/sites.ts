@@ -5,7 +5,7 @@ import configDB from '../db/impl/ConfigDB';
 import siteDB from '../db/impl/SiteDB';
 import userDB from '../db/impl/UserDB';
 
-import o1Optimizer from '../util/O1Optimizer';
+import o1Optimizer from '../util/TimedCalculator';
 
 import getBalancer from '../balancer';
 
@@ -107,11 +107,9 @@ const sites = new Elysia({ name: 'sites' })
             if (balance === 'leaked_key') return status(424, { error: 'balancer has determined this key was flagged.' });
 
             site.keys[body.key] = isNaN(Number(balance)) ? balance : `$${balance}`;
-            o1Optimizer.addToBalance(body.domain, isNaN(Number(balance)) ? 0 : Number(balance));
         } else site.keys[body.key] = null;
 
         siteDB.update(body.domain, { keys: site.keys });
-        o1Optimizer.incrementKeys(body.domain);
 
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'adds a key to a site. if the site supports balancer, the key will be checked and its balance will be stored', tags: ['Site Keys'] } })
@@ -138,10 +136,6 @@ const sites = new Elysia({ name: 'sites' })
         if (balance === 'invalid_key') return status(400, { error: 'balancer has determined the key is invalid' });
         if (balance === 'leaked_key') return status(400, { error: 'balancer has determined the key was flagged' });
 
-        const oldBalance = site.keys[body.key];
-        if (oldBalance && oldBalance.startsWith('$')) o1Optimizer.subtractFromBalance(body.domain, Number(oldBalance.slice(1)));
-        if (!isNaN(Number(balance))) o1Optimizer.addToBalance(body.domain, Number(balance));
-
         site.keys[body.key] = isNaN(Number(balance)) ? balance : `$${balance}`;
         siteDB.update(body.domain, { keys: site.keys });
 
@@ -157,7 +151,6 @@ const sites = new Elysia({ name: 'sites' })
 
         delete site.keys[body.key];
         siteDB.update(body.domain, { keys: site.keys });
-        o1Optimizer.decrementKeys(body.domain);
 
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'removes a key from a site. requires: admin', tags: ['Site Keys'] } })

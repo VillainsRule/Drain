@@ -1,6 +1,6 @@
 import LinkedDB from '../struct/LinkedDB';
 
-import o1Optimizer from '../../util/O1Optimizer';
+import timedCalculator from '../../util/TimedCalculator';
 
 import { DBSite } from '../../../../types';
 
@@ -10,7 +10,7 @@ export class SiteDB extends LinkedDB<DBSite> {
     }
 
     afterInit() {
-        o1Optimizer.init(this);
+        timedCalculator.init(this);
     }
 }
 

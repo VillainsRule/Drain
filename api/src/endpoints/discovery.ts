@@ -7,7 +7,7 @@ import requestDB from '../db/impl/RequestDB';
 import siteDB from '../db/impl/SiteDB';
 import userDB from '../db/impl/UserDB';
 
-import o1Optimizer from '../util/O1Optimizer';
+import timedCalculator from '../util/TimedCalculator';
 
 const discovery = new Elysia()
     .guard({
@@ -45,8 +45,8 @@ const discovery = new Elysia()
 
             return {
                 domain: id,
-                keys: o1Optimizer.getKeyCount(id),
-                balance: o1Optimizer.getBalance(id),
+                keys: timedCalculator.getKeyCount(id),
+                balance: timedCalculator.getBalance(id),
                 public: info?.public || false,
                 description: info?.description || ''
             };

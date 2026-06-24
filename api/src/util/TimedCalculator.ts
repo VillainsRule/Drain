@@ -5,11 +5,16 @@ const fixFloatingPoint = (num: number): number => {
     return Number(rounded.toFixed(2));
 }
 
-class O1Optimizer {
+class TimedCalculator {
     private keyCountCache: Record<string, number> = {};
     private balanceCache: Record<string, number> = {};
 
     init(db: SiteDB) {
+        this.calculate(db);
+        setInterval(() => this.calculate(db), 60000);
+    }
+
+    calculate(db: SiteDB) {
         for (const site of db.getAll()) {
             this.keyCountCache[site.id] = Object.keys(site.keys).length;
             const firstKey = site.keys[Object.keys(site.keys)[0]];
@@ -27,32 +32,14 @@ class O1Optimizer {
         }
     }
 
-    getKeyCount(siteId: string): number {
-        return this.keyCountCache[siteId] ?? 0;
+    getKeyCount(domain: string): number {
+        return this.keyCountCache[domain] || 0;
     }
 
-    incrementKeys(siteId: string, amount: number = 1): void {
-        this.keyCountCache[siteId] = (this.keyCountCache[siteId] ?? 0) + amount;
-    }
-
-    decrementKeys(siteId: string, amount: number = 1): void {
-        this.keyCountCache[siteId] = Math.max((this.keyCountCache[siteId] ?? 0) - amount, 0);
-    }
-
-    getBalance(siteId: string): number | undefined {
-        return this.balanceCache[siteId];
-    }
-
-    addToBalance(siteId: string, amount: number): void {
-        if (typeof amount === 'number')
-            this.balanceCache[siteId] = fixFloatingPoint((this.balanceCache[siteId] ?? 0) + amount);
-    }
-
-    subtractFromBalance(siteId: string, amount: number): void {
-        if (typeof amount === 'number')
-            this.balanceCache[siteId] = fixFloatingPoint(Math.max((this.balanceCache[siteId] ?? 0) - amount, 0));
+    getBalance(domain: string): number {
+        return this.balanceCache[domain] || 0;
     }
 }
 
-const o1Optimizer = new O1Optimizer();
-export default o1Optimizer;
+const timedCalculator = new TimedCalculator();
+export default timedCalculator;
