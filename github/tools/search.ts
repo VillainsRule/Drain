@@ -7,15 +7,7 @@ let keyPath = path.join(import.meta.dirname, 'keys.txt');
 
 const searchQuery = process.argv[2];
 
-if (process.argv[3]) {
-    const comboDir = path.join(import.meta.dirname, '..', 'combos');
-    if (!fs.existsSync(comboDir)) fs.mkdirSync(comboDir);
-
-    const comboFile = path.join(comboDir, `${process.argv[2].split('=')[1]}.txt`);
-    keyPath = comboFile;
-}
-
-const githubToken = GITHUB_CONFIG.githubUserToken;
+const githubToken = GITHUB_CONFIG.search.githubUserToken;
 
 if (!githubToken) {
     console.error('githubUserToken config value not set');
@@ -84,7 +76,7 @@ const processItems = async (items: any[]) => {
             const contentResults = await fetchFileContent(item.url);
             if (contentResults) {
                 const fileContent = Buffer.from(contentResults.content, 'base64').toString('utf-8');
-                const matches = fileContent.match(GITHUB_CONFIG.regex);
+                const matches = fileContent.match(GITHUB_CONFIG.search.regex);
                 if (matches) matches.forEach((key) => {
                     if (!key.toLowerCase().includes('abc') && !key.toLowerCase().includes('xxxxx')) matchedKeys.add(key)
                 });

@@ -64,7 +64,7 @@ const sites = new Elysia({ name: 'sites' })
         if (!user.admin) return status(401, { error: 'unauthorized' });
 
         if (body.url.length > 36) return status(413, { error: 'URL too long' });
-        if (siteDB.has(body.url)) return status(403, { error: 'site already exists' });
+        if (siteDB.has(body.url)) return status(409, { error: 'site already exists' });
 
         siteDB.add({
             id: body.url,
@@ -89,7 +89,7 @@ const sites = new Elysia({ name: 'sites' })
         if (!site) return status(401, { error: 'no permission' });
         if (!site.users.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
 
-        if (site.keys[body.key]) return status(403, { error: 'key already exists' });
+        if (site.keys[body.key]) return status(409, { error: 'key already exists' });
 
         const balancer = getBalancer(body.domain);
         if (balancer) {
@@ -212,7 +212,7 @@ const sites = new Elysia({ name: 'sites' })
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
         if (!user.admin && !site.users.includes(user.id)) return status(401, { error: 'no permission' });
-        if (site.users.includes(body.userId)) return status(403, { error: 'user already has access to this site' });
+        if (site.users.includes(body.userId)) return status(409, { error: 'user already has access to this site' });
 
         site.users.push(body.userId);
         siteDB.update(body.domain, { users: site.users });
