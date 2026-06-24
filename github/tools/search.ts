@@ -5,16 +5,14 @@ import path from 'path';
 
 let keyPath = path.join(import.meta.dirname, 'keys.txt');
 
-if (process.argv[2]) {
-    GITHUB_CONFIG.searchQuery = process.argv[2];
+const searchQuery = process.argv[2];
 
-    if (process.argv[3]) {
-        const comboDir = path.join(import.meta.dirname, '..', 'combos');
-        if (!fs.existsSync(comboDir)) fs.mkdirSync(comboDir);
+if (process.argv[3]) {
+    const comboDir = path.join(import.meta.dirname, '..', 'combos');
+    if (!fs.existsSync(comboDir)) fs.mkdirSync(comboDir);
 
-        const comboFile = path.join(comboDir, `${process.argv[2].split('=')[1]}.txt`);
-        keyPath = comboFile;
-    }
+    const comboFile = path.join(comboDir, `${process.argv[2].split('=')[1]}.txt`);
+    keyPath = comboFile;
 }
 
 const githubToken = GITHUB_CONFIG.githubUserToken;
@@ -98,7 +96,7 @@ const processItems = async (items: any[]) => {
 const matchedKeys = new Set<string>();
 
 try {
-    const firstResults = await rateLimitedSearchGitHub(GITHUB_CONFIG.searchQuery, '1');
+    const firstResults = await rateLimitedSearchGitHub(searchQuery, '1');
     const totalCount = firstResults.total_count;
     const perPage = 100;
     const totalPages = Math.ceil(totalCount / perPage);
@@ -113,7 +111,7 @@ try {
     matchedKeys.clear();
 
     for (let page = 2; page <= Math.min(totalPages, 10); page++) {
-        const pageResults = await rateLimitedSearchGitHub(GITHUB_CONFIG.searchQuery, page.toString());
+        const pageResults = await rateLimitedSearchGitHub(searchQuery, page.toString());
         await processItems(pageResults.items);
         console.log(`processed page ${page}`);
         fs.appendFileSync(keyPath, Array.from(matchedKeys).join('\n') + '\n', 'utf-8');
