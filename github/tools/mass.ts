@@ -8,7 +8,7 @@ const combos = fs.readFileSync(path.join(import.meta.dirname, 'combos.txt'), 'ut
 for (const combo of combos) {
     let start = Date.now();
 
-    execSync(`bun ${path.join(import.meta.dirname, 'search.ts')} ${combo}`, { stdio: 'inherit' });
+    execSync(`bun ${path.join(import.meta.dirname, 'search.ts')} "${combo.replaceAll('"', '\\"')}"`, { stdio: 'inherit' });
 
     if (Date.now() - start < 7000) {
         console.log(`waiting for the remainder of 7 seconds to avoid rate limit...`);
