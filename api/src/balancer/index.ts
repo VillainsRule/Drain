@@ -13,7 +13,7 @@ import vpnApiBalancer from './custom/vpnapi.io';
 import createBasicBalancer from './basicBalancer';
 import createCaptchaBalancer from './captchaBalancer';
 
-const corsShBalancer = createBasicBalancer('https://proxy.cors.sh/https://ip.villainsrule.xyz', { tokenHeader: 'x-cors-api-key', validCode: 400, customText: 'Paid Key' });
+const corsShBalancer = createBasicBalancer('https://proxy.cors.sh/https://ip.villainsrule.xyz', { tokenHeader: 'x-cors-api-key', validCode: 400, invalidCode: [403], customText: 'Paid Key' });
 const mistralBalancer = createBasicBalancer('https://api.mistral.ai/v1/models', { customText: 'Has Credits' });
 const togetherBalancer = createBasicBalancer('https://api.together.xyz/v1/models', { customText: 'Has Credits' });
 

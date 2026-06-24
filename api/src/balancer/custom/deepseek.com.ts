@@ -34,6 +34,6 @@ export default async function deepseekBalancer(token: string, useProxy: boolean)
         return rounded === '-0.00' ? '0.00' : rounded;
     }
 
-    console.log('[deepseek] ran all 3 passes');
+    console.log('[deepseek] failed all 5 times');
     return 'invalid_key';
 }
