@@ -11,7 +11,7 @@ class TimedCalculator {
 
     init(db: SiteDB) {
         this.calculate(db);
-        setInterval(() => this.calculate(db), 60000);
+        setInterval(() => this.calculate(db), 15 * 60 * 1000);
     }
 
     calculate(db: SiteDB) {
