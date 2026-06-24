@@ -34,7 +34,7 @@ class SiteStore {
                     totalBalance: Object.values(res.data.keys).reduce((sum, val) => {
                         if (val && val.startsWith('$')) {
                             const num = parseFloat(val.slice(1));
-                            return sum + (isNaN(num) ? 0 : num);
+                            return sum + ((isNaN(num) || num < 0) ? 0 : num);
                         }
 
                         return sum;
