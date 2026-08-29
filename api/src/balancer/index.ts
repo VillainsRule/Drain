@@ -7,6 +7,8 @@ import elevenlabsBalancer from './custom/elevenlabs.io';
 import geminiBalancer from './custom/gemini.google';
 import ipinfoBalancer from './custom/ipinfo.io';
 import httpsProxy from './custom/https.proxy';
+import mailtrapBalancer from './custom/mailtrap.io';
+import resendBalancer from './custom/resend.com';
 import serperBalancer from './custom/serper.dev';
 import vpnApiBalancer from './custom/vpnapi.io';
 
@@ -48,9 +50,11 @@ const getBalancer = (domain: string) => {
     if (domain.endsWith('groq.com')) return groqBalancer;
     if (domain.endsWith('https.proxy')) return httpsProxy;
     if (domain.endsWith('ipinfo.io')) return ipinfoBalancer;
+    if (domain.endsWith('mailtrap.io')) return mailtrapBalancer;
     if (domain.endsWith('mistral.ai')) return mistralBalancer;
     if (domain.endsWith('nvidia.com')) return nvidiaBalancer;
     if (domain.endsWith('perplexity.ai')) return perplexityBalancer;
+    if (domain.endsWith('resend.com')) return resendBalancer;
     if (domain.endsWith('serper.dev')) return serperBalancer;
     if (domain.endsWith('together.ai')) return togetherBalancer;
     if (domain.endsWith('vpnapi.io')) return vpnApiBalancer;

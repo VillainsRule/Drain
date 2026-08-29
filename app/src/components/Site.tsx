@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 import ArrowDownWideNarrow from 'lucide-react/icons/arrow-down-wide-narrow';
 import Copy from 'lucide-react/icons/copy';
+import FunnelX from 'lucide-react/icons/funnel-x';
 import ListPlus from 'lucide-react/icons/list-plus';
 import Plus from 'lucide-react/icons/plus';
 import RefreshCw from 'lucide-react/icons/refresh-cw';
@@ -124,6 +125,22 @@ const SiteKeys = observer(function SiteKeys() {
                         </TooltipTrigger>
 
                         <TooltipContent>recheck all</TooltipContent>
+                    </Tooltip>}
+
+                    {!!authStore.admin && site.supportsBalancer && <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant='outline' onClick={() => {
+                                api.v1.sites.keys.delete.bulk.post({
+                                    domain: site.id,
+                                    keys: Object.keys(site.keys).filter(k => invalidKeys.includes(k))
+                                }).then((res) => {
+                                    if (res.data) siteStore.refreshCurrent();
+                                    else alert(errorFrom(res));
+                                });
+                            }}><FunnelX /></Button>
+                        </TooltipTrigger>
+
+                        <TooltipContent>delete invalid</TooltipContent>
                     </Tooltip>}
 
                     <Tooltip>

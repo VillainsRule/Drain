@@ -115,7 +115,7 @@ const sites = new Elysia({ name: 'sites' })
         const site = siteDB.get(body.domain);
         if (!site) return status(401, { error: 'no permission' });
         if (!site.users.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
-        if (!site.keys[body.key]) return status(401, { error: 'no permission' });
+        if (!(body.key in site.keys)) return status(401, { error: 'no permission' });
 
         const balancer = getBalancer(body.domain);
         if (!balancer) return status(401, { error: 'no permission' });
@@ -151,6 +151,21 @@ const sites = new Elysia({ name: 'sites' })
 
         return {};
     }, { body: t.Object({ domain: t.String(), key: t.String() }), detail: { description: 'removes a key from a site. requires: admin', tags: ['Site Keys'] } })
+
+    .post('/api/v1/sites/keys/delete/bulk', async ({ body, user }) => {
+        if (!user.admin) return status(401, { error: 'unauthorized' });
+
+        const site = siteDB.get(body.domain);
+        if (!site) return status(401, { error: 'no permission' });
+
+        body.keys.forEach((key) => {
+            if (site.keys[key]) delete site.keys[key];
+        });
+
+        siteDB.update(body.domain, { keys: site.keys });
+
+        return {};
+    }, { body: t.Object({ domain: t.String(), keys: t.Array(t.String()) }), detail: { description: 'removes multiple keys from a site. requires: admin', tags: ['Site Keys'] } })
 
     .post('/api/v1/sites/keys/sort', async ({ body, user }) => {
         const site = siteDB.get(body.domain);

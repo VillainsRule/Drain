@@ -9,7 +9,7 @@ export default async function serperBalancer(token: string, useProxy: boolean): 
     const res = await req.json() as any;
     if (res.message === 'Not enough credits') return 'Empty Key';
     else if (res.message === 'Missing query parameter') return 'Has Credits';
-    else if (res.message === 'Unauthorized. Sign up for a free account.') return 'invalid_key';
+    else if (res.message === 'Unauthorized. Sign up for a free account.' || res.message === 'Unauthorized.') return 'invalid_key';
 
     console.log('[serper] unexpected response:', res);
 
