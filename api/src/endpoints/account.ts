@@ -67,7 +67,7 @@ const account = new Elysia({ name: 'account' })
             return new Response(null, { status: 302, headers: { Location: '/' } });
         } catch (error) {
             console.error(error);
-            return status(502, {});
+            return status(500, {});
         }
     }, { query: t.Object({ code: t.Optional(t.String()) }) })
 
@@ -84,7 +84,7 @@ const account = new Elysia({ name: 'account' })
             return status(200, { username: user.username, redirect });
         } catch (error) {
             console.error(error);
-            return status(502, {});
+            return status(500, {});
         }
     }, { body: t.Object({ code: t.String(), origin: t.String() }) })
 
@@ -130,7 +130,7 @@ const account = new Elysia({ name: 'account' })
             return new Response(null, { status: 302, headers: { Location: '/' } });
         } catch (error) {
             console.error(error);
-            return status(502, {});
+            return status(500, {});
         }
     }, { query: t.Object({ state: t.Optional(t.String()), code: t.Optional(t.String()) }) })
 
