@@ -7,7 +7,7 @@ const linkedKeys = [
     { prop: 'code', type: 'string' },
     { prop: 'sessions', type: 'string' },
     { prop: 'invitedBy', type: 'array' },
-    { prop: 'voauthId', type: 'number' },
+    { prop: 'voauthId', type: 'number' }
 ] as const;
 
 export class UserDB extends LinkedDB<DBUser, typeof linkedKeys> {
@@ -22,7 +22,8 @@ export class UserDB extends LinkedDB<DBUser, typeof linkedKeys> {
                 invitedBy: 0,
                 sites: [],
                 sessions: [],
-                apiKeys: []
+                apiKeys: [],
+                lastSeen: 0
             }
         });
     }

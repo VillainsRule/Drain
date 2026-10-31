@@ -26,6 +26,7 @@ export interface DBUser {
     sessions: string[];
     sites: string[];
     apiKeys: string[];
+    lastSeen: number;
 }
 
 export interface PublicUser {
@@ -39,6 +40,7 @@ export interface PublicAdminUser extends PublicUser {
     invitedBy: number;
     sites: string[];
     voauthed: boolean;
+    lastSeen: number;
 }
 
 export interface DBSite {

@@ -68,7 +68,7 @@ const Invites = observer(function Invites() {
 
             <div className='flex flex-col gap-2 w-full'>
                 {invites.length < 1
-                    ? <p className='text-center text-muted-foreground text-sm py-4'>you haven't invited anyone.<br /><br />if you abuse this, since i haven't written a restriction system yet, i'll lowkey delete your account :D</p>
+                    ? <p className='text-center text-muted-foreground text-sm py-4'>you haven't invited anyone yet.<br /><br />abuse of this tool will lead to account deletion :D</p>
                     : invites.map((invite) => (
                         <div key={invite.username} className='flex items-center justify-between w-full py-3 px-4 border rounded-md gap-4'>
                             <div className='flex items-center gap-3'>

@@ -309,6 +309,26 @@ if (fs.existsSync(dbRootPath)) {
             } else if (fs.existsSync(v8Path)) fs.cpSync(v8Path, v9Path);
         })
     }
+
+    // v9 -> v10
+    // 10/30 - add lastSeen to users
+    const v10Dir = path.join(dbRootPath, 'v10');
+    if (!fs.existsSync(v10Dir)) {
+        fs.mkdirSync(v10Dir);
+
+        v4Files.forEach((filename) => {
+            const v9Path = path.join(dbRootPath, 'v9', filename);
+            const v10Path = path.join(dbRootPath, 'v10', filename);
+
+            if (filename === 'users.db') {
+                const v9File = JSON.parse(fs.readFileSync(v9Path, 'utf8'));
+                Object.values(v9File.target).forEach((user: any) => {
+                    user.lastSeen = 0;
+                });
+                fs.writeFileSync(v10Path, JSON.stringify(v9File));
+            } else if (fs.existsSync(v9Path)) fs.cpSync(v9Path, v10Path);
+        })
+    }
 }
 
 // DID YOU BUMP ./version.ts?

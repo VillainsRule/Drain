@@ -22,6 +22,8 @@ import UserPlus from 'lucide-react/icons/user-plus';
 import adminStore from '@/store/AdminStore';
 import authStore from '@/store/AuthStore';
 
+import { getRelativeTime } from '@/lib/utils';
+
 const Users = observer(function Users() {
     const navigate = useNavigate();
 
@@ -79,6 +81,8 @@ const Users = observer(function Users() {
                                 <Clock className='h-3 w-3' />
                                 <span className='hidden sm:inline'>pending</span>
                             </Badge>)}
+
+                            {user.lastSeen && <span className='ml-1 text-sm text-muted-foreground shrink-0'>last seen: {user.lastSeen ? getRelativeTime(user.lastSeen) : 'never'}</span>}
                         </div>
 
                         <div className='flex items-center gap-1 shrink-0'>
