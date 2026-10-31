@@ -21,7 +21,7 @@ import Users from './components/admin/Users'
 import Discovery from './components/discovery/Discovery'
 import Requests from './components/discovery/Requests'
 
-import Site from './components/Site'
+import Site from './components/site/Site.tsx'
 
 import APIKeys from './components/user/APIKeys'
 import Invites from './components/user/Invites'
