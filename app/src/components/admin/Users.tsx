@@ -82,7 +82,7 @@ const Users = observer(function Users() {
                                 <span className='hidden sm:inline'>pending</span>
                             </Badge>)}
 
-                            {user.lastSeen && <span className='ml-1 text-sm text-muted-foreground shrink-0'>last seen: {user.lastSeen ? getRelativeTime(user.lastSeen) : 'never'}</span>}
+                            {!!user.lastSeen && <span className='ml-1 text-sm text-muted-foreground shrink-0'>last seen: {user.id === authStore.id ? 'now' : user.lastSeen ? getRelativeTime(user.lastSeen) : 'never'}</span>}
                         </div>
 
                         <div className='flex items-center gap-1 shrink-0'>
