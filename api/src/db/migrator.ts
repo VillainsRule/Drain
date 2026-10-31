@@ -329,6 +329,26 @@ if (fs.existsSync(dbRootPath)) {
             } else if (fs.existsSync(v9Path)) fs.cpSync(v9Path, v10Path);
         })
     }
+
+    // v10 -> v11
+    // 10/31 - add sortPatterns to sites
+    const v11Dir = path.join(dbRootPath, 'v11');
+    if (!fs.existsSync(v11Dir)) {
+        fs.mkdirSync(v11Dir);
+
+        v4Files.forEach((filename) => {
+            const v10Path = path.join(dbRootPath, 'v10', filename);
+            const v11Path = path.join(dbRootPath, 'v11', filename);
+
+            if (filename === 'sites.db') {
+                const v10File = JSON.parse(fs.readFileSync(v10Path, 'utf8'));
+                Object.values(v10File.target).forEach((site: any) => {
+                    site.sortPatterns = [];
+                });
+                fs.writeFileSync(v11Path, JSON.stringify(v10File));
+            } else if (fs.existsSync(v10Path)) fs.cpSync(v10Path, v11Path);
+        })
+    }
 }
 
 // DID YOU BUMP ./version.ts?

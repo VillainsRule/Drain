@@ -50,6 +50,7 @@ export interface DBSite {
     users: number[];
     keys: Record<string, string | null>;
     useProxy: boolean;
+    sortPatterns: { regex: boolean, value: string }[];
     notes?: string;
 }
 

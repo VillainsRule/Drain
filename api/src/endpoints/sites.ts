@@ -56,6 +56,7 @@ const sites = new Elysia({ name: 'sites' })
             description: site.description,
             public: site.public,
             useProxy: site.useProxy,
+            sortPatterns: site.sortPatterns,
             notes: user.admin ? site.notes : undefined
         }
         else return status(401, { error: 'no permission' });
@@ -74,6 +75,7 @@ const sites = new Elysia({ name: 'sites' })
             users: [user.id],
             keys: {},
             useProxy: false,
+            sortPatterns: [],
             notes: ''
         });
 
@@ -171,48 +173,43 @@ const sites = new Elysia({ name: 'sites' })
         return {};
     }, { body: t.Object({ domain: t.String(), keys: t.Array(t.String()) }), detail: { description: 'removes multiple keys from a site. requires: admin', tags: ['Site Keys'] } })
 
-    .post('/api/v1/sites/keys/sort', async ({ body, user }) => {
+    .post('/api/v1/sites/sort/run', async ({ body, user }) => {
         const site = siteDB.get(body.domain);
-        if (!site) return status(401, { error: 'no permission' });
-        if (!site.users.includes(user.id) && !user.admin) return status(401, { error: 'no permission' });
+        if (!site || !user.admin) return status(401, { error: 'no permission' });
+
+        if (site.sortPatterns.length === 0) return status(404, { error: 'no sort patterns configured' });
 
         const dedupedEntries = Array.from(new Map(Object.entries(site.keys)).entries());
-        if (dedupedEntries.length === 0) return status(404, { error: 'no keys with balance to sort' });
+        if (dedupedEntries.length === 0) return status(404, { error: 'no keys to sort' });
+
+        const matchers = site.sortPatterns.map((p) => p.regex ? new RegExp(p.value) : p.value);
 
         const score = (balance: string): number => {
-            if (balance.startsWith('$')) {
-                const num = parseFloat(balance.slice(1));
-                return isNaN(num) ? 0 : 10_000 + num;
+            for (let i = 0; i < matchers.length; i++) {
+                const matcher = matchers[i];
+                const matched = typeof matcher === 'string' ? balance.includes(matcher) : matcher.test(balance);
+                if (matched) return matchers.length - i;
             }
 
-            const tierMatch = balance.match(/Tier\s*(\d+)/i);
-            if (tierMatch) return 1_000 + parseInt(tierMatch[1], 10);
-
-            if (/paid|premium|prod/i.test(balance)) return 500;
-            if (/has credits/i.test(balance)) return 200;
-            if (/trial|free|valid/i.test(balance)) return 100;
-            if (/empty/i.test(balance)) return 0;
-            if (/unknown|\?/i.test(balance)) return -1;
-
-            return 0;
+            return -1;
         };
 
-        let hasSignificant = false;
-
-        const sorted = dedupedEntries.sort((a, b) => {
-            const sa = score(a[1] || '?');
-            const sb = score(b[1] || '?');
-            if (sa !== 0 || sb !== 0) hasSignificant = true;
-            return sb - sa;
-        });
-
-        if (!hasSignificant) return status(404, { error: 'no keys with balance to sort' });
+        const sorted = dedupedEntries.sort((a, b) => score(b[1] || '') - score(a[1] || ''));
 
         site.keys = Object.fromEntries(sorted);
         siteDB.update(body.domain, { keys: site.keys });
 
         return {};
-    }, { body: t.Object({ domain: t.String() }), detail: { description: 'sorts the keys of a site by their balance', tags: ['Site Keys'] } })
+    }, { body: t.Object({ domain: t.String() }), detail: { description: 'sorts the keys of a site using its configured sort patterns', tags: ['Site Keys'] } })
+
+    .post('/api/v1/sites/sort/save', async ({ body, user }) => {
+        const site = siteDB.get(body.domain);
+        if (!site || !user.admin) return status(401, { error: 'no permission' });
+
+        siteDB.update(body.domain, { sortPatterns: body.patterns });
+
+        return {};
+    }, { body: t.Object({ domain: t.String(), patterns: t.Array(t.Object({ value: t.String(), regex: t.Boolean() })) }), detail: { description: 'saves the sort pattern configuration for a site', tags: ['Site Keys'] } })
 
     .post('/api/v1/sites/access/add', async ({ body, user }) => {
         const targetUser = userDB.get(body.userId);

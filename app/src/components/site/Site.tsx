@@ -5,7 +5,6 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
-import ArrowDownWideNarrow from 'lucide-react/icons/arrow-down-wide-narrow';
 import Copy from 'lucide-react/icons/copy';
 import FunnelX from 'lucide-react/icons/funnel-x';
 import RefreshCw from 'lucide-react/icons/refresh-cw';
@@ -22,6 +21,7 @@ import AddKey from '@/components/site/buttons/AddKey';
 import BulkAddKeys from '@/components/site/buttons/BulkAddKeys';
 import ManageAccess from '@/components/site/buttons/ManageAccess';
 import Settings from '@/components/site/buttons/Settings';
+import Sort from '@/components/site/buttons/Sort';
 
 const SiteKeys = observer(function SiteKeys() {
     const [validKeys, setValidKeys] = useState<string[]>([]);
@@ -39,18 +39,7 @@ const SiteKeys = observer(function SiteKeys() {
                     <AddKey site={site} />
                     <BulkAddKeys site={site} />
 
-                    {site.sortable && <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant='outline' onClick={() => {
-                                api.v1.sites.keys.sort.post({ domain: site.id }).then((res) => {
-                                    if (res.data) siteStore.refreshCurrent();
-                                    else alert(errorFrom(res));
-                                });
-                            }}><ArrowDownWideNarrow /></Button>
-                        </TooltipTrigger>
-
-                        <TooltipContent>sort by $$</TooltipContent>
-                    </Tooltip>}
+                    {!!authStore.admin && <Sort site={site} />}
 
                     {!!authStore.admin && site.supportsBalancer && <Tooltip>
                         <TooltipTrigger asChild>

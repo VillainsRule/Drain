@@ -16,7 +16,7 @@ export class AuditDB extends LinkedDB<DBAuditEntry, typeof linkedKeys> {
             user: actor,
             timestamp: Date.now(),
             details
-        })
+        });
     }
 }
 
