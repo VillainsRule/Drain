@@ -1,9 +1,9 @@
 import * as React from "react"
+import { cn } from "cn"
 import { Command as CommandPrimitive } from "cmdk"
 
 import SearchIcon from 'lucide-react/icons/search';
 
-import { cn } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,

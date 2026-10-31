@@ -5,11 +5,10 @@ import {
     CommandInput,
 } from "./command"
 import { Command as CommandPrimitive } from "cmdk"
+import { cn } from "cn"
 import { useState, useRef, useCallback, type KeyboardEvent } from "react"
 
 import Check from 'lucide-react/icons/check';
-
-import { cn } from "../../lib/utils"
 
 export type Option = Record<"value" | "label", string> & Record<string, string>
 

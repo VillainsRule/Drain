@@ -29,7 +29,7 @@ import adminStore from '@/store/AdminStore';
 import { displayMoney } from '@/lib/utils';
 
 const randomHex = (len: number) => Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-const fakeKeys = [randomHex(16), randomHex(16), randomHex(16)];
+const fakeKeys = [randomHex(24), randomHex(24), randomHex(24)];
 
 const SiteKeys = observer(function SiteKeys() {
     const [bulkAddDialogOpen, setBulkAddDialogOpen] = useState(false);
@@ -200,9 +200,9 @@ const SiteKeys = observer(function SiteKeys() {
                                     <span>proxy balancer (avoids ratelimits on some sites)</span>
                                 </label>
 
-                                <div className='flex flex-col gap-1'>
-                                    <span>discovery tag</span>
-                                    <Input defaultValue={site.description} onChange={(e) => {
+                                <div className='flex items-center gap-3'>
+                                    <span className='shrink-0'>discovery tag:</span>
+                                    <Input className='inline-block focus-visible:ring-0 border-0 border-b shadow-none rounded-none transition-colors duration-100 mt-px px-0' defaultValue={site.description} onChange={(e) => {
                                         api.v1.sites.settings.description.post({ domain: site.id, description: e.target.value }).then((res) => {
                                             if (res.data) siteStore.refreshCurrent();
                                             else alert(errorFrom(res));
