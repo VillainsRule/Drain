@@ -194,7 +194,21 @@ const sites = new Elysia({ name: 'sites' })
             return -1;
         };
 
-        const sorted = dedupedEntries.sort((a, b) => score(b[1] || '') - score(a[1] || ''));
+        const extractNumber = (balance: string): number | null => {
+            const match = balance.match(/[0-9]+(\.[0-9]+)?/);
+            return match ? parseFloat(match[0]) : null;
+        };
+
+        const sorted = dedupedEntries.sort((a, b) => {
+            const tierDiff = score(b[1] || '') - score(a[1] || '');
+            if (tierDiff !== 0) return tierDiff;
+
+            const numA = extractNumber(a[1] || '');
+            const numB = extractNumber(b[1] || '');
+            if (numA !== null && numB !== null) return numB - numA;
+
+            return 0;
+        });
 
         site.keys = Object.fromEntries(sorted);
         siteDB.update(body.domain, { keys: site.keys });
