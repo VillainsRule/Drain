@@ -195,7 +195,8 @@ const sites = new Elysia({ name: 'sites' })
         };
 
         const extractNumber = (balance: string): number | null => {
-            const match = balance.match(/[0-9]+(\.[0-9]+)?/);
+            const cleaned = balance.replace(/[^0-9.\-]/g, '');
+            const match = cleaned.match(/-?[0-9]+(\.[0-9]+)?/);
             return match ? parseFloat(match[0]) : null;
         };
 
