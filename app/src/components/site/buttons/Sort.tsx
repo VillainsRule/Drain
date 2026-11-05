@@ -106,7 +106,7 @@ export default function Sort({ site }: { site: PublicSite }) {
                                     {exp.regex && <span className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 select-none text-muted-foreground'>/</span>}
                                 </div>
 
-                                <Button variant='outline' size='icon' onClick={() => update(exp.id, { value: '\\$[0-9]+\\.?[0-9]{0,2}', regex: true })}><DollarSign /></Button>
+                                <Button variant='outline' size='icon' onClick={() => update(exp.id, { value: '\\${dec}', regex: true })}><DollarSign /></Button>
                                 <Button variant='outline' size='icon' onClick={() => setExpressions((list) => {
                                     const next = list.filter((item) => item.id !== exp.id);
                                     scheduleSave(next);
@@ -129,6 +129,8 @@ export default function Sort({ site }: { site: PublicSite }) {
                             </div>
                         )}
                     </div>
+
+                    <span className='text-center text-sm'>you can use <span className='rounded bg-muted px-1 py-0.5 font-mono text-sm'>&#123;dec&#125;</span> and <code className='rounded bg-muted px-1 py-0.5 font-mono text-sm'>&#123;inc&#125;</code> for decrementing/incrementing numbers</span>
                 </DialogContent>
             </Dialog>
         </>

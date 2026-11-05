@@ -182,17 +182,22 @@ const sites = new Elysia({ name: 'sites' })
         const dedupedEntries = Array.from(new Map(Object.entries(site.keys)).entries());
         if (dedupedEntries.length === 0) return status(404, { error: 'no keys to sort' });
 
-        const matchers = site.sortPatterns.map((p) => p.regex ? new RegExp(p.value) : p.value);
+        const numberSource = '-?[0-9]+(?:\\.[0-9]+)?';
 
-        const score = (balance: string): number => {
-            for (let i = 0; i < matchers.length; i++) {
-                const matcher = matchers[i];
-                const matched = typeof matcher === 'string' ? balance.includes(matcher) : matcher.test(balance);
-                if (matched) return matchers.length - i;
-            }
+        const matchers = site.sortPatterns.map((p) => {
+            const direction = p.value.match(/\{(dec|inc)\}/)?.[1] as 'dec' | 'inc' | undefined;
+            if (!direction) return { regex: p.regex ? new RegExp(p.value) : null, text: p.value, direction };
 
-            return -1;
-        };
+            let captured = false;
+            const source = p.value.split(/(\{(?:dec|inc)\})/).map((part, i) => {
+                if (i % 2 === 0) return p.regex ? part : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                if (captured) return `(?:${numberSource})`;
+                captured = true;
+                return `(?<sortnum>${numberSource})`;
+            }).join('');
+
+            return { regex: new RegExp(source), text: p.value, direction };
+        });
 
         const extractNumber = (balance: string): number | null => {
             const cleaned = balance.replace(/[^0-9.\-]/g, '');
@@ -200,16 +205,37 @@ const sites = new Elysia({ name: 'sites' })
             return match ? parseFloat(match[0]) : null;
         };
 
-        const sorted = dedupedEntries.sort((a, b) => {
-            const tierDiff = score(b[1] || '') - score(a[1] || '');
-            if (tierDiff !== 0) return tierDiff;
+        const classify = (balance: string) => {
+            for (let i = 0; i < matchers.length; i++) {
+                const matcher = matchers[i];
+                if (!matcher.regex) {
+                    if (!balance.includes(matcher.text)) continue;
+                    return { tier: matchers.length - i, direction: matcher.direction, value: extractNumber(balance) };
+                }
 
-            const numA = extractNumber(a[1] || '');
-            const numB = extractNumber(b[1] || '');
-            if (numA !== null && numB !== null) return numB - numA;
+                const match = matcher.regex.exec(balance);
+                if (!match) continue;
 
-            return 0;
-        });
+                const raw = match.groups?.sortnum;
+                return { tier: matchers.length - i, direction: matcher.direction, value: raw !== undefined ? parseFloat(raw) : extractNumber(balance) };
+            }
+
+            return { tier: -1, direction: undefined, value: extractNumber(balance) };
+        };
+
+        const sorted = dedupedEntries
+            .map((entry) => ({ entry, info: classify(entry[1] || '') }))
+            .sort((a, b) => {
+                const tierDiff = b.info.tier - a.info.tier;
+                if (tierDiff !== 0) return tierDiff;
+
+                if (a.info.value !== null && b.info.value !== null && !Number.isNaN(a.info.value) && !Number.isNaN(b.info.value)) {
+                    return a.info.direction === 'inc' ? a.info.value - b.info.value : b.info.value - a.info.value;
+                }
+
+                return 0;
+            })
+            .map(({ entry }) => entry);
 
         site.keys = Object.fromEntries(sorted);
         siteDB.update(body.domain, { keys: site.keys });
