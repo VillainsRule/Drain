@@ -1,6 +1,6 @@
 import fetchWithProxy from '../getProxy';
 
-const yuanToUSD = (yuan: number): number => yuan / 6.88; // 1 USD = 6.88 CNY (as of 3/3/25) - https://www.google.com/search?q=1+usd+to+cny
+const yuanToUSD = (yuan: number): number => yuan / 6.67; // rate as of 11/5/26 - https://www.google.com/search?q=1+usd+to+cny
 
 export default async function deepseekBalancer(token: string, useProxy: boolean): Promise<string> {
     for (let i = 1; i <= 5; i++) {
